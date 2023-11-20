@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "tg-bot-demo"
+name = "JCN-exchaige-assistant"
 version = "0.1.0"
 description = ""
 authors = ["Jay Hsia <jayhsia1997@gmail.com>"]
