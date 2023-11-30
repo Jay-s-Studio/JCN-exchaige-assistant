@@ -1,8 +1,8 @@
 """
 Top-level package for database.
 """
-from .aio_redis import RedisPool
+from .aio_redis import redis_pool
 
 __all__ = [
-    "RedisPool",
+    "redis_pool",
 ]

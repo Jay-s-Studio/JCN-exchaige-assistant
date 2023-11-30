@@ -3,7 +3,7 @@ Container
 """
 from dependency_injector import containers, providers
 
-from app.libs.database.aio_redis import redis_pool
+from app.libs.database import redis_pool
 from app.providers import TelegramAccountProvider
 
 
@@ -11,7 +11,7 @@ from app.providers import TelegramAccountProvider
 class Container(containers.DeclarativeContainer):
     """Container"""
 
-    containers.WiringConfiguration(
+    wiring_config = containers.WiringConfiguration(
         modules=[],
         packages=["app.handlers", "app.routers"],
     )

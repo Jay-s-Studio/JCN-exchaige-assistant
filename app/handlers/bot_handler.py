@@ -19,14 +19,15 @@ import html
 from typing import Optional, Tuple
 from urllib.parse import urljoin
 
+from dependency_injector.wiring import inject, Provide
 from telegram import Update, Chat, ChatMemberUpdated, ChatMember
-from telegram.constants import ParseMode
-from telegram.ext import ContextTypes
 
-from app.clients.firebase.firestore import GoogleFirestoreClient
 from app.config import settings
+from app.containers import Container
 from app.context import CustomContext
 from app.libs.logger import logger
+from app.models.account.telegram import TelegramAccount
+from app.providers import TelegramAccountProvider
 
 
 async def start(update: Update, context: CustomContext) -> None:
@@ -77,8 +78,19 @@ def extract_status_change(chat_member_update: ChatMemberUpdated) -> Optional[Tup
     return was_member, is_member
 
 
-async def track_chats(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Tracks the chats the bot is in."""
+@inject
+async def track_chats(
+    update: Update,
+    context: CustomContext,
+    telegram_account_provider: TelegramAccountProvider = Provide[Container.telegram_account_provider]
+) -> None:
+    """
+    Tracks the chats the bot is in.
+    :param update:
+    :param context:
+    :param telegram_account_provider:
+    :return:
+    """
     logger.info(str.rjust("", 100, "-"))
     logger.info("track_chats")
     result = extract_status_change(update.my_chat_member)
@@ -103,33 +115,12 @@ async def track_chats(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         except Exception as exc:
             logger.exception(exc)
 
-    if chat.type == Chat.PRIVATE:
-        if not was_member and is_member:
-            # This may not be really needed in practice because most clients will automatically
-            # send a /start command after the user unblocks the bot, and start_private_chat()
-            # will add the user to "user_ids".
-            # We're including this here for the sake of the example.
-            logger.info("%s unblocked the bot", cause_name)
-            context.bot_data.setdefault("user_ids", set()).add(chat.id)
-        elif was_member and not is_member:
-            logger.info("%s blocked the bot", cause_name)
-            context.bot_data.setdefault("user_ids", set()).discard(chat.id)
-    elif chat.type in [Chat.GROUP, Chat.SUPERGROUP]:
-        if not was_member and is_member:
-            logger.info("%s added the bot to the group %s", cause_name, chat.title)
-            context.bot_data.setdefault("group_ids", set()).add(chat.id)
-        elif was_member and not is_member:
-            logger.info("%s removed the bot from the group %s", cause_name, chat.title)
-            context.bot_data.setdefault("group_ids", set()).discard(chat.id)
-    elif not was_member and is_member:
-        logger.info("%s added the bot to the channel %s", cause_name, chat.title)
-        context.bot_data.setdefault("channel_ids", set()).add(chat.id)
-    elif was_member and not is_member:
-        logger.info("%s removed the bot from the channel %s", cause_name, chat.title)
-        context.bot_data.setdefault("channel_ids", set()).discard(chat.id)
+    data = chat.to_dict()
+    data["in_group"] = is_member
+    await telegram_account_provider.update_chat_group(chat_id=str(chat.id), data=data)
 
 
-async def show_chats(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+async def show_chats(update: Update, context: CustomContext) -> None:
     """Shows which chats the bot is in"""
     user_ids = ", ".join(str(uid) for uid in context.bot_data.setdefault("user_ids", set()))
     group_ids = ", ".join(str(gid) for gid in context.bot_data.setdefault("group_ids", set()))
@@ -142,8 +133,16 @@ async def show_chats(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
     await update.effective_message.reply_text(text)
 
 
-async def greet_chat_members(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Greets new users in chats and announces when someone leaves"""
+async def greet_chat_members(
+    update: Update,
+    context: CustomContext
+) -> None:
+    """
+    Greets new users in chats and announces when someone leaves
+    :param update:
+    :param context:
+    :return:
+    """
     logger.info(str.rjust("", 100, "-"))
     logger.info("greet_chat_members")
     for new_member in update.message.new_chat_members:
@@ -172,33 +171,44 @@ async def greet_chat_members(update: Update, context: ContextTypes.DEFAULT_TYPE)
     #     )
 
 
-async def get_my_information(update: Update, context: CustomContext) -> None:
+@inject
+async def get_my_information(
+    update: Update,
+    context: CustomContext,
+    telegram_account_provider: TelegramAccountProvider = Provide[Container.telegram_account_provider]
+) -> None:
     """
     Get my information
     :param update:
     :param context:
+    :param telegram_account_provider:
     :return:
     """
-    user = await GoogleFirestoreClient().get_document(
-        collection="users",
-        document=str(update.effective_user.id)
-    )
-    data = user.to_dict()
+    user = await telegram_account_provider.get_account(user_id=str(update.effective_user.id))
+    if not user:
+        await telegram_account_provider.set_account(user_id=str(update.effective_user.id), data=update.effective_user.to_dict())
+        user = TelegramAccount(**update.effective_user.to_dict())
     text = (
         f"Your user id is <code>{user.id}</code>.\n\n"
-        f"Your name is <code>{data.get('last_name')}</code>.\n\n"
-        f"Your username is <code>{data.get('username')}</code>.\n\n"
+        f"Your name is <code>{user.last_name}</code>.\n\n"
+        f"Your username is <code>{user.username}</code>.\n\n"
     )
     await update.message.reply_html(text=text)
 
 
-async def echo(update: Update, context: CustomContext) -> None:
+@inject
+async def echo(
+    update: Update,
+    context: CustomContext,
+    telegram_account_provider: TelegramAccountProvider = Provide[Container.telegram_account_provider]
+) -> None:
     """
     Echo the user message.
     :param update:
     :param context:
+    :param telegram_account_provider:
     :return:
     """
-    # user = update.effective_user.to_dict()
-    # await GoogleFirestoreClient().set_document(collection=f"{settings.TELEGRAM_BOT_USERNAME}:users", document=str(user["id"]), data=user)
+    user = update.effective_user.to_dict()
+    await telegram_account_provider.set_account(user_id=str(update.effective_user.id), data=user)
     await update.effective_message.reply_text(update.message.text)
