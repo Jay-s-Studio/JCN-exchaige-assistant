@@ -22,9 +22,9 @@ class GoogleFirestoreClient:
         :param collection:
         :return:
         """
-        if collection.startswith(f"{settings.TELEGRAM_BOT_USERNAME}:"):
+        if collection.startswith(f"{settings.APP_NAME}:"):
             return collection
-        return f"{settings.TELEGRAM_BOT_USERNAME}:{collection}"
+        return f"{settings.APP_NAME}:{collection}"
 
     async def set_document(self, collection: str, document: str, data: dict, **kwargs) -> write.WriteResult:
         """

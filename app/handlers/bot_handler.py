@@ -120,19 +120,6 @@ async def track_chats(
     await telegram_account_provider.update_chat_group(chat_id=str(chat.id), data=data)
 
 
-async def show_chats(update: Update, context: CustomContext) -> None:
-    """Shows which chats the bot is in"""
-    user_ids = ", ".join(str(uid) for uid in context.bot_data.setdefault("user_ids", set()))
-    group_ids = ", ".join(str(gid) for gid in context.bot_data.setdefault("group_ids", set()))
-    channel_ids = ", ".join(str(cid) for cid in context.bot_data.setdefault("channel_ids", set()))
-    text = (
-        f"@{context.bot.username} is currently in a conversation with the user IDs {user_ids}."
-        f" Moreover it is a member of the groups with IDs {group_ids} "
-        f"and administrator in the channels with IDs {channel_ids}."
-    )
-    await update.effective_message.reply_text(text)
-
-
 async def greet_chat_members(
     update: Update,
     context: CustomContext

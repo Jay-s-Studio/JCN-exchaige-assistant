@@ -21,6 +21,7 @@ dependency-injector = "*"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "*"
+pytest-asyncio = "*"
 
 [build-system]
 requires = ["poetry-core"]

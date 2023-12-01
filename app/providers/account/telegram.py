@@ -5,6 +5,7 @@ from typing import Optional
 
 from redis.asyncio import Redis
 
+from app.libs.database import RedisPool
 from app.clients.firebase.firestore import GoogleFirestoreClient
 from app.models.account.telegram import TelegramAccount
 
@@ -12,8 +13,8 @@ from app.models.account.telegram import TelegramAccount
 class TelegramAccountProvider:
     """TelegramAccountProvider"""
 
-    def __init__(self, redis: Redis):
-        self._redis = redis
+    def __init__(self, redis: RedisPool):
+        self._redis: Redis = redis.create()
         self.firestore_client = GoogleFirestoreClient()
 
     @staticmethod

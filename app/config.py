@@ -15,7 +15,7 @@ class Configuration(BaseSettings):
     Configuration
     """
     # [App Base]
-    APP_NAME: str = "JCN-exchaige-assistant"
+    APP_NAME: str = "jcn_exchaige_assistant"
     ENV: str = os.getenv(key="ENV", default="dev").lower()
     DEBUG: bool = os.getenv(key="DEBUG", default=False)
     IS_PROD: bool = ENV == "prod"
