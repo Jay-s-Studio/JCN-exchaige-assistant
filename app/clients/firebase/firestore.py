@@ -2,6 +2,7 @@
 GoogleFirestore
 """
 from firebase_admin import firestore_async
+from google.api_core import retry_async
 from google.cloud.firestore_v1 import DocumentSnapshot
 from google.cloud.firestore_v1.types import write
 
@@ -35,6 +36,7 @@ class GoogleFirestoreClient:
         :param kwargs:
         :return:
         """
+        kwargs["retry"] = retry_async.AsyncRetry()
         collection = self.gen_collection(collection)
         doc_ref = self.db.collection(collection).document(document)
         return await doc_ref.set(data, **kwargs)
@@ -47,6 +49,7 @@ class GoogleFirestoreClient:
         :param kwargs:
         :return:
         """
+        kwargs["retry"] = retry_async.AsyncRetry()
         collection = self.gen_collection(collection)
         doc_ref = self.db.collection(collection).document(document)
         return await doc_ref.get(**kwargs)
@@ -60,6 +63,7 @@ class GoogleFirestoreClient:
         :param kwargs:
         :return:
         """
+        kwargs["retry"] = retry_async.AsyncRetry()
         collection = self.gen_collection(collection)
         doc_ref = self.db.collection(collection).document(document)
         return await doc_ref.update(data, **kwargs)

@@ -117,6 +117,7 @@ async def track_chats(
 
     data = chat.to_dict()
     data["in_group"] = is_member
+    data["bot_type"] = settings.TELEGRAM_BOT_TYPE.value
     await telegram_account_provider.update_chat_group(chat_id=str(chat.id), data=data)
 
 

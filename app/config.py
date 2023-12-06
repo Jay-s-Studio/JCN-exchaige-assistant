@@ -7,6 +7,8 @@ import os
 from dotenv import load_dotenv
 from pydantic_settings import BaseSettings
 
+from app.libs.consts.enums import BotType
+
 load_dotenv()
 
 
@@ -22,6 +24,10 @@ class Configuration(BaseSettings):
     APP_FQDN: str = os.getenv(key="APP_FQDN", default="localhost")
     BASE_URL: str = f"https://{APP_FQDN}"
 
+    # [FastAPI]
+    HOST: str = os.getenv(key="HOST", default="127.0.0.1")
+    PORT: int = os.getenv(key="PORT", default=8000)
+
     # [Redis]
     REDIS_HOST: str = os.getenv(key="REDIS_HOST", default="localhost")
     REDIS_PORT: int = os.getenv(key="REDIS_PORT", default=6379)
@@ -32,6 +38,7 @@ class Configuration(BaseSettings):
     # [Telegram]
     TELEGRAM_BOT_USERNAME: str = os.getenv(key="TELEGRAM_BOT_USERNAME")
     TELEGRAM_BOT_TOKEN: str = os.getenv(key="TELEGRAM_BOT_TOKEN")
+    TELEGRAM_BOT_TYPE: BotType = BotType.CUSTOMER
 
     # [Sentry]
     SENTRY_URL: str = os.getenv(key="SENTRY_URL")

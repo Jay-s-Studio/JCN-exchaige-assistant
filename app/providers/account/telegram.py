@@ -62,19 +62,73 @@ class TelegramAccountProvider:
         :param data:
         :return:
         """
+        _collection = "chat_group"
         result = await self.firestore_client.get_document(
-            collection="chat_group",
+            collection=_collection,
             document=chat_id
         )
         if result.exists:
             await self.firestore_client.update_document(
-                collection="chat_group",
+                collection=_collection,
                 document=chat_id,
                 data=data
             )
             return
         await self.firestore_client.set_document(
-            collection="chat_group",
+            collection=_collection,
             document=chat_id,
             data=data
         )
+
+    async def update_chat_group_member(self, chat_id: str, user_id: str, data: dict):
+        """
+        update chat group member
+        :param chat_id:
+        :param user_id:
+        :param data:
+        :return:
+        """
+        _collection = f"group_member:{chat_id}"
+        result = await self.firestore_client.get_document(
+            collection=_collection,
+            document=user_id
+        )
+        if result.exists:
+            await self.firestore_client.update_document(
+                collection=_collection,
+                document=user_id,
+                data=data
+            )
+            return
+        await self.firestore_client.set_document(
+            collection=_collection,
+            document=user_id,
+            data=data
+        )
+
+    async def update_account_exist_group(self, user_id: str, chat_id: str, data: dict):
+        """
+        update account exist group
+        :param user_id:
+        :param chat_id:
+        :param data:
+        :return:
+        """
+        _collection = f"account_group:{user_id}"
+        result = await self.firestore_client.get_document(
+            collection=_collection,
+            document=chat_id
+        )
+        if result.exists:
+            await self.firestore_client.update_document(
+                collection=_collection,
+                document=chat_id,
+                data=data
+            )
+            return
+        await self.firestore_client.set_document(
+            collection=_collection,
+            document=chat_id,
+            data=data
+        )
+
