@@ -2,7 +2,7 @@
 CurrencyHandler
 """
 from app.providers import CurrencyProvider
-from app.serializers.v1.currency import CurrencyList
+from app.serializers.v1.currency import Currencies
 
 
 class CurrencyHandler:
@@ -18,7 +18,7 @@ class CurrencyHandler:
         """
         return await self.currency_provider.get_currencies()
 
-    async def update_currencies(self, currency_list: CurrencyList):
+    async def update_currencies(self, currency_list: Currencies):
         """
         Update currencies
         :return:

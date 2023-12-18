@@ -6,14 +6,14 @@ from fastapi import APIRouter, Depends
 
 from app.containers import Container
 from app.handlers.currency import CurrencyHandler
-from app.serializers.v1.currency import CurrencyList
+from app.serializers.v1.currency import Currencies
 
 router = APIRouter()
 
 
 @router.get(
-    path="/list",
-    response_model=CurrencyList,
+    path="/all",
+    response_model=Currencies,
 )
 @inject
 async def all_currency(
@@ -29,7 +29,7 @@ async def all_currency(
 @router.post(path="/update")
 @inject
 async def update_currencies(
-    currency_list: CurrencyList,
+    currency_list: Currencies,
     currency_handler: CurrencyHandler = Depends(Provide[Container.currency_handler])
 ):
     """

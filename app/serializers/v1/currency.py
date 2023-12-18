@@ -24,8 +24,8 @@ class Currency(BaseModel):
         return value.upper()
 
 
-class CurrencyList(BaseModel):
+class Currencies(BaseModel):
     """
-    Currency List
+    Currencies
     """
     currencies: List[Currency]

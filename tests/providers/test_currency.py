@@ -4,7 +4,7 @@ Test currency provider
 import pytest
 
 from app.providers import CurrencyProvider
-from app.serializers.v1.currency import Currency, CurrencyList
+from app.serializers.v1.currency import Currency, Currencies
 
 
 @pytest.mark.asyncio
@@ -15,17 +15,18 @@ async def test_get_currencies(currency_provider: CurrencyProvider):
     :return:
     """
     currencies = await currency_provider.get_currencies()
-    assert CurrencyList(**currencies)
+    assert Currencies(**currencies)
 
 
 @pytest.mark.asyncio
 async def test_update_currencies(currency_provider: CurrencyProvider):
     """
     Test update currencies
+
     :param currency_provider:
     :return:
     """
-    currency_list = CurrencyList(
+    currencies = Currencies(
         currencies=[
             Currency(name="JPY", description="Japanese Yen", sequence=1),
             Currency(name="PHP", description="Philippine Peso", sequence=2),
@@ -45,5 +46,5 @@ async def test_update_currencies(currency_provider: CurrencyProvider):
             Currency(name="BRL", description="Brazilian Real", sequence=16),
         ]
     )
-    data = currency_list.model_dump()
+    data = currencies.model_dump()
     await currency_provider.update_currencies(data=data)

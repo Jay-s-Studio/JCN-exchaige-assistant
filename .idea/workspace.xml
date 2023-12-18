@@ -4,14 +4,19 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="4d9f8181-d21f-40b3-9fe9-1624f8f1596e" name="Changes" comment="feat: Implement currency APIs and handler">
-      <change afterPath="$PROJECT_DIR$/app/libs/consts/__init__.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/libs/consts/enums.py" afterDir="false" />
+    <list default="true" id="4d9f8181-d21f-40b3-9fe9-1624f8f1596e" name="Changes" comment="feat: Add bot type to determine the type of chat group">
+      <change afterPath="$PROJECT_DIR$/app/handlers/exchange_rate.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/providers/exchange_rate.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/routers/v1/exchange_rate.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/serializers/v1/exchange_rate.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/clients/firebase/firestore.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/clients/firebase/firestore.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/config.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/config.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/handlers/bot_handler.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/handlers/bot_handler.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/providers/account/telegram.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/providers/account/telegram.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/containers.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/containers.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/handlers/currency.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/handlers/currency.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/providers/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/providers/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/routers/v1/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/routers/v1/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/routers/v1/currency.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/routers/v1/currency.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/serializers/v1/currency.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/serializers/v1/currency.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/providers/test_currency.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/providers/test_currency.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -164,9 +169,20 @@
       <option name="presentableId" value="Default" />
       <updated>1701732994766</updated>
       <workItem from="1701732997895" duration="7997000" />
-      <workItem from="1701830168574" duration="6896000" />
+      <workItem from="1701830168574" duration="11250000" />
+      <workItem from="1702607154516" duration="33000" />
+      <workItem from="1702607203418" duration="626000" />
+      <workItem from="1702866348425" duration="16413000" />
     </task>
-    <option name="localTasksCounter" value="3" />
+    <task id="LOCAL-00003" summary="feat: Add bot type to determine the type of chat group">
+      <option name="closed" value="true" />
+      <created>1701846634923</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1701846634923</updated>
+    </task>
+    <option name="localTasksCounter" value="4" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -176,10 +192,11 @@
     <MESSAGE value="feat: Implement firestore client and account providers" />
     <MESSAGE value="feat: Implement set/get account and set chat group information" />
     <MESSAGE value="feat: Implement currency APIs and handler" />
-    <option name="LAST_COMMIT_MESSAGE" value="feat: Implement currency APIs and handler" />
+    <MESSAGE value="feat: Add bot type to determine the type of chat group" />
+    <option name="LAST_COMMIT_MESSAGE" value="feat: Add bot type to determine the type of chat group" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/JCN_exchaige_assistant$.coverage" NAME=" Coverage Results" MODIFIED="1701422428466" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/tests/providers" />
-    <SUITE FILE_PATH="coverage/JCN_exchaige_assistant$app.coverage" NAME="app Coverage Results" MODIFIED="1701832382430" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="" />
+    <SUITE FILE_PATH="coverage/JCN_exchaige_assistant$app.coverage" NAME="app Coverage Results" MODIFIED="1702893121817" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="" />
   </component>
 </project>
