@@ -7,10 +7,12 @@ from app.libs.database import RedisPool
 from app.providers import (
     TelegramAccountProvider,
     CurrencyProvider,
-    ExchangeRateProvider
+    ExchangeRateProvider,
+    UserProvider
 )
 from app.handlers.currency import CurrencyHandler
 from app.handlers.exchange_rate import ExchangeRateHandler
+from app.handlers.user import UserHandler
 
 
 # pylint: disable=too-few-public-methods,c-extension-no-member
@@ -38,6 +40,10 @@ class Container(containers.DeclarativeContainer):
         ExchangeRateProvider,
         redis=redis_pool
     )
+    user_provider = providers.Factory(
+        UserProvider,
+        redis=redis_pool
+    )
 
     # [handlers]
     currency_handler = providers.Factory(
@@ -47,4 +53,8 @@ class Container(containers.DeclarativeContainer):
     exchange_rate_handler = providers.Factory(
         ExchangeRateHandler,
         exchange_rate_provider=exchange_rate_provider
+    )
+    user_handler = providers.Factory(
+        UserHandler,
+        user_provider=user_provider
     )
