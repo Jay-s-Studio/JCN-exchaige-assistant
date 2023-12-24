@@ -28,6 +28,9 @@ class Configuration(BaseSettings):
     HOST: str = os.getenv(key="HOST", default="127.0.0.1")
     PORT: int = os.getenv(key="PORT", default=8000)
 
+    # [JWT]
+    JWT_SECRET: str = os.getenv(key="JWT_SECRET")
+
     # [Redis]
     REDIS_HOST: str = os.getenv(key="REDIS_HOST", default="localhost")
     REDIS_PORT: int = os.getenv(key="REDIS_PORT", default=6379)

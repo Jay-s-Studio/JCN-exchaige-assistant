@@ -10,7 +10,7 @@ import pytz
 
 from app.models.user import User
 from app.providers import UserProvider
-from app.serializers.v1.user import UserLogin, UserRegister
+from app.serializers.v1.user import UserLogin, UserRegister, LoginResponse
 
 
 class UserHandler:
@@ -70,7 +70,7 @@ class UserHandler:
         user.model_dump()
         await self.user_provider.create_user(user=user)
 
-    async def login(self, model: UserLogin):
+    async def login(self, model: UserLogin) -> LoginResponse:
         """
         Login
         :return:
@@ -80,4 +80,6 @@ class UserHandler:
             raise Exception("User not found")
         if not self.check_password(input_password=model.password, hashed_password=user.hash_password.encode('utf-8')):
             raise Exception("Password not correct")
-        return user.model_dump(exclude={"hash_password", "password_salt"})
+        return LoginResponse(
+            access_token="",
+        )

@@ -1,10 +1,11 @@
 """
 Telegram Router
 """
-import telegram
-from fastapi import APIRouter, HTTPException
+from dependency_injector.wiring import inject, Provide
+from fastapi import APIRouter, Depends
 
-from app.bot import bot
+from app.containers import Container
+from app.handlers.telegram import TelegramHandler
 from app.serializers.v1.telegram import TelegramBroadcast
 
 router = APIRouter()
@@ -13,18 +14,15 @@ router = APIRouter()
 @router.post(
     path="/broadcast"
 )
+@inject
 async def broadcast(
     model: TelegramBroadcast,
+    telegram_handler: TelegramHandler = Depends(Provide[Container.telegram_handler])
 ):
     """
 
     :param model:
+    :param telegram_handler:
     :return:
     """
-    try:
-        message = await bot.send_message(chat_id=model.chat_id, text=model.message)
-    except telegram.error.BadRequest as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-    return message.to_dict()
+    return await telegram_handler.broadcast_message(model)

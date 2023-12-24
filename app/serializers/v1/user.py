@@ -18,3 +18,12 @@ class UserLogin(BaseModel):
     """
     username: str
     password: str
+
+
+class LoginResponse(BaseModel):
+    """
+    Login Response
+    """
+
+    access_token: str
+    token_type: str = "Bearer"

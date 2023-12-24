@@ -1,13 +1,14 @@
 """
 AccountProvider
 """
-from typing import Optional
+from typing import Optional, List
 
 from redis.asyncio import Redis
 
+from app.libs.consts.enums import BotType
 from app.libs.database import RedisPool
 from app.clients.firebase.firestore import GoogleFirestoreClient
-from app.models.account.telegram import TelegramAccount
+from app.models.account.telegram import TelegramAccount, TelegramChatGroup
 
 
 class TelegramAccountProvider:
@@ -79,6 +80,44 @@ class TelegramAccountProvider:
             document=chat_id,
             data=data
         )
+
+    async def get_chat_group(self, chat_id: str):
+        """
+        get a chat group
+        :param chat_id:
+        :return:
+        """
+        result = await self.firestore_client.get_document(
+            collection="chat_group",
+            document=chat_id
+        )
+        if not result.exists:
+            return None
+        return result.to_dict()
+
+    async def get_all_chat_group(self) -> List[TelegramChatGroup]:
+        """
+        get all chat group
+        :return:
+        """
+        result = await self.firestore_client.stream(collection="chat_group")
+        chat_groups = []
+        async for item in result:
+            chat_groups.append(TelegramChatGroup(**item.to_dict()))
+        return chat_groups
+
+    async def get_chat_groups_by_bot_type(self, bot_type: BotType) -> List[TelegramChatGroup]:
+        """
+        get chat groups by bot type
+        :param bot_type:
+        :return:
+        """
+        result = await self.get_all_chat_group()
+        chat_groups = []
+        for item in result:
+            if item.bot_type == bot_type:
+                chat_groups.append(item)
+        return chat_groups
 
     async def update_chat_group_member(self, chat_id: str, user_id: str, data: dict):
         """
