@@ -9,8 +9,7 @@ on:
 
 
 env:
-  # Setting an environment variable with the value of a configuration variable
-  env_var: ${{ vars.ENV_CONTEXT_VAR }}
+  CONTAINER_REGISTRY_USER: ${{ var.CONTAINER_REGISTRY_USER }}
   # Use docker.io for Docker Hub if empty
   REGISTRY: ghcr.io
   # github.repository as <account>/<repo>
@@ -37,7 +36,7 @@ jobs:
         run: |
           echo "REGISTRY: ${{ env.REGISTRY }}"
           echo "IMAGE_NAME: ${{ env.IMAGE_NAME }}"
-          echo "USER: $CONTAINER_REGISTRY_USER"
+          echo "USER: ${{ env.CONTAINER_REGISTRY_USER }}"
           echo "TAGS: ${{ steps.meta.outputs.tags }}"
           echo "LABELS: ${{ steps.meta.outputs.labels }}"
           echo "OUTPUTS: ${{ steps.meta.outputs }}"
