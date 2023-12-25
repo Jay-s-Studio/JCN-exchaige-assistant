@@ -9,7 +9,7 @@ on:
 
 
 env:
-  CONTAINER_REGISTRY_USER: ${{ var.CONTAINER_REGISTRY_USER }}
+  CONTAINER_REGISTRY_USER: ${{ vars.CONTAINER_REGISTRY_USER }}
   # Use docker.io for Docker Hub if empty
   REGISTRY: ghcr.io
   # github.repository as <account>/<repo>
