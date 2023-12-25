@@ -1,0 +1,38 @@
+name: Docker Image CI
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - "*"
+
+
+jobs:
+  build-docker:
+    runs-on: ubuntu-latest
+    name: "Docker build"
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build the Docker image
+        id: build-image
+        run: |-
+          #!/usr/bin/env bash
+          set -euo pipefail
+          
+          log() { COLOR=${1} ; shift ; echo -e "\033[1;${COLOR}m${*}\033[m" ; }
+          exec_echo() { CMD=$@ ; log 33 "> $@" >&2 ; "${@}" ; return $? ; }
+          
+          [[ $(expr match "$GITHUB_REF" '^refs/heads') != 0 ]] && export CI_COMMIT_REF_NAME=${GITHUB_REF#refs/heads/}
+          [[ $(expr match "$GITHUB_REF" '^refs/tags') != 0 ]] && export CI_COMMIT_TAG=${GITHUB_REF#refs/tags/}
+          export CI_COMMIT_SHORT_SHA=$(git rev-parse --short HEAD)
+          export CI_PIPELINE_ID=${GITHUB_RUN_ID}
+          export CI_PROJECT_DIR=${GITHUB_WORKSPACE}
+          
+          exec_echo ${CI_COMMIT_REF_NAME}
+          exec_echo ${CI_COMMIT_TAG}
+          exec_echo ${CI_COMMIT_SHORT_SHA}
+          exec_echo ${CI_PIPELINE_ID}
+          exec_echo ${CI_PROJECT_DIR}
+          
+          # docker build . --file Dockerfile --tag my-image-name:$(date +%s)

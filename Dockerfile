@@ -7,7 +7,7 @@ RUN apk add --update --no-cache --virtual .build-deps build-base libffi-dev
 RUN python -m venv --copies /opt/venv
 
 ENV PATH="/opt/venv/bin:$PATH" \
-    POETRY_VERSION=1.7.0
+    POETRY_VERSION=1.7.1
 
 COPY poetry.lock pyproject.toml /tmp/
 
