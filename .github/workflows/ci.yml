@@ -19,6 +19,10 @@ jobs:
   build-docker:
     runs-on: ubuntu-latest
     name: "Docker build"
+    environment:
+      name: image
+      # package url
+      url: "https://github.com/${{ github.repository }}/pkgs/container/jcn-exchaige-assistant"
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -41,7 +45,6 @@ jobs:
           echo "USER: ${{ vars.CONTAINER_REGISTRY_USER }}"
           echo "TAGS: ${{ steps.meta.outputs.tags }}"
           echo "LABELS: ${{ steps.meta.outputs.labels }}"
-          echo "OUTPUTS: ${{ steps.meta.outputs }}"
       - name: Login to registry ${{ env.REGISTRY }}
         uses: docker/login-action@v3
         with:
