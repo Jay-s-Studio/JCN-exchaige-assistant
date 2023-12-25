@@ -35,11 +35,9 @@ jobs:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
       - name: Test
         run: |
-          # ${{ steps.meta.outputs.tags }}
-          # ${{ steps.meta.outputs.labels }}
           echo "REGISTRY: ${{ env.REGISTRY }}"
           echo "IMAGE_NAME: ${{ env.IMAGE_NAME }}"
-          echo "USER: ${{ vars.CONTAINER_REGISTRY_USER }}"
+          echo "USER: $CONTAINER_REGISTRY_USER"
           echo "TAGS: ${{ steps.meta.outputs.tags }}"
           echo "LABELS: ${{ steps.meta.outputs.labels }}"
           echo "OUTPUTS: ${{ steps.meta.outputs }}"
