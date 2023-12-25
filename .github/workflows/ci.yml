@@ -36,7 +36,7 @@ jobs:
           export CI_PIPELINE_ID=${GITHUB_RUN_ID}
           export CI_PROJECT_DIR=${GITHUB_WORKSPACE}
           
-          echo "IMAGE_NAME=${env.IMAGE_NAME}"
+          echo "IMAGE_NAME=${{ env.REGISTRY }}"
           echo "CI_COMMIT_REF_NAME=${CI_COMMIT_REF_NAME}"
           echo "CI_COMMIT_TAG=${CI_COMMIT_TAG}"
           echo "CI_COMMIT_SHORT_SHA=${CI_COMMIT_SHORT_SHA}"
