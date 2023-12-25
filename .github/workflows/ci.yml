@@ -35,7 +35,7 @@ jobs:
         run: |
           echo "REGISTRY: ${{ env.REGISTRY }}"
           echo "IMAGE_NAME: ${{ env.IMAGE_NAME }}"
-          echo "USER: ${{ secrets.CONTAINER_REGISTRY_USER }}"
+          echo "USER: ${{ vars.CONTAINER_REGISTRY_USER }}"
           echo "TAGS: ${{ steps.meta.outputs.tags }}"
           echo "LABELS: ${{ steps.meta.outputs.labels }}"
           echo "OUTPUTS: ${{ steps.meta.outputs }}"
@@ -43,7 +43,7 @@ jobs:
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
-          username: ${{ secrets.CONTAINER_REGISTRY_USER }}
+          username: ${{ vars.CONTAINER_REGISTRY_USER }}
           password: ${{ secrets.CONTAINER_REGISTRY_TOKEN }}
 #      - name: Build and push
 #        uses: docker/build-push-action@v5
