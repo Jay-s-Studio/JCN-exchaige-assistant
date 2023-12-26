@@ -28,7 +28,7 @@ class Container(containers.DeclarativeContainer):
 
     wiring_config = containers.WiringConfiguration(
         modules=[],
-        packages=["app.handlers", "app.routers"],
+        packages=["app.bots", "app.handlers", "app.routers"],
     )
 
     # [bot]
