@@ -85,7 +85,7 @@ jobs:
             --data '{"image":{"ownerId":"${{ env.RENDER_OWNER_ID }}","registryCredentialId":"${{ env.RENDER_REGISTRY_CREDENTIAL_ID }}","imagePath":"${{ steps.meta.outputs.tags }}"}}'
   deploy-stg:
     if: github.ref == format('refs/heads/{0}', 'main')
-    needs: update-service
+    needs: update-service-stg
     runs-on: ubuntu-latest
     name: "Deploy"
     steps:
