@@ -47,6 +47,7 @@ class Configuration(BaseSettings):
     SENTRY_URL: str = os.getenv(key="SENTRY_URL")
 
     # [Google Cloud]
+    print(f'GOOGLE_FIREBASE_CERTIFICATE: {os.getenv(key="GOOGLE_FIREBASE_CERTIFICATE")}')
     GOOGLE_FIREBASE_CERTIFICATE: dict = json.loads(os.getenv(key="GOOGLE_FIREBASE_CERTIFICATE"))
 
 
