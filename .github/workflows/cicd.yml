@@ -79,10 +79,16 @@ jobs:
           #!/usr/bin/env bash
           set -euo pipefail
     
-          curl --location --request PATCH 'https://api.render.com/v1/services/${{ env.RENDER_SERVICE_ID_STG }}' \
-            --header 'authorization: Bearer ${{ env.RENDER_API_KEY }}' \
+          curl --location --request PATCH 'https://api.render.com/v1/services/${{ secrets.RENDER_SERVICE_ID_STG }}' \
+            --header 'authorization: Bearer ${{ secrets.RENDER_API_KEY }}' \
             --header 'Content-Type: application/json' \
-            --data '{"image":{"ownerId":"${{ env.RENDER_OWNER_ID }}","registryCredentialId":"${{ env.RENDER_REGISTRY_CREDENTIAL_ID }}","imagePath":"${{ steps.meta.outputs.tags }}"}}'
+            --data '{
+              "image": {
+                "ownerId":"${{ secrets.RENDER_OWNER_ID }}",
+                "registryCredentialId":"${{ secrets.RENDER_REGISTRY_CREDENTIAL_ID }}",
+                "imagePath":"${{ steps.meta.outputs.tags }}"
+              }
+            }'
   deploy-stg:
     if: github.ref == format('refs/heads/{0}', 'main')
     needs: update-service-stg
@@ -94,8 +100,8 @@ jobs:
           #!/usr/bin/env bash
           set -euo pipefail
     
-          curl --location --request POST 'https://api.render.com/v1/services/${{ env.RENDER_SERVICE_ID_STG }}/deploys' \
-            --header 'authorization: Bearer ${{ env.RENDER_API_KEY }}' \
+          curl --location --request POST 'https://api.render.com/v1/services/${{ secrets.RENDER_SERVICE_ID_STG }}/deploys' \
+            --header 'authorization: Bearer ${{ secrets.RENDER_API_KEY }}' \
             --header 'Content-Type: application/json' \
   update-service-prod:
     if: github.ref == format('refs/tags/{0}', 'v*')
@@ -118,7 +124,13 @@ jobs:
           #!/usr/bin/env bash
           set -euo pipefail
     
-          curl --location --request PATCH 'https://api.render.com/v1/services/${{ env.RENDER_SERVICE_ID }}' \
-            --header 'authorization: Bearer ${{ env.RENDER_API_KEY }}' \
+          curl --location --request PATCH 'https://api.render.com/v1/services/${{ secrets.RENDER_SERVICE_ID }}' \
+            --header 'authorization: Bearer ${{ secrets.RENDER_API_KEY }}' \
             --header 'Content-Type: application/json' \
-            --data '{"image":{"ownerId":"${{ env.RENDER_OWNER_ID }}","registryCredentialId":"${{ env.RENDER_REGISTRY_CREDENTIAL_ID }}","imagePath":"${{ steps.meta.outputs.tags }}"}}'
+            --data '{
+              "image": {
+                "ownerId":"${{ secrets.RENDER_OWNER_ID }}",
+                "registryCredentialId":"${{ secrets.RENDER_REGISTRY_CREDENTIAL_ID }}",
+                "imagePath":"${{ steps.meta.outputs.tags }}"
+              }
+            }'
