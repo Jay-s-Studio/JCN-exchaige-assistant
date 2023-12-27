@@ -1,9 +1,10 @@
 """
 UserProvider
 """
+from datetime import datetime
 from typing import Optional
 
-from google.cloud.firestore_v1 import DocumentSnapshot
+from google.cloud.firestore_v1 import DocumentSnapshot, FieldFilter
 from redis.asyncio import Redis
 
 from app.clients.firebase.firestore import GoogleFirestoreClient
@@ -37,8 +38,38 @@ class UserProvider:
         :return:
         """
         collection = self.firestore_client.gen_collection(collection="users")
-        results = await collection.where("username", "==", username).get()
+        field_filter = FieldFilter(field_path="username", op_string="==", value=username)
+        results = await collection.where(filter=field_filter).get()
+        if not results:
+            return None
         raw_user: DocumentSnapshot = results[0]
         if not raw_user.exists:
             return None
         return User(**raw_user.to_dict())
+
+    async def get_user_by_id(self, user_id: str) -> Optional[User]:
+        """
+        Get user by id
+        :param user_id:
+        :return:
+        """
+        raw_user: DocumentSnapshot = await self.firestore_client.get_document(
+            collection="users",
+            document=user_id
+        )
+        if not raw_user.exists:
+            return None
+        return User(**raw_user.to_dict())
+
+    async def update_last_login(self, user_id: str, last_login: datetime):
+        """
+        Update last login
+        :param user_id:
+        :param last_login:
+        :return:
+        """
+        await self.firestore_client.update_document(
+            collection="users",
+            document=user_id,
+            data={"last_login": last_login}
+        )

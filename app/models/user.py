@@ -14,6 +14,7 @@ class User(BaseModel):
     """
     id: UUID
     username: str
+    display_name: str
     hash_password: str
     password_salt: str
     is_active: bool

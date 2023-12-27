@@ -1,6 +1,7 @@
 """
 AuthHandler
 """
+import re
 from datetime import datetime, timedelta
 
 import pytz
@@ -16,6 +17,17 @@ class AuthHandler:
 
     def __init__(self):
         self._token_expire_time = 3600
+
+    @staticmethod
+    def verify_password_strength(password: str) -> bool:
+        """
+        Verify password strength
+        :param password:
+        :return:
+        """
+        pattern = r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+]).{16,}$'
+        match = re.match(pattern, password)
+        return bool(match)
 
     async def generate_token(self, user: User) -> str:
         """

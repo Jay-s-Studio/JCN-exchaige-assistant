@@ -1,6 +1,9 @@
 """
 Serializer for User API
 """
+from datetime import datetime
+from uuid import UUID
+
 from pydantic import BaseModel
 
 
@@ -20,10 +23,27 @@ class UserLogin(BaseModel):
     password: str
 
 
-class LoginResponse(BaseModel):
+class TokenResponse(BaseModel):
+    """
+    Refresh Token Response
+    """
+    access_token: str
+    token_type: str = "Bearer"
+
+
+class LoginResponse(TokenResponse):
     """
     Login Response
     """
+    id: UUID
+    username: str
+    display_name: str
+    is_active: bool
+    last_login: datetime
 
-    access_token: str
-    token_type: str = "Bearer"
+
+class RefreshToken(BaseModel):
+    """
+    Refresh Token
+    """
+    user_id: UUID

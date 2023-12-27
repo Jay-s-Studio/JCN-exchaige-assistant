@@ -70,6 +70,8 @@ class Container(containers.DeclarativeContainer):
     )
     user_handler = providers.Factory(
         UserHandler,
+        redis=redis_pool,
+        auth_handler=auth_handler,
         user_provider=user_provider
     )
     telegram_handler = providers.Factory(
