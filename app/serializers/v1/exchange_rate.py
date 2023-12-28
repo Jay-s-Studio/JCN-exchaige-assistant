@@ -1,7 +1,7 @@
 """
 Serializers for Exchange Rate API
 """
-from typing import List
+from typing import List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -11,8 +11,8 @@ class ExchangeRate(BaseModel):
     Exchange Rate
     """
     currency: str = Field(title="Currency", max_length=255)
-    buy_rate: float = Field(title="Buy Rate", gt=0)
-    sell_rate: float = Field(title="Sell Rate", gt=0)
+    buy_rate: Optional[float] = Field(default=None, title="Buy Rate", ge=0)
+    sell_rate: Optional[float] = Field(default=None, title="Sell Rate", ge=0)
 
 
 class UpdateExchangeRate(BaseModel):

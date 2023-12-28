@@ -40,6 +40,18 @@ class ExchangeRateProvider:
         :return:
         """
         redis_name = f"exchange_rate:{group_id}"
+        result = await self.firestore_client.get_document(
+            collection="exchange_rate",
+            document=group_id
+        )
+        if result.exists:
+            await self.firestore_client.update_document(
+                collection="exchange_rate",
+                document=group_id,
+                data=currency_rates
+            )
+            await self._redis.delete(redis_name)
+            return
         await self.firestore_client.set_document(
             collection="exchange_rate",
             document=group_id,
