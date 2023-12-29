@@ -16,9 +16,10 @@ from app.handlers import (
     AuthHandler,
     CurrencyHandler,
     ExchangeRateHandler,
+    TelegramAccountHandler,
+    TelegramMessageHandler,
+    TelegramBotMessagesHandler,
     UserHandler,
-    TelegramHandler,
-    TelegramBotMessagesHandler
 )
 
 
@@ -68,19 +69,24 @@ class Container(containers.DeclarativeContainer):
         ExchangeRateHandler,
         exchange_rate_provider=exchange_rate_provider
     )
-    user_handler = providers.Factory(
-        UserHandler,
-        redis=redis_pool,
-        auth_handler=auth_handler,
-        user_provider=user_provider
-    )
-    telegram_handler = providers.Factory(
-        TelegramHandler,
+    telegram_account_handler = providers.Factory(
+        TelegramAccountHandler,
         bot=bot,
+        telegram_account_provider=telegram_account_provider
+    )
+    telegram_message_handler = providers.Factory(
+        TelegramMessageHandler,
+        redis=redis_pool,
         telegram_account_provider=telegram_account_provider
     )
     telegram_bot_messages_handler = providers.Factory(
         TelegramBotMessagesHandler,
         redis=redis_pool,
         telegram_account_provider=telegram_account_provider
+    )
+    user_handler = providers.Factory(
+        UserHandler,
+        redis=redis_pool,
+        auth_handler=auth_handler,
+        user_provider=user_provider
     )

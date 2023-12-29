@@ -1,14 +1,10 @@
 """
 Telegram Router
 """
-from dependency_injector.wiring import inject, Provide
 from fastapi import APIRouter, Request, Response
 from telegram import Update
 
 from app.bot import application
-from app.containers import Container
-from app.handlers.telegram import TelegramHandler
-from app.serializers.v1.telegram import TelegramBroadcast
 
 router = APIRouter()
 
