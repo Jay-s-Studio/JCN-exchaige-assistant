@@ -1,16 +1,32 @@
 """
 Auth Exception
 """
-from fastapi import HTTPException
 from starlette import status
 
+from .api_base import APIException
 
-class InvalidAuthorizationToken(HTTPException):
+
+class InvalidTokenException(APIException):
     """
-    Invalid Authorization Token Exception
+    Invalid Token Exception
     """
-    def __init__(self, details=""):
+    def __init__(self, message: str = None):
+        if message is None:
+            message = "Invalid authorization token"
+        else:
+            message = f"Invalid authorization token: {message}"
         super().__init__(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=f"Invalid authorization token: {details}"
+            message=message
+        )
+
+
+class UnauthorizedException(APIException):
+    """
+    Unauthorized Exception
+    """
+    def __init__(self):
+        super().__init__(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            message="Unauthorized"
         )

@@ -25,7 +25,7 @@ class ExchangeRateProvider:
         redis_name = f"exchange_rate:{group_id}"
         if await self._redis.exists(redis_name):
             value = await self._redis.get(redis_name)
-            return value
+            return json.loads(value)
         result = await self.firestore_client.get_document(
             collection="exchange_rate",
             document=group_id
@@ -36,7 +36,7 @@ class ExchangeRateProvider:
         await self._redis.set(name=redis_name, value=json.dumps(result.to_dict()), ex=ExpireTime.ONE_HOUR.value * 6)
         return result.to_dict()
 
-    async def update_exchange_rate(self, group_id: str, currency_rates: dict):
+    async def update_exchange_rate(self, group_id: str, exchange_rates: dict):
         """
         Update exchange rate
         :return:
@@ -50,13 +50,13 @@ class ExchangeRateProvider:
             await self.firestore_client.update_document(
                 collection="exchange_rate",
                 document=group_id,
-                data=currency_rates
+                data=exchange_rates
             )
             await self._redis.delete(redis_name)
             return
         await self.firestore_client.set_document(
             collection="exchange_rate",
             document=group_id,
-            data=currency_rates
+            data=exchange_rates
         )
         await self._redis.delete(redis_name)

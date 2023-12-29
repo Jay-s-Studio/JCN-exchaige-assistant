@@ -80,11 +80,13 @@ def get_application() -> FastAPI:
     Get application
     :return:
     """
-    fastapi_app = FastAPI(
-        docs_url="/swagger/api/documents",
-        openapi_url="/open_api/documents/openapi.json",
-        redoc_url=None,
-    )
+    fastapi_app = FastAPI()
+    if not settings.IS_DEV:
+        fastapi_app = FastAPI(
+            docs_url="/swagger/api/documents",
+            openapi_url="/open_api/documents/openapi.json",
+            redoc_url=None,
+        )
     # set container
     container = Container()
     fastapi_app.container = container

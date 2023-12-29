@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 import pytz
 
 from app.config import settings
-from app.exceptions.auth import InvalidAuthorizationToken
+from app.exceptions.auth import InvalidTokenException
 from app.models.auth import JWTPayload
 from app.models.user import User
 
@@ -72,11 +72,11 @@ class AuthHandler:
             )
             return JWTPayload(**payload)
         except jwt.exceptions.ExpiredSignatureError:
-            raise InvalidAuthorizationToken("Token has expired")
+            raise InvalidTokenException("Token has expired")
         except (
             jwt.exceptions.PyJWTError,
             jwt.exceptions.InvalidIssuerError,
             jwt.exceptions.InvalidSignatureError,
             Exception
         ) as e:
-            raise InvalidAuthorizationToken("Invalid token")
+            raise InvalidTokenException("Invalid token")

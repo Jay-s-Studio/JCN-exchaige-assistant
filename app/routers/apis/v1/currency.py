@@ -6,15 +6,19 @@ from fastapi import APIRouter, Depends
 
 from app.containers import Container
 from app.handlers.currency import CurrencyHandler
+from app.libs.auth.bearer_jwt import BearerJWTAuth
 from app.routing import LogRouting
 from app.serializers.v1.currency import Currencies
 
-router = APIRouter(route_class=LogRouting)
+router = APIRouter(
+    dependencies=[Depends(BearerJWTAuth())],
+    route_class=LogRouting
+)
 
 
 @router.get(
     path="/all",
-    response_model=Currencies,
+    response_model=Currencies
 )
 @inject
 async def all_currency(

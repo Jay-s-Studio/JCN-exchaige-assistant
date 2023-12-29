@@ -15,6 +15,13 @@ class ExchangeRate(BaseModel):
     sell_rate: Optional[float] = Field(default=None, title="Sell Rate", ge=0)
 
 
+class GetExchangeRate(BaseModel):
+    """
+    Get Exchange Rate
+    """
+    exchange_rates: List[ExchangeRate] = Field(title="Exchange Rate")
+
+
 class UpdateExchangeRate(BaseModel):
     """
     Update Exchange Rate

@@ -7,11 +7,12 @@ from typing import Optional
 
 import bcrypt
 import pytz
-from fastapi import HTTPException
 from redis.asyncio import Redis
 from starlette import status
 
+from app.exceptions.api_base import APIException
 from app.handlers import AuthHandler
+from app.libs.consts.enums import ExpireTime
 from app.libs.consts.redis_keys import get_user_access_token_key
 from app.libs.database import RedisPool
 from app.models.user import User
@@ -71,11 +72,9 @@ class UserHandler:
         if await self.check_user_exist(username=model.username):
             raise Exception("User already exist")
         if not self.auth_handler.verify_password_strength(password=model.password):
-            raise HTTPException(
-                status_code=400,
-                detail={
-                    "message": "Password not strong enough"
-                }
+            raise APIException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                message="Password not strong enough"
             )
         salt = bcrypt.gensalt()
         hash_password = self.hash_password(salt, model.password)
@@ -104,7 +103,11 @@ class UserHandler:
         last_login = datetime.now(tz=pytz.UTC)
         await self.user_provider.update_last_login(user_id=user.id.hex, last_login=last_login)
         access_token = self.auth_handler.generate_token(user=user)
-        await self.redis.set(name=get_user_access_token_key(user_id=user.id.hex), value=access_token)
+        await self.redis.set(
+            name=get_user_access_token_key(user_id=user.id.hex),
+            value=access_token,
+            ex=ExpireTime.ONE_HOUR.value * 2
+        )
         return LoginResponse(
             **user.model_dump(exclude={"hash_password", "password_salt", "created_at", "last_login"}),
             last_login=last_login,
@@ -120,18 +123,22 @@ class UserHandler:
         """
         access_token = await self.redis.get(name=get_user_access_token_key(user_id=user_id))
         if access_token is None:
-            raise HTTPException(
+            raise APIException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail={"message": "Unauthorized"}
+                message="Unauthorized"
             )
         if access_token != token:
-            raise HTTPException(
+            raise APIException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail={"message": "Unauthorized"}
+                message="Unauthorized"
             )
         user = await self.user_provider.get_user_by_id(user_id=user_id)
         if user is None:
             raise Exception("User not found")
         new_token = self.auth_handler.generate_token(user=user)
-        await self.redis.set(name=get_user_access_token_key(user_id=user_id), value=new_token)
+        await self.redis.set(
+            name=get_user_access_token_key(user_id=user_id),
+            value=new_token,
+            ex=ExpireTime.ONE_HOUR.value * 2
+        )
         return TokenResponse(access_token=new_token)
