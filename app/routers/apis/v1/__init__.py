@@ -5,8 +5,8 @@ from fastapi import APIRouter
 
 from .currency import router as currency_router
 from .demo import router as demo_router
-from .telegram import router as telegram_router
 from .exchange_rate import router as exchange_rate_router
+from .telegram import router as telegram_router
 from .user import router as user_router
 
 router = APIRouter()

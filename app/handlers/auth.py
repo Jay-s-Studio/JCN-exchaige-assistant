@@ -7,6 +7,8 @@ from datetime import datetime, timedelta
 import pytz
 
 from app.config import settings
+from app.exceptions.auth import InvalidAuthorizationToken
+from app.models.auth import JWTPayload
 from app.models.user import User
 
 import jwt
@@ -29,7 +31,7 @@ class AuthHandler:
         match = re.match(pattern, password)
         return bool(match)
 
-    async def generate_token(self, user: User) -> str:
+    def generate_token(self, user: User) -> str:
         """
         Generate token
         :param user:
@@ -37,26 +39,25 @@ class AuthHandler:
         """
         now = datetime.now(tz=pytz.UTC)
         expiration_time = now + timedelta(seconds=self._token_expire_time)
-        payload = {
-            "iss": settings.APP_NAME,
-            "sub": user.username,
-            "uid": str(user.id),
-            "iat": now,
-            "exp": expiration_time
-        }
+        payload = JWTPayload(
+            iss=settings.APP_NAME,
+            uid=user.id.hex,
+            sub=user.username,
+            name=user.display_name,
+            iat=now,
+            exp=expiration_time
+        )
         token = jwt.encode(
-            payload=payload,
+            payload=payload.model_dump(),
             key=settings.JWT_SECRET,
             algorithm="HS512"
         )
         return token
 
-    async def verify_token(self, token: str) -> str:
+    @staticmethod
+    def verify_token(token: str) -> JWTPayload:
         """
         Verify token
-        1. validate expiration
-        2. validate issuer
-        3. validate signature
         :param token:
         :return:
         """
@@ -69,13 +70,13 @@ class AuthHandler:
                 issuer=settings.APP_NAME,
                 leeway=60  # 60 seconds
             )
-            return payload.get("uid")
+            return JWTPayload(**payload)
         except jwt.exceptions.ExpiredSignatureError:
-            raise Exception("Token expired")
+            raise InvalidAuthorizationToken("Token has expired")
         except (
             jwt.exceptions.PyJWTError,
             jwt.exceptions.InvalidIssuerError,
             jwt.exceptions.InvalidSignatureError,
             Exception
         ) as e:
-            raise Exception("Invalid token")
+            raise InvalidAuthorizationToken("Invalid token")

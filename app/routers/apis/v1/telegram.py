@@ -6,9 +6,10 @@ from fastapi import APIRouter, Depends
 
 from app.containers import Container
 from app.handlers.telegram import TelegramHandler
+from app.routing import LogRouting
 from app.serializers.v1.telegram import TelegramBroadcast
 
-router = APIRouter()
+router = APIRouter(route_class=LogRouting)
 
 
 @router.post(

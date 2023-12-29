@@ -5,9 +5,10 @@ from starlette import status
 
 from app.containers import Container
 from app.handlers.exchange_rate import ExchangeRateHandler
+from app.routing import LogRouting
 from app.serializers.v1.exchange_rate import UpdateExchangeRate
 
-router = APIRouter()
+router = APIRouter(route_class=LogRouting)
 
 
 @router.post(

@@ -6,6 +6,7 @@ import json
 from redis.asyncio import Redis
 
 from app.clients.firebase.firestore import GoogleFirestoreClient
+from app.libs.consts.enums import ExpireTime
 from app.libs.database import RedisPool
 
 
@@ -31,7 +32,8 @@ class ExchangeRateProvider:
         )
         if not result.exists:
             return None
-        await self._redis.set(name=redis_name, value=json.dumps(result.to_dict()), ex=60 * 60 * 6)
+        # Cache 6 hours
+        await self._redis.set(name=redis_name, value=json.dumps(result.to_dict()), ex=ExpireTime.ONE_HOUR.value * 6)
         return result.to_dict()
 
     async def update_exchange_rate(self, group_id: str, currency_rates: dict):

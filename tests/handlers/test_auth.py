@@ -26,7 +26,7 @@ async def test_generate_token(auth_handler: AuthHandler):
     :param auth_handler:
     :return:
     """
-    token = await auth_handler.generate_token(user=dummy_user)
+    token = auth_handler.generate_token(user=dummy_user)
     assert isinstance(token, str)
 
 
@@ -37,8 +37,8 @@ async def test_verify_token(auth_handler: AuthHandler):
     :param auth_handler:
     :return:
     """
-    token = await auth_handler.generate_token(user=dummy_user)
-    uid = await auth_handler.verify_token(token=token)
+    token = auth_handler.generate_token(user=dummy_user)
+    uid = auth_handler.verify_token(token=token)
     assert uid == "00000000-0000-0000-0000-000000000000"
 
 
@@ -50,4 +50,4 @@ async def test_expired_token(auth_handler: AuthHandler):
     :return:
     """
     token = "eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJqY25fZXhjaGFpZ2VfYXNzaXN0YW50Iiwic3ViIjoidGVzdCIsInVpZCI6IjAwMDAwMDAwLTAwMDAtMDAwMC0wMDAwLTAwMDAwMDAwMDAwMCIsImlhdCI6MTcwMzMzOTQyNywiZXhwIjoxNzAzMzQzMDI3fQ.KY3hsttvKydpzp8FGDMGRq_3y-C9fTPiIB3kH74SnVpjbHi21Cf57U78GmQy0kuar-XkUkIsU-9oxdX8GUPgHA"
-    await auth_handler.verify_token(token=token)
+    auth_handler.verify_token(token=token)

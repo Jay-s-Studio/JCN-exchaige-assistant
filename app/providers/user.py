@@ -1,6 +1,7 @@
 """
 UserProvider
 """
+import json
 from datetime import datetime
 from typing import Optional
 
@@ -8,6 +9,8 @@ from google.cloud.firestore_v1 import DocumentSnapshot, FieldFilter
 from redis.asyncio import Redis
 
 from app.clients.firebase.firestore import GoogleFirestoreClient
+from app.libs.consts.enums import ExpireTime
+from app.libs.consts.redis_keys import get_user_key
 from app.libs.database import RedisPool
 from app.models.user import User
 
@@ -53,13 +56,23 @@ class UserProvider:
         :param user_id:
         :return:
         """
+        redis_key = get_user_key(user_id=user_id)
+        if await self._redis.exists(redis_key):
+            user_data = await self._redis.get(redis_key)
+            return User(**json.loads(user_data))
         raw_user: DocumentSnapshot = await self.firestore_client.get_document(
             collection="users",
             document=user_id
         )
         if not raw_user.exists:
             return None
-        return User(**raw_user.to_dict())
+        user = User(**raw_user.to_dict())
+        await self._redis.set(
+            name=redis_key,
+            value=user.model_dump_json(),
+            ex=ExpireTime.ONE_WEEK.value
+        )
+        return user
 
     async def update_last_login(self, user_id: str, last_login: datetime):
         """
@@ -73,3 +86,4 @@ class UserProvider:
             document=user_id,
             data={"last_login": last_login}
         )
+        await self._redis.delete(get_user_key(user_id=user_id))

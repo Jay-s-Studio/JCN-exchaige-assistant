@@ -1,13 +1,15 @@
 """User Router"""
 from dependency_injector.wiring import inject, Provide
-from fastapi import APIRouter, Depends, Header
-from starlette.requests import Request
+from fastapi import APIRouter, Depends
 
 from app.containers import Container
 from app.handlers import UserHandler
+from app.libs.auth.bearer_jwt import BearerJWTAuth
+from app.libs.contexts.api_context import APIContext, get_api_context
+from app.routing import LogRouting
 from app.serializers.v1.user import UserLogin, LoginResponse, RefreshToken, TokenResponse
 
-router = APIRouter()
+router = APIRouter(route_class=LogRouting)
 
 
 @router.post(
@@ -31,19 +33,19 @@ async def login(
 @router.post(
     path="/refresh_token",
     response_model=TokenResponse,
+    dependencies=[Depends(BearerJWTAuth())]
 )
 @inject
 async def refresh_token(
     model: RefreshToken,
-    authorization: str = Header(...),
+    api_context: APIContext = Depends(get_api_context),
     user_handler: UserHandler = Depends(Provide[Container.user_handler])
 ):
     """
 
     :param model:
-    :param authorization:
+    :param api_context:
     :param user_handler:
     :return:
     """
-    token = authorization.split(" ")[1]
-    return await user_handler.refresh_token(user_id=model.user_id.hex, token=token)
+    return await user_handler.refresh_token(user_id=model.user_id.hex, token=api_context.token)

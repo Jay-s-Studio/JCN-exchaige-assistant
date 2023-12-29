@@ -103,7 +103,7 @@ class UserHandler:
             raise Exception("Password not correct")
         last_login = datetime.now(tz=pytz.UTC)
         await self.user_provider.update_last_login(user_id=user.id.hex, last_login=last_login)
-        access_token = await self.auth_handler.generate_token(user=user)
+        access_token = self.auth_handler.generate_token(user=user)
         await self.redis.set(name=get_user_access_token_key(user_id=user.id.hex), value=access_token)
         return LoginResponse(
             **user.model_dump(exclude={"hash_password", "password_salt", "created_at", "last_login"}),
@@ -132,6 +132,6 @@ class UserHandler:
         user = await self.user_provider.get_user_by_id(user_id=user_id)
         if user is None:
             raise Exception("User not found")
-        new_token = await self.auth_handler.generate_token(user=user)
+        new_token = self.auth_handler.generate_token(user=user)
         await self.redis.set(name=get_user_access_token_key(user_id=user_id), value=new_token)
         return TokenResponse(access_token=new_token)
