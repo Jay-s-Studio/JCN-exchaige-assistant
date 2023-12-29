@@ -4,19 +4,47 @@ Configuration
 import json
 import os
 from pathlib import Path, PosixPath
+from typing import List, Optional, Any, Type, Tuple
 
 from dotenv import load_dotenv
-from pydantic_settings import BaseSettings
+from pydantic.fields import FieldInfo
+from pydantic_settings import BaseSettings, EnvSettingsSource, PydanticBaseSettingsSource
 
 from app.libs.consts.enums import BotType
 
 load_dotenv()
 
 
+class MyCustomSource(EnvSettingsSource):
+
+    def prepare_field_value(
+        self,
+        field_name: str,
+        field: FieldInfo,
+        value: Any,
+        value_is_complex: bool
+    ) -> Any:
+        if field.annotation is List[str]:
+            return [v for v in value.split(',')]
+        return value
+
+
 class Configuration(BaseSettings):
     """
     Configuration
     """
+
+    @classmethod
+    def settings_customise_sources(
+        cls,
+        settings_cls: Type[BaseSettings],
+        init_settings: PydanticBaseSettingsSource,
+        env_settings: PydanticBaseSettingsSource,
+        dotenv_settings: PydanticBaseSettingsSource,
+        file_secret_settings: PydanticBaseSettingsSource,
+    ) -> Tuple[PydanticBaseSettingsSource, ...]:
+        return (MyCustomSource(settings_cls),)
+
     # [App Base]
     APP_NAME: str = "jcn_exchaige_assistant"
     ENV: str = os.getenv(key="ENV", default="dev").lower()
@@ -29,6 +57,10 @@ class Configuration(BaseSettings):
     # [FastAPI]
     HOST: str = os.getenv(key="HOST", default="127.0.0.1")
     PORT: int = os.getenv(key="PORT", default=8000)
+
+    # [CORS]
+    CORS_ALLOWED_ORIGINS: List[str] = os.getenv(key="CORS_ALLOWED_ORIGINS", default="*").split(",")
+    CORS_ALLOW_ORIGINS_REGEX: Optional[str] = os.getenv(key="CORS_ALLOW_ORIGINS_REGEX")
 
     # [JWT]
     JWT_SECRET: str = os.getenv(key="JWT_SECRET")

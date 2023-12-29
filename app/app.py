@@ -21,6 +21,7 @@ import uvicorn
 from fastapi import FastAPI
 from sentry_sdk.integrations.fastapi import FastApiIntegration
 from sentry_sdk.integrations.httpx import HttpxIntegration
+from fastapi.middleware.cors import CORSMiddleware
 from starlette.requests import Request
 from starlette.responses import Response
 from telegram import Update
@@ -59,6 +60,14 @@ def setup_middlewares(webapi_app: FastAPI):
     :param webapi_app:
     :return:
     """
+    webapi_app.add_middleware(
+        CORSMiddleware,
+        allow_origins=settings.CORS_ALLOWED_ORIGINS,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+        allow_origin_regex=settings.CORS_ALLOW_ORIGINS_REGEX
+    )
 
 
 async def run_application():
@@ -89,6 +98,7 @@ async def run_application():
     # set route
     fastapi_app.add_route(path=telegram_webhook_path, route=telegram, methods=["POST"], name="telegram webhook")
     setup_routers(fastapi_app)
+    setup_middlewares(fastapi_app)
 
     webserver = uvicorn.Server(
         config=uvicorn.Config(
