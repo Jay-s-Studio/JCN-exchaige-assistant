@@ -3,8 +3,14 @@ Fixtures for handlers
 """
 import pytest
 
-from app.handlers.auth import AuthHandler
-from app.handlers.user import UserHandler
+from app.handlers import (
+    AuthHandler,
+    CurrencyHandler,
+    ExchangeRateHandler,
+    TelegramAccountHandler,
+    TelegramMessageHandler,
+    UserHandler,
+)
 from app.containers import Container
 
 
@@ -15,6 +21,42 @@ def auth_handler() -> AuthHandler:
     :return:
     """
     return Container.auth_handler()
+
+
+@pytest.fixture
+def currency_handler() -> CurrencyHandler:
+    """
+    currency_handler
+    :return:
+    """
+    return Container.currency_handler()
+
+
+@pytest.fixture
+def exchange_rate_handler() -> ExchangeRateHandler:
+    """
+    exchange_rate_handler
+    :return:
+    """
+    return Container.exchange_rate_handler()
+
+
+@pytest.fixture
+def telegram_account_handler() -> TelegramAccountHandler:
+    """
+    telegram_account_handler
+    :return:
+    """
+    return Container.telegram_account_handler()
+
+
+@pytest.fixture
+def telegram_message_handler() -> TelegramMessageHandler:
+    """
+    telegram_message_handler
+    :return:
+    """
+    return Container.telegram_message_handler()
 
 
 @pytest.fixture

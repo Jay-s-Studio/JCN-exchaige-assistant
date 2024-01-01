@@ -6,12 +6,13 @@ from uuid import UUID
 
 import pytest
 
-from app.handlers.auth import AuthHandler
+from app.handlers import AuthHandler
 from app.models.user import User
 
 dummy_user = User(
     id=UUID("00000000-0000-0000-0000-000000000000"),
     username="test",
+    display_name="test",
     hash_password="test",
     password_salt="test",
     created_at=datetime.now(),

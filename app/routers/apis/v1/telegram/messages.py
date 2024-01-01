@@ -6,11 +6,14 @@ from fastapi import APIRouter, Depends
 
 from app.containers import Container
 from app.handlers.telegram import TelegramMessageHandler
-from app.libs.auth.bearer_jwt import BearerJWTAuth
+from app.libs.auth import check_all_authenticators
 from app.routing import LogRouting
 from app.serializers.v1.telegram import TelegramBroadcast
 
-router = APIRouter(dependencies=[Depends(BearerJWTAuth())], route_class=LogRouting)
+router = APIRouter(
+    dependencies=[Depends(check_all_authenticators)],
+    route_class=LogRouting
+)
 
 
 @router.post(

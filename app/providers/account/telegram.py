@@ -120,10 +120,10 @@ class TelegramAccountProvider:
         :param bot_type:
         :return:
         """
-        result = await self.get_all_chat_group()
+        result: List[TelegramChatGroup] = await self.get_all_chat_group()
         chat_groups = []
         for item in result:
-            if item.bot_type == bot_type:
+            if item.custom_info.bot_type == bot_type:
                 chat_groups.append(item)
         return chat_groups
 

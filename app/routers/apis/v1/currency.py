@@ -1,17 +1,16 @@
 """
-Currency Router
+Currency API Router
 """
 from dependency_injector.wiring import inject, Provide
 from fastapi import APIRouter, Depends
 
 from app.containers import Container
 from app.handlers.currency import CurrencyHandler
-from app.libs.auth.bearer_jwt import BearerJWTAuth
+from app.libs.auth import check_all_authenticators
 from app.routing import LogRouting
 from app.serializers.v1.currency import Currencies
 
 router = APIRouter(
-    dependencies=[Depends(BearerJWTAuth())],
     route_class=LogRouting
 )
 
@@ -31,7 +30,10 @@ async def all_currency(
     return await currency_handler.get_all_currency()
 
 
-@router.post(path="/update")
+@router.post(
+    path="/update",
+    dependencies=[Depends(check_all_authenticators)]
+)
 @inject
 async def update_currencies(
     currency_list: Currencies,

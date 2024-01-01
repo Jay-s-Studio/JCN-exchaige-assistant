@@ -1,10 +1,12 @@
-"""User Router"""
+"""
+User API Router
+"""
 from dependency_injector.wiring import inject, Provide
 from fastapi import APIRouter, Depends
 
 from app.containers import Container
 from app.handlers import UserHandler
-from app.libs.auth.bearer_jwt import BearerJWTAuth
+from app.libs.auth import check_all_authenticators
 from app.libs.contexts.api_context import APIContext, get_api_context
 from app.routing import LogRouting
 from app.serializers.v1.user import UserLogin, LoginResponse, RefreshToken, TokenResponse
@@ -33,7 +35,7 @@ async def login(
 @router.post(
     path="/refresh_token",
     response_model=TokenResponse,
-    dependencies=[Depends(BearerJWTAuth())]
+    dependencies=[Depends(check_all_authenticators)]
 )
 @inject
 async def refresh_token(

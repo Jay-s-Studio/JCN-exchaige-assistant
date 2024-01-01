@@ -17,14 +17,13 @@ class BearerJWTAuth(HTTPBearer):
     def __init__(self) -> None:
         super().__init__(auto_error=False)
 
-    async def __call__(self, request: Request):
+    async def __call__(self, request: Request) -> APIContext:
         result: Optional[HTTPAuthorizationCredentials] = await super().__call__(
             request=request
         )
         if not result:
             raise UnauthorizedException()
         api_context = await self.authenticate(request=request, token=result.credentials)
-        set_api_context(api_context)
         return api_context
 
     @staticmethod

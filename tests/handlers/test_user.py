@@ -4,7 +4,7 @@ Test user handler
 import pytest
 from fastapi import HTTPException
 
-from app.handlers.user import UserHandler
+from app.handlers import UserHandler
 from app.serializers.v1.user import UserRegister, UserLogin
 
 

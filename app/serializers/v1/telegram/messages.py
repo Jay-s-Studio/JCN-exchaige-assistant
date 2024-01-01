@@ -1,5 +1,5 @@
 """
-Serializers for Telegram API
+Serializers for Telegram Messages API
 """
 from pydantic import BaseModel
 

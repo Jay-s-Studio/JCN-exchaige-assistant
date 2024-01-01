@@ -1,11 +1,13 @@
-"""ExchangeRate Router"""
+"""
+ExchangeRate API Router
+"""
 from dependency_injector.wiring import inject, Provide
 from fastapi import APIRouter, Depends
 from starlette import status
 
 from app.containers import Container
 from app.handlers.exchange_rate import ExchangeRateHandler
-from app.libs.auth.bearer_jwt import BearerJWTAuth
+from app.libs.auth import check_all_authenticators
 from app.routing import LogRouting
 from app.serializers.v1.exchange_rate import UpdateExchangeRate, GetExchangeRate
 
@@ -15,7 +17,7 @@ router = APIRouter(route_class=LogRouting)
 @router.get(
     path="/{group_id}",
     response_model=GetExchangeRate,
-    dependencies=[Depends(BearerJWTAuth())],
+    dependencies=[Depends(check_all_authenticators)],
 )
 @inject
 async def get_exchange_rate(

@@ -10,12 +10,14 @@ from app.providers import (
     TelegramAccountProvider,
     CurrencyProvider,
     ExchangeRateProvider,
+    HandingFeeProvider,
     UserProvider
 )
 from app.handlers import (
     AuthHandler,
     CurrencyHandler,
     ExchangeRateHandler,
+    HandingFeeHandler,
     TelegramAccountHandler,
     TelegramMessageHandler,
     TelegramBotMessagesHandler,
@@ -54,6 +56,10 @@ class Container(containers.DeclarativeContainer):
         ExchangeRateProvider,
         redis=redis_pool
     )
+    handing_fee_provider = providers.Factory(
+        HandingFeeProvider,
+        redis=redis_pool
+    )
     user_provider = providers.Factory(
         UserProvider,
         redis=redis_pool
@@ -68,6 +74,10 @@ class Container(containers.DeclarativeContainer):
     exchange_rate_handler = providers.Factory(
         ExchangeRateHandler,
         exchange_rate_provider=exchange_rate_provider
+    )
+    handing_fee_handler = providers.Factory(
+        HandingFeeHandler,
+        handing_fee_provider=handing_fee_provider
     )
     telegram_account_handler = providers.Factory(
         TelegramAccountHandler,
