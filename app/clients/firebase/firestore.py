@@ -79,3 +79,16 @@ class GoogleFirestoreClient:
         collection = self.gen_collection(collection)
         doc_ref = collection.document(document)
         return await doc_ref.update(data, **kwargs)
+
+    async def delete_document(self, collection: str, document: str, **kwargs) -> write.WriteResult:
+        """
+
+        :param collection:
+        :param document:
+        :param kwargs:
+        :return:
+        """
+        kwargs["retry"] = retry_async.AsyncRetry()
+        collection = self.gen_collection(collection)
+        doc_ref = collection.document(document)
+        return await doc_ref.delete(**kwargs)
