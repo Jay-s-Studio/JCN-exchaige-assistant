@@ -6,10 +6,12 @@ from telegram import Bot
 
 from app.config import settings
 from app.libs.database import RedisPool
+from app.controllers import MessagesController
 from app.providers import (
     TelegramAccountProvider,
     CurrencyProvider,
     ExchangeRateProvider,
+    GinaProvider,
     HandingFeeProvider,
     UserProvider
 )
@@ -56,6 +58,7 @@ class Container(containers.DeclarativeContainer):
         ExchangeRateProvider,
         redis=redis_pool
     )
+    gina_provider = providers.Factory(GinaProvider)
     handing_fee_provider = providers.Factory(
         HandingFeeProvider,
         redis=redis_pool
@@ -63,6 +66,12 @@ class Container(containers.DeclarativeContainer):
     user_provider = providers.Factory(
         UserProvider,
         redis=redis_pool
+    )
+
+    # [controllers]
+    messages_controller = providers.Factory(
+        MessagesController,
+        gina_provider=gina_provider,
     )
 
     # [handlers]
@@ -92,7 +101,8 @@ class Container(containers.DeclarativeContainer):
     telegram_bot_messages_handler = providers.Factory(
         TelegramBotMessagesHandler,
         redis=redis_pool,
-        telegram_account_provider=telegram_account_provider
+        telegram_account_provider=telegram_account_provider,
+        messages_controller=messages_controller
     )
     user_handler = providers.Factory(
         UserHandler,
