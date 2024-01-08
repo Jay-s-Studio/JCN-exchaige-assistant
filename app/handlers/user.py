@@ -82,12 +82,11 @@ class UserHandler:
             id=uuid.uuid4(),
             username=model.username,
             display_name=model.username,
-            hash_password=hash_password.decode('utf-8'),
-            password_salt=salt.decode('utf-8'),
+            hash_password=hash_password.decode(),
+            password_salt=salt.decode(),
             is_active=True,
             created_at=datetime.now(tz=pytz.UTC)
         )
-        user.model_dump()
         await self.user_provider.create_user(user=user)
 
     async def login(self, model: UserLogin) -> LoginResponse:
@@ -98,7 +97,7 @@ class UserHandler:
         user: Optional[User] = await self.user_provider.get_user_by_username(username=model.username)
         if user is None:
             raise Exception("User not found")
-        if not self.check_password(input_password=model.password, hashed_password=user.hash_password.encode('utf-8')):
+        if not self.check_password(input_password=model.password, hashed_password=user.hash_password.encode()):
             raise Exception("Password not correct")
         last_login = datetime.now(tz=pytz.UTC)
         await self.user_provider.update_last_login(user_id=user.id.hex, last_login=last_login)
@@ -114,14 +113,14 @@ class UserHandler:
             access_token=access_token
         )
 
-    async def refresh_token(self, user_id: str, token: str) -> TokenResponse:
+    async def refresh_token(self, user_id: uuid.UUID, token: str) -> TokenResponse:
         """
         Refresh token
         :param user_id:
         :param token:
         :return:
         """
-        access_token = await self.redis.get(name=get_user_access_token_key(user_id=user_id))
+        access_token = await self.redis.get(name=get_user_access_token_key(user_id=user_id.hex))
         if access_token is None:
             raise APIException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
@@ -132,12 +131,12 @@ class UserHandler:
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 message="Unauthorized"
             )
-        user = await self.user_provider.get_user_by_id(user_id=user_id)
+        user = await self.user_provider.get_user_by_id(user_id=user_id.hex)
         if user is None:
             raise Exception("User not found")
         new_token = self.auth_handler.generate_token(user=user)
         await self.redis.set(
-            name=get_user_access_token_key(user_id=user_id),
+            name=get_user_access_token_key(user_id=user_id.hex),
             value=new_token,
             ex=ExpireTime.ONE_HOUR.value * 2
         )

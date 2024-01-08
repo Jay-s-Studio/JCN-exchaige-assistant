@@ -3,16 +3,14 @@ Models for user
 """
 from datetime import datetime
 from typing import Optional
-from uuid import UUID
 
-from pydantic import BaseModel, field_serializer
+from app.models.mixins import UUIDBaseModel
 
 
-class User(BaseModel):
+class User(UUIDBaseModel):
     """
     User
     """
-    id: UUID
     username: str
     display_name: str
     hash_password: str
@@ -20,13 +18,3 @@ class User(BaseModel):
     is_active: bool
     created_at: datetime
     last_login: Optional[datetime] = None
-
-    @field_serializer("id")
-    def serialize_uuid(self, value: UUID, _info):
-        """
-
-        :param value:
-        :param _info:
-        :return:
-        """
-        return value.hex

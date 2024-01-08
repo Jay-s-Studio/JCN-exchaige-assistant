@@ -6,6 +6,8 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
+from app.models.mixins import UUIDBaseModel
+
 
 class UserRegister(BaseModel):
     """
@@ -31,11 +33,10 @@ class TokenResponse(BaseModel):
     token_type: str = "Bearer"
 
 
-class LoginResponse(TokenResponse):
+class LoginResponse(UUIDBaseModel, TokenResponse):
     """
     Login Response
     """
-    id: UUID
     username: str
     display_name: str
     is_active: bool

@@ -50,4 +50,4 @@ async def refresh_token(
     :param user_handler:
     :return:
     """
-    return await user_handler.refresh_token(user_id=model.user_id.hex, token=api_context.token)
+    return await user_handler.refresh_token(user_id=model.user_id, token=api_context.token)

@@ -3,6 +3,7 @@ API Context
 """
 from contextvars import ContextVar, Token
 from typing import Optional
+from uuid import UUID
 
 from pydantic import BaseModel
 
@@ -13,7 +14,7 @@ class APIContext(BaseModel):
     """API Context"""
     token: str
     api_key: Optional[str] = None
-    user_id: str
+    user_id: UUID
     username: Optional[str] = None
     display_name: Optional[str] = None
     host: Optional[str] = None

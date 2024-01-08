@@ -41,7 +41,7 @@ class AuthHandler:
         expiration_time = now + timedelta(seconds=self._token_expire_time)
         payload = JWTPayload(
             iss=settings.APP_NAME,
-            uid=user.id.hex,
+            uid=user.id,
             sub=user.username,
             name=user.display_name,
             iat=now,
