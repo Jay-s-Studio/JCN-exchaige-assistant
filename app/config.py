@@ -77,6 +77,10 @@ class Configuration(BaseSettings):
     TELEGRAM_BOT_TOKEN: str = os.getenv(key="TELEGRAM_BOT_TOKEN")
     TELEGRAM_BOT_TYPE: BotType = BotType.CUSTOMER
 
+    # [Gina]
+    GINA_URL: str = os.getenv(key="GINA_URL")
+    GINA_API_KEY: str = os.getenv(key="GINA_API_KEY")
+
     # [Sentry]
     SENTRY_URL: str = os.getenv(key="SENTRY_URL")
 

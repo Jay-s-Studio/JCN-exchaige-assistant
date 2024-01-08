@@ -38,9 +38,6 @@ class TelegramBotMessagesHandler(TelegramBotBaseHandler):
         :param context:
         :return:
         """
-        await self.setup_account_info(
-            user=update.effective_user,
-            chat=update.effective_chat
-        )
+        await self.setup_account_info(user=update.effective_user, chat=update.effective_chat)
 
         await update.effective_message.reply_text(update.message.text)
