@@ -9,9 +9,28 @@ from app.handlers import UserHandler
 from app.libs.auth import check_all_authenticators
 from app.libs.contexts.api_context import APIContext, get_api_context
 from app.routing import LogRouting
-from app.serializers.v1.user import UserLogin, LoginResponse, RefreshToken, TokenResponse
+from app.serializers.v1.user import UserLogin, LoginResponse, RefreshToken, TokenResponse, UserInfoResponse
 
 router = APIRouter(route_class=LogRouting)
+
+
+@router.get(
+    path="/info",
+    response_model=UserInfoResponse,
+    dependencies=[Depends(check_all_authenticators)]
+)
+@inject
+async def get_user_info(
+    api_context: APIContext = Depends(get_api_context),
+    user_handler: UserHandler = Depends(Provide[Container.user_handler])
+):
+    """
+
+    :param api_context:
+    :param user_handler:
+    :return:
+    """
+    return await user_handler.get_user_info(user_id=api_context.user_id)
 
 
 @router.post(
@@ -39,15 +58,13 @@ async def login(
 )
 @inject
 async def refresh_token(
-    model: RefreshToken,
     api_context: APIContext = Depends(get_api_context),
     user_handler: UserHandler = Depends(Provide[Container.user_handler])
 ):
     """
 
-    :param model:
     :param api_context:
     :param user_handler:
     :return:
     """
-    return await user_handler.refresh_token(user_id=model.user_id, token=api_context.token)
+    return await user_handler.refresh_token(user_id=api_context.user_id, token=api_context.token)

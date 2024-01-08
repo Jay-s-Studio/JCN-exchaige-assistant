@@ -17,7 +17,7 @@ from app.libs.consts.redis_keys import get_user_access_token_key
 from app.libs.database import RedisPool
 from app.models.user import User
 from app.providers import UserProvider
-from app.serializers.v1.user import UserLogin, UserRegister, LoginResponse, TokenResponse
+from app.serializers.v1.user import UserLogin, UserRegister, LoginResponse, TokenResponse, UserInfoResponse
 
 
 class UserHandler:
@@ -41,7 +41,7 @@ class UserHandler:
         :param password:
         :return:
         """
-        return bcrypt.hashpw(password.encode('utf-8'), salt)
+        return bcrypt.hashpw(password.encode(), salt)
 
     @staticmethod
     def check_password(input_password: str, hashed_password: bytes) -> bool:
@@ -51,7 +51,7 @@ class UserHandler:
         :param hashed_password:
         :return:
         """
-        return bcrypt.checkpw(input_password.encode('utf-8'), hashed_password)
+        return bcrypt.checkpw(input_password.encode(), hashed_password)
 
     async def check_user_exist(self, username: str) -> bool:
         """
@@ -70,7 +70,10 @@ class UserHandler:
         :return:
         """
         if await self.check_user_exist(username=model.username):
-            raise Exception("User already exist")
+            raise APIException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                message="User already exist"
+            )
         if not self.auth_handler.verify_password_strength(password=model.password):
             raise APIException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -89,6 +92,26 @@ class UserHandler:
         )
         await self.user_provider.create_user(user=user)
 
+    async def get_user_info(self, user_id: uuid.UUID) -> UserInfoResponse:
+        """
+        Get user info
+        :param user_id:
+        :return:
+        """
+        user: Optional[User] = await self.user_provider.get_user_by_id(user_id=user_id.hex)
+        if user is None:
+            raise APIException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                message="Unauthorized"
+            )
+        return UserInfoResponse(
+            id=user.id,
+            username=user.username,
+            display_name=user.display_name,
+            is_active=user.is_active,
+            last_login=user.last_login
+        )
+
     async def login(self, model: UserLogin) -> LoginResponse:
         """
         Login
@@ -96,9 +119,15 @@ class UserHandler:
         """
         user: Optional[User] = await self.user_provider.get_user_by_username(username=model.username)
         if user is None:
-            raise Exception("User not found")
+            raise APIException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                message="Unauthorized"
+            )
         if not self.check_password(input_password=model.password, hashed_password=user.hash_password.encode()):
-            raise Exception("Password not correct")
+            raise APIException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                message="Unauthorized"
+            )
         last_login = datetime.now(tz=pytz.UTC)
         await self.user_provider.update_last_login(user_id=user.id.hex, last_login=last_login)
         access_token = self.auth_handler.generate_token(user=user)
@@ -107,11 +136,7 @@ class UserHandler:
             value=access_token,
             ex=ExpireTime.ONE_HOUR.value * 2
         )
-        return LoginResponse(
-            **user.model_dump(exclude={"hash_password", "password_salt", "created_at", "last_login"}),
-            last_login=last_login,
-            access_token=access_token
-        )
+        return LoginResponse(access_token=access_token)
 
     async def refresh_token(self, user_id: uuid.UUID, token: str) -> TokenResponse:
         """

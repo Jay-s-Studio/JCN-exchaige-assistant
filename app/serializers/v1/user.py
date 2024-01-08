@@ -25,6 +25,16 @@ class UserLogin(BaseModel):
     password: str
 
 
+class UserInfoResponse(UUIDBaseModel):
+    """
+    User Info Response
+    """
+    username: str
+    display_name: str
+    is_active: bool
+    last_login: datetime
+
+
 class TokenResponse(BaseModel):
     """
     Refresh Token Response
@@ -33,14 +43,11 @@ class TokenResponse(BaseModel):
     token_type: str = "Bearer"
 
 
-class LoginResponse(UUIDBaseModel, TokenResponse):
+class LoginResponse(TokenResponse):
     """
     Login Response
     """
-    username: str
-    display_name: str
-    is_active: bool
-    last_login: datetime
+    pass
 
 
 class RefreshToken(BaseModel):
