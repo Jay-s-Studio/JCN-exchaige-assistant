@@ -8,6 +8,7 @@ from app.containers import Container
 from app.handlers.telegram import TelegramAccountHandler
 from app.libs.auth import check_all_authenticators
 from app.routing import LogRouting
+from app.serializers.v1.telegram import GroupsResponse
 
 router = APIRouter(
     dependencies=[Depends(check_all_authenticators)],
@@ -16,7 +17,8 @@ router = APIRouter(
 
 
 @router.get(
-    path="/groups"
+    path="/groups",
+    response_model=GroupsResponse
 )
 @inject
 async def get_accounts(
