@@ -15,10 +15,11 @@ class ExchangeRate(BaseModel):
     sell_rate: Optional[float] = Field(default=None, title="Sell Rate", ge=0)
 
 
-class GetExchangeRate(BaseModel):
+class GroupExchangeRate(BaseModel):
     """
-    Get Exchange Rate
+    Group Exchange Rate
     """
+    group_id: str = Field(title="Group ID", max_length=255)
     exchange_rates: List[ExchangeRate] = Field(title="Exchange Rate")
 
 

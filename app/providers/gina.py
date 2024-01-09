@@ -1,10 +1,12 @@
 """
 GinaProvider
 """
+from typing import Optional
+
 from telegram import Update
 
 from app.clients.gina import GinaClient
-from app.models.gina import GinaHeaders, GinaPayload, GinaMessage
+from app.models.gina import GinaHeaders, GinaPayload, GinaMessage, GinaResponse
 
 
 class GinaProvider:
@@ -13,7 +15,7 @@ class GinaProvider:
     def __init__(self):
         self._client = GinaClient()
 
-    async def telegram_messages(self, update: Update):
+    async def telegram_messages(self, update: Update) -> Optional[GinaResponse]:
         """
         telegram messages
         :param update:
@@ -32,3 +34,6 @@ class GinaProvider:
             messages=[message]
         )
         data = await self._client.messages(headers=headers, payload=payload)
+        if not data:
+            return None
+        return GinaResponse(**data)

@@ -1,3 +1,6 @@
+### Custom template
+temp*.py
+
 ### direnv template
 .direnv
 .envrc

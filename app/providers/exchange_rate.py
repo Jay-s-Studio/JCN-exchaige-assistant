@@ -2,12 +2,14 @@
 ExchangeRateProvider
 """
 import json
+from typing import List
 
 from redis.asyncio import Redis
 
 from app.clients.firebase.firestore import GoogleFirestoreClient
 from app.libs.consts.enums import ExpireTime
 from app.libs.database import RedisPool
+from app.serializers.v1.exchange_rate import ExchangeRate, GroupExchangeRate
 
 
 class ExchangeRateProvider:
@@ -16,6 +18,16 @@ class ExchangeRateProvider:
     def __init__(self, redis: RedisPool):
         self._redis: Redis = redis.create()
         self.firestore_client = GoogleFirestoreClient()
+
+    async def get_all_exchange_rate(self) -> List[GroupExchangeRate]:
+        """
+        Get all exchange rate
+        :return:
+        """
+        results = []
+        async for document in self.firestore_client.stream(collection="exchange_rate"):
+            results.append(GroupExchangeRate(**document.to_dict(), group_id=document.id))
+        return results
 
     async def get_exchange_rate(self, group_id: str):
         """

@@ -43,4 +43,4 @@ class TelegramBotMessagesHandler(TelegramBotBaseHandler):
         :return:
         """
         await self.setup_account_info(user=update.effective_user, chat=update.effective_chat)
-        await self._messages_controller.receive_message(update=update, context=context)
+        await self._messages_controller.receive_message(update=update)

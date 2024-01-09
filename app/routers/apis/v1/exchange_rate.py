@@ -9,14 +9,14 @@ from app.containers import Container
 from app.handlers.exchange_rate import ExchangeRateHandler
 from app.libs.auth import check_all_authenticators
 from app.routing import LogRouting
-from app.serializers.v1.exchange_rate import UpdateExchangeRate, GetExchangeRate
+from app.serializers.v1.exchange_rate import UpdateExchangeRate, GroupExchangeRate
 
 router = APIRouter(route_class=LogRouting)
 
 
 @router.get(
     path="/{group_id}",
-    response_model=GetExchangeRate,
+    response_model=GroupExchangeRate,
     dependencies=[Depends(check_all_authenticators)],
 )
 @inject
