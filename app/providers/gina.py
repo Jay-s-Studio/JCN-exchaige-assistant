@@ -6,6 +6,7 @@ from typing import Optional
 from telegram import Update
 
 from app.clients.gina import GinaClient
+from app.libs.decorators.sentry_tracer import distributed_trace
 from app.models.gina import GinaHeaders, GinaPayload, GinaMessage, GinaResponse
 
 
@@ -15,6 +16,7 @@ class GinaProvider:
     def __init__(self):
         self._client = GinaClient()
 
+    @distributed_trace()
     async def telegram_messages(self, update: Update) -> Optional[GinaResponse]:
         """
         telegram messages

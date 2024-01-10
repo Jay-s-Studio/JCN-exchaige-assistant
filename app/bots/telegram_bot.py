@@ -1,39 +1,46 @@
 """
 This module contains the Telegram application handlers.
 """
-import html
-from urllib.parse import urljoin
-
 from dependency_injector.wiring import inject, Provide
 from telegram import Update
 
-from app.config import settings
 from app.containers import Container
 from app.context import CustomContext
 from app.handlers.telegram_bot import TelegramBotMessagesHandler
-from app.libs.logger import logger
+from app.libs.decorators.sentry_tracer import start_transaction
+
+TRANSACTION_NAME = "Telegram Update Queue Task"
 
 
-async def start(update: Update, context: CustomContext) -> None:
+@inject
+@start_transaction(name=TRANSACTION_NAME)
+async def start(
+    update: Update,
+    context: CustomContext,
+    telegram_bot_messages_handler: TelegramBotMessagesHandler = Provide[Container.telegram_bot_messages_handler]
+) -> None:
     """
     Send a message when the command /start is issued.
     :param update:
     :param context:
+    :param telegram_bot_messages_handler:
     :return:
     """
-    user = update.effective_user
-    payload_url = html.escape(urljoin(base=settings.BASE_URL, url=f"/submitpayload?user_id=<your user id>&payload=<payload>"))
-    healthcheck_url = html.escape(urljoin(base=settings.BASE_URL, url=f"/healthcheck"))
-    text = (
-        f"Hi {user.mention_html()}!\n\n"
-        f"To check if the app is still running, call <code>{healthcheck_url}</code>.\n\n"
-        f"To post a custom update, call <code>{payload_url}</code>.\n\n"
-        f"Your user id is <code>{user.id}</code>.\n\n"
-    )
-    await update.message.reply_html(text=text)
+    pass
+    # user = update.effective_user
+    # payload_url = html.escape(urljoin(base=settings.BASE_URL, url=f"/submitpayload?user_id=<your user id>&payload=<payload>"))
+    # healthcheck_url = html.escape(urljoin(base=settings.BASE_URL, url=f"/healthcheck"))
+    # text = (
+    #     f"Hi {user.mention_html()}!\n\n"
+    #     f"To check if the app is still running, call <code>{healthcheck_url}</code>.\n\n"
+    #     f"To post a custom update, call <code>{payload_url}</code>.\n\n"
+    #     f"Your user id is <code>{user.id}</code>.\n\n"
+    # )
+    # await update.message.reply_html(text=text)
 
 
 @inject
+@start_transaction(name=TRANSACTION_NAME)
 async def receive_message(
     update: Update,
     context: CustomContext,
@@ -50,6 +57,7 @@ async def receive_message(
 
 
 @inject
+@start_transaction(name=TRANSACTION_NAME)
 async def track_chats(
     update: Update,
     context: CustomContext,
@@ -62,12 +70,11 @@ async def track_chats(
     :param telegram_bot_messages_handler:
     :return:
     """
-    logger.info(str.rjust("", 100, "-"))
-    logger.info("track_chats")
     await telegram_bot_messages_handler.track_chats(update, context)
 
 
 @inject
+@start_transaction(name=TRANSACTION_NAME)
 async def new_member_handler(
     update: Update,
     context: CustomContext,
@@ -80,12 +87,11 @@ async def new_member_handler(
     :param telegram_bot_messages_handler:
     :return:
     """
-    logger.info(str.rjust("", 100, "-"))
-    logger.info("new_member_handler")
     await telegram_bot_messages_handler.new_member_handler(update, context)
 
 
 @inject
+@start_transaction(name=TRANSACTION_NAME)
 async def left_member_handler(
     update: Update,
     context: CustomContext,
@@ -98,6 +104,4 @@ async def left_member_handler(
     :param telegram_bot_messages_handler:
     :return:
     """
-    logger.info(str.rjust("", 100, "-"))
-    logger.info("left_member_handler")
     await telegram_bot_messages_handler.left_member_handler(update, context)

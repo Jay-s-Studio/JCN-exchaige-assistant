@@ -6,6 +6,7 @@ from typing import List, Optional, Callable
 from telegram import Update
 
 from app.libs.consts.enums import GinaIntention
+from app.libs.decorators.sentry_tracer import distributed_trace
 from app.models.exchange_rate import CurrentExchangeRate
 from app.providers import GinaProvider, ExchangeRateProvider
 from app.serializers.v1.exchange_rate import GroupExchangeRate
@@ -22,6 +23,7 @@ class MessagesController:
         self._gina_provider = gina_provider
         self._exchange_rate_provider = exchange_rate_provider
 
+    @distributed_trace()
     async def receive_message(self, update: Update) -> None:
         """
         receive message

@@ -10,6 +10,7 @@ from telegram import Update, ChatMemberUpdated, ChatMember, Chat, User
 from app.config import settings
 from app.context import CustomContext
 from app.libs.database import RedisPool
+from app.libs.decorators.sentry_tracer import distributed_trace
 from app.libs.logger import logger
 from app.models.account.telegram import CustomGroupInfo, TelegramAccount, TelegramChatGroup, CustomAccountInfo
 from app.providers import TelegramAccountProvider
@@ -66,6 +67,7 @@ class TelegramBotBaseHandler:
 
         return was_member, is_member
 
+    @distributed_trace()
     async def setup_account_info(
         self,
         user: User,
@@ -108,6 +110,7 @@ class TelegramBotBaseHandler:
         ]
         await asyncio.gather(*tasks)
 
+    @distributed_trace()
     async def track_chats(self, update: Update, context: CustomContext) -> None:
         """
 
@@ -142,6 +145,7 @@ class TelegramBotBaseHandler:
             )
         )
 
+    @distributed_trace()
     async def new_member_handler(self, update: Update, context: CustomContext) -> None:
         """
 
@@ -157,6 +161,7 @@ class TelegramBotBaseHandler:
                 chat=update.effective_chat
             )
 
+    @distributed_trace()
     async def left_member_handler(self, update: Update, context: CustomContext) -> None:
         """
 

@@ -7,6 +7,7 @@ from app.config import settings
 from app.context import CustomContext
 from app.controllers import MessagesController
 from app.libs.database import RedisPool
+from app.libs.decorators.sentry_tracer import distributed_trace
 from app.providers import TelegramAccountProvider
 from .base import TelegramBotBaseHandler
 
@@ -34,6 +35,7 @@ class TelegramBotMessagesHandler(TelegramBotBaseHandler):
         """
         return f"{settings.APP_NAME}:{name}"
 
+    @distributed_trace()
     async def receive_message(self, update: Update, context: CustomContext) -> None:
         """
         receive message
