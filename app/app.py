@@ -142,7 +142,8 @@ async def run_application():
     webserver = uvicorn.Server(
         config=uvicorn.Config(
             app=web_application,
-            host="127.0.0.1" if settings.DEBUG else "0.0.0.0"
+            host=settings.HOST,
+            port=settings.PORT
         )
     )
 
