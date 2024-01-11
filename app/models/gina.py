@@ -5,7 +5,7 @@ from typing import Optional, List
 
 from pydantic import BaseModel, Field, field_validator
 
-from app.libs.consts.enums import GinaIntention, GinaAction
+from app.libs.consts.enums import GinaIntention, GinaAction, Language
 
 
 class GinaHeaders(BaseModel):
@@ -54,7 +54,7 @@ class GinaResponse(BaseModel):
     payment_currency: Optional[str] = Field(default=None, description="Payment Currency")
     exchange_currency: Optional[str] = Field(default=None, description="Exchange Currency")
     amount_to_exchange: Optional[float] = Field(default=None, description="Amount to Exchange")
-    language: Optional[str] = Field(default=None)
+    language: Optional[Language] = Field(default=Language.ZH_TW, description="Language")
 
     @field_validator("intention", "action", mode="before")
     def check_intention_and_action(cls, value: str):

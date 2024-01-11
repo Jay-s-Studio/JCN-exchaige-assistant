@@ -19,6 +19,7 @@ redis = "^5.0.1"
 dependency-injector = "*"
 bcrypt = "^4.1.2"
 pytz = "^2023.3.post1"
+fastapi-limiter = "^0.1.6"
 
 
 [tool.poetry.group.dev.dependencies]

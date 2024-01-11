@@ -16,7 +16,7 @@ class RedisPool:
         self._uri = uri
         self._redis = None
 
-    def create(self) -> Redis:
+    def create(self, db: int = 0) -> Redis:
         """
 
         :return:
@@ -25,6 +25,7 @@ class RedisPool:
             return self._redis
         session = from_url(
             url=self._uri,
+            db=db,
             password=settings.REDIS_PASSWORD,
             encoding="utf-8",
             decode_responses=True

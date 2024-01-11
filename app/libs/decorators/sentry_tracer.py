@@ -64,8 +64,10 @@ def start_transaction(
                 ) as transaction:
                     try:
                         result = await func(*args, **kwargs)
+                        transaction.set_status("ok")
                     except Exception as exc:
                         transaction.set_data("error", str(exc))
+                        transaction.set_status("error")
                         raise exc
                 return result
         # Synchronous case
@@ -86,8 +88,10 @@ def start_transaction(
                 ) as transaction:
                     try:
                         result = func(*args, **kwargs)
+                        transaction.set_status("ok")
                     except Exception as exc:
-                        transaction.set_data("error", str(exc))
+                        transaction.set_data("Exception", str(exc))
+                        transaction.set_status("error")
                         raise exc
                 return result
 

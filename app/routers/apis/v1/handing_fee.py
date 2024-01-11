@@ -2,17 +2,20 @@
 Handling Fee API Router
 """
 from dependency_injector.wiring import inject, Provide
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends
 from starlette import status
 
 from app.containers import Container
 from app.handlers.handing_fee import HandingFeeHandler
-from app.libs.auth import check_all_authenticators
-from app.serializers.v1.handing_fee import HandingFee
+from app.libs.depends import check_all_authenticators, DEFAULT_RATE_LIMITERS
 from app.routing import LogRouting
+from app.serializers.v1.handing_fee import HandingFee
 
 router = APIRouter(
-    dependencies=[Depends(check_all_authenticators)],
+    dependencies=[
+        Depends(check_all_authenticators),
+        *DEFAULT_RATE_LIMITERS
+    ],
     route_class=LogRouting
 )
 

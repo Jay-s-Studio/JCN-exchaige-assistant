@@ -6,11 +6,12 @@ from fastapi import APIRouter, Depends
 
 from app.containers import Container
 from app.handlers.currency import CurrencyHandler
-from app.libs.auth import check_all_authenticators
+from app.libs.depends import check_all_authenticators, DEFAULT_RATE_LIMITERS
 from app.routing import LogRouting
 from app.serializers.v1.currency import Currencies
 
 router = APIRouter(
+    dependencies=DEFAULT_RATE_LIMITERS,
     route_class=LogRouting
 )
 

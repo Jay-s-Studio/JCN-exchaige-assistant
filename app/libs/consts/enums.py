@@ -19,6 +19,13 @@ class BotType(StrEnum):
     VENDORS = "vendors"
 
 
+class Language(StrEnum):
+    """Language"""
+    EN_US = "en-us"
+    ZH_TW = "zh-tw"
+    ZH_CN = "zh-cn"
+
+
 class GinaIntention(StrEnum):
     """GinaIntention
     swap

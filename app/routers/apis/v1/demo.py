@@ -2,9 +2,13 @@
 from fastapi import APIRouter
 from starlette.requests import Request
 
+from app.libs.depends import DEFAULT_RATE_LIMITERS
 from app.routing import LogRouting
 
-router = APIRouter(route_class=LogRouting)
+router = APIRouter(
+    dependencies=DEFAULT_RATE_LIMITERS,
+    route_class=LogRouting
+)
 
 
 @router.get(

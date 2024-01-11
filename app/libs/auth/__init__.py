@@ -1,8 +1,8 @@
 """
 Top level auth package
 """
-from .authenticators import check_all_authenticators
+from .bearer_jwt import BearerJWTAuth
 
 __all__ = [
-    "check_all_authenticators",
+    "BearerJWTAuth",
 ]

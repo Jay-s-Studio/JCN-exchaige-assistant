@@ -4,10 +4,13 @@ MessagesController
 from typing import List, Optional, Callable
 
 from telegram import Update
+from telegram.constants import ParseMode
 
 from app.libs.consts.enums import GinaIntention
+from app.libs.consts.messages import ExchangeRateMessage
 from app.libs.decorators.sentry_tracer import distributed_trace
 from app.models.exchange_rate import CurrentExchangeRate
+from app.models.gina import GinaResponse
 from app.providers import GinaProvider, ExchangeRateProvider
 from app.serializers.v1.exchange_rate import GroupExchangeRate
 
@@ -35,25 +38,43 @@ class MessagesController:
         if not result:
             await update.effective_message.reply_text(text="Sorry, There is something wrong. Please try again later. 🙇🏼‍")
             return
-        reply_message = result.reply
         match result.intention:
             case GinaIntention.EXCHANGE_RATE:
-                exchange_rate_list = await self._exchange_rate_provider.get_all_exchange_rate()
-                if result.payment_currency.upper() != "USDT":
-                    exchange_rate = self.get_lowest_buying_exchange_rate(
-                        currency=result.payment_currency,
-                        exchange_rate_list=exchange_rate_list
-                    )
-                else:
-                    exchange_rate = self.get_highest_selling_exchange_rate(
-                        currency=result.exchange_currency,
-                        exchange_rate_list=exchange_rate_list
-                    )
-                print(exchange_rate)
+                reply_message = await self.exchange_rate(update=update, gina_resp=result)
+            case GinaIntention.SWAP:
+                reply_message = result.reply
             case _:
-                pass
+                reply_message = result.reply
+        await update.effective_message.reply_text(text=reply_message, parse_mode=ParseMode.MARKDOWN_V2)
 
-        await update.effective_message.reply_text(text=reply_message)
+    @distributed_trace()
+    async def exchange_rate(self, update: Update, gina_resp: GinaResponse) -> None:
+        """
+        exchange rate
+        :param update:
+        :param gina_resp:
+        :return:
+        """
+        await update.effective_message.reply_text(text=gina_resp.reply)
+        exchange_rate_list = await self._exchange_rate_provider.get_all_exchange_rate()
+        if gina_resp.payment_currency.upper() != "USDT":
+            exchange_rate = self.get_lowest_buying_exchange_rate(
+                currency=gina_resp.payment_currency,
+                exchange_rate_list=exchange_rate_list
+            )
+            price = exchange_rate.buy
+        else:
+            exchange_rate = self.get_highest_selling_exchange_rate(
+                currency=gina_resp.exchange_currency,
+                exchange_rate_list=exchange_rate_list
+            )
+            price = exchange_rate.sell
+        return ExchangeRateMessage.format(
+            language=gina_resp.language,
+            payment_currency=gina_resp.payment_currency,
+            exchange_currency=gina_resp.exchange_currency,
+            price=price
+        )
 
     @staticmethod
     def _get_optimal_exchange_rate(

@@ -32,6 +32,7 @@ from app.routers import api_router, webhook_router
 from .bot import application
 from .config import settings
 from .containers import Container
+from .libs.utils.lifespan import lifespan
 
 sentry_sdk.init(
     dsn=settings.SENTRY_URL,
@@ -80,7 +81,7 @@ def get_application() -> FastAPI:
     Get application
     :return:
     """
-    fastapi_app = FastAPI()
+    fastapi_app = FastAPI(lifespan=lifespan)
     if not settings.IS_DEV:
         fastapi_app = FastAPI(
             docs_url="/swagger/api/documents",
@@ -102,7 +103,6 @@ async def run_application():
     Run the application
     :return:
     """
-
     # Pass webhook settings to telegram
     await application.bot.set_webhook(
         url=urljoin(base=settings.BASE_URL, url=TELEGRAM_WEBHOOK_PATH),
