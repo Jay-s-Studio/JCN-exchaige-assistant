@@ -10,10 +10,7 @@ class RedisPool:
     """RedisPool"""
 
     def __init__(self):
-        uri = f"redis://:{settings.REDIS_PASSWORD}@{settings.REDIS_HOST}:{settings.REDIS_PORT}"
-        if settings.REDIS_SSL:
-            uri = f"rediss://{settings.REDIS_USERNAME}:{settings.REDIS_PASSWORD}@{settings.REDIS_HOST}:{settings.REDIS_PORT}"
-        self._uri = uri
+        self._uri = settings.REDIS_URL
         self._redis = None
 
     def create(self, db: int = 0) -> Redis:
@@ -26,7 +23,6 @@ class RedisPool:
         session = from_url(
             url=self._uri,
             db=db,
-            password=settings.REDIS_PASSWORD,
             encoding="utf-8",
             decode_responses=True
         )
