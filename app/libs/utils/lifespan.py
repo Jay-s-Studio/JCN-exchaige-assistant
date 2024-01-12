@@ -23,4 +23,5 @@ async def lifespan(_: FastAPI):
         redis=redis_connection,
         prefix=f"{settings.APP_NAME}_limiter"
     )
+    yield
     await FastAPILimiter.close()
