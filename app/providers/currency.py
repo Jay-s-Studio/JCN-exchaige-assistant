@@ -15,15 +15,15 @@ class CurrencyProvider:
     def __init__(self, redis: RedisPool):
         self._redis: Redis = redis.create()
         self.firestore_client = GoogleFirestoreClient()
+        self.redis_name = "currencies"
 
     async def get_currencies(self):
         """
         get currencies
         :return:
         """
-        redis_name = "currencies"
-        if await self._redis.exists(redis_name):
-            value = await self._redis.get(redis_name)
+        if await self._redis.exists(self.redis_name):
+            value = await self._redis.get(self.redis_name)
             return json.loads(value)
         result = await self.firestore_client.get_document(
             collection="currency",
@@ -31,7 +31,7 @@ class CurrencyProvider:
         )
         if not result.exists:
             return None
-        await self._redis.set(redis_name, json.dumps(result.to_dict()))
+        await self._redis.set(self.redis_name, json.dumps(result.to_dict()), ex=60 * 60 * 24)
         return result.to_dict()
 
     async def update_currencies(self, data: dict):
@@ -40,6 +40,7 @@ class CurrencyProvider:
         :param data:
         :return:
         """
+        await self._redis.delete(self.redis_name)
         result = await self.firestore_client.get_document(
             collection="currency",
             document="currencies"
