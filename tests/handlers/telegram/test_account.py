@@ -4,6 +4,7 @@ Test account handler.
 import pytest
 
 from app.handlers import TelegramAccountHandler
+from app.serializers.v1.telegram import UpdateTelegramGroup
 
 
 @pytest.mark.asyncio
@@ -17,6 +18,44 @@ async def test_get_vendors(telegram_account_handler: TelegramAccountHandler):
     assert vendors is not None
     assert vendors.vendors is not None
     assert vendors.total >= 0
+
+
+@pytest.mark.asyncio
+async def test_get_groups(telegram_account_handler: TelegramAccountHandler):
+    """
+    Test get_groups
+    :param telegram_account_handler:
+    :return:
+    """
+    groups = await telegram_account_handler.get_groups()
+    assert groups is not None
+
+
+@pytest.mark.asyncio
+async def test_get_group(telegram_account_handler: TelegramAccountHandler):
+    """
+    Test get_group
+    :param telegram_account_handler:
+    :return:
+    """
+    group_id = "-1002050270240"
+    group = await telegram_account_handler.get_group(group_id=group_id)
+    assert group is not None
+
+
+@pytest.mark.asyncio
+async def test_update_group(telegram_account_handler: TelegramAccountHandler):
+    """
+    Test update_group
+    :param telegram_account_handler:
+    :return:
+    """
+    group_id = "-1002050270240"
+    model = UpdateTelegramGroup(
+        description="test",
+        customer_service_id=1259597115
+    )
+    await telegram_account_handler.update_group(group_id=group_id, model=model)
 
 
 @pytest.mark.asyncio

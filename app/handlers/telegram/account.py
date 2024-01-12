@@ -10,7 +10,7 @@ from app.exceptions.api_base import APIException
 from app.libs.consts.enums import BotType
 from app.models.account.telegram import TelegramChatGroup, TelegramAccount
 from app.providers import TelegramAccountProvider
-from app.serializers.v1.telegram import TelegramGroup, VendorResponse, GroupsResponse, CustomerResponse, GroupMembersResponse, UpdateCustomerService
+from app.serializers.v1.telegram import TelegramGroup, VendorResponse, GroupsResponse, CustomerResponse, GroupMembersResponse, UpdateTelegramGroup
 
 
 class TelegramAccountHandler:
@@ -126,6 +126,55 @@ class TelegramAccountHandler:
             total=total,
             customers=customers
         )
+
+    async def get_group(self, group_id: str) -> TelegramGroup:
+        """
+
+        :param group_id:
+        :return:
+        """
+        group = await self._telegram_account_provider.get_chat_group(chat_id=group_id)
+        if not group:
+            raise APIException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                message="Group Not Found"
+            )
+        return TelegramGroup(
+            id=group.id,
+            title=group.title,
+            description=group.custom_info.description,
+            has_bot=group.custom_info.in_group,
+            bot_type=group.custom_info.bot_type,
+            customer_service=group.custom_info.customer_service
+        )
+
+    async def update_group(
+        self,
+        group_id: str,
+        model: UpdateTelegramGroup
+    ):
+        """
+
+        :param group_id:
+        :param model:
+        :return:
+        """
+        customer_service = await self._telegram_account_provider.get_account(user_id=str(model.customer_service_id))
+        if not customer_service:
+            raise APIException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                message="Account Not Found"
+            )
+        data = {
+            "custom_info.description": model.description,
+            "custom_info.customer_service": customer_service.model_dump()
+        }
+        result = await self._telegram_account_provider.update_group_custom_info(chat_id=group_id, data=data)
+        if not result:
+            raise APIException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                message="Group Not Found"
+            )
 
     async def get_group_members(
         self,

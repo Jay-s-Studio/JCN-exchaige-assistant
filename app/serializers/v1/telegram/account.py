@@ -53,9 +53,9 @@ class GroupMembersResponse(BaseModel):
     members: List[Optional[TelegramAccount]] = Field(default=[], description="Group Member List")
 
 
-# class UpdateCustomerService(BaseModel):
-#     """
-#     Update Customer Service
-#     """
-#     group_id: str = Field(description="Group ID")
-#     customer_service_id: str = Field(description="Customer Service ID")
+class UpdateTelegramGroup(BaseModel):
+    """
+    Update Telegram Group
+    """
+    description: Optional[str] = Field(default=None, description="Group Description")
+    customer_service_id: Optional[int] = Field(default=None, description="Group Customer Service ID")

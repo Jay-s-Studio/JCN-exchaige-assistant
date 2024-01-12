@@ -9,7 +9,14 @@ from app.containers import Container
 from app.handlers.telegram import TelegramAccountHandler
 from app.libs.depends import check_all_authenticators, DEFAULT_RATE_LIMITERS
 from app.route_classes import LogRoute
-from app.serializers.v1.telegram import GroupsResponse, GroupMembersResponse, CustomerResponse, VendorResponse, UpdateCustomerService
+from app.serializers.v1.telegram import (
+    GroupsResponse,
+    GroupMembersResponse,
+    CustomerResponse,
+    VendorResponse,
+    TelegramGroup,
+    UpdateTelegramGroup,
+)
 
 router = APIRouter(
     dependencies=[
@@ -89,6 +96,50 @@ async def get_customers(
     return await telegram_account_handler.get_customers(
         page_size=page_size,
         page_index=page_index
+    )
+
+
+@router.get(
+    path="/group/{group_id}",
+    response_model=TelegramGroup,
+    status_code=status.HTTP_200_OK
+)
+@inject
+async def get_group(
+    group_id: str,
+    telegram_account_handler: TelegramAccountHandler = Depends(Provide[Container.telegram_account_handler])
+):
+    """
+
+    :param group_id:
+    :param telegram_account_handler:
+    :return:
+    """
+    return await telegram_account_handler.get_group(
+        group_id=group_id
+    )
+
+
+@router.put(
+    path="/group/{group_id}",
+    status_code=status.HTTP_204_NO_CONTENT
+)
+@inject
+async def update_group(
+    group_id: str,
+    model: UpdateTelegramGroup,
+    telegram_account_handler: TelegramAccountHandler = Depends(Provide[Container.telegram_account_handler])
+):
+    """
+
+    :param group_id:
+    :param model:
+    :param telegram_account_handler:
+    :return:
+    """
+    return await telegram_account_handler.update_group(
+        group_id=group_id,
+        model=model
     )
 
 

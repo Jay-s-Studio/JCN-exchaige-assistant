@@ -93,7 +93,7 @@ class TelegramAccountProvider:
             data=data.model_dump()
         )
 
-    async def get_chat_group(self, chat_id: str):
+    async def get_chat_group(self, chat_id: str) -> Optional[TelegramChatGroup]:
         """
         get a chat group
         :param chat_id:
@@ -105,7 +105,7 @@ class TelegramAccountProvider:
         )
         if not result.exists:
             return None
-        return result.to_dict()
+        return TelegramChatGroup(**result.to_dict())
 
     async def get_all_chat_group(self) -> List[TelegramChatGroup]:
         """
@@ -220,15 +220,15 @@ class TelegramAccountProvider:
             document=chat_id
         )
 
-    async def update_group_customer_service(
+    async def update_group_custom_info(
         self,
         chat_id: str,
-        customer_service: TelegramAccount
+        data: dict,
     ) -> bool:
         """
         update group customer service
         :param chat_id:
-        :param customer_service:
+        :param data:
         :return:
         """
         _collection = "chat_group"
@@ -241,8 +241,6 @@ class TelegramAccountProvider:
         await self.firestore_client.update_document(
             collection=_collection,
             document=chat_id,
-            data={
-                "custom_info.customer_service": customer_service.model_dump()
-            }
+            data=data
         )
         return True
