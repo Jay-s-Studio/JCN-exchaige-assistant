@@ -15,7 +15,6 @@ Press Ctrl-C on the command line or send a signal to the process to stop the
 app.
 """
 import asyncio
-from contextlib import asynccontextmanager
 from urllib.parse import urljoin
 
 import sentry_sdk
@@ -23,7 +22,6 @@ import uvicorn
 from fastapi import FastAPI, HTTPException
 from fastapi.exception_handlers import http_exception_handler
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi_limiter import FastAPILimiter
 from sentry_sdk.integrations.fastapi import FastApiIntegration
 from sentry_sdk.integrations.httpx import HttpxIntegration
 from starlette.requests import Request
@@ -34,9 +32,7 @@ from app.routers import api_router, webhook_router
 from .bot import application
 from .config import settings
 from .containers import Container
-from .libs.database import RedisPool
-from .libs.logger import logger
-# from .libs.utils.lifespan import lifespan
+from .libs.utils.lifespan import lifespan
 
 sentry_sdk.init(
     dsn=settings.SENTRY_URL,
@@ -78,24 +74,6 @@ def setup_middlewares(webapi_app: FastAPI):
         allow_headers=["*"],
         allow_origin_regex=settings.CORS_ALLOW_ORIGINS_REGEX
     )
-
-
-@asynccontextmanager
-async def lifespan(_: FastAPI):
-    """
-    Lifespan
-    :param _:
-    """
-    logger.info("Starting lifespan")
-    redis_connection = RedisPool().create(db=1)
-    logger.info(redis_connection)
-    await FastAPILimiter.init(
-        redis=redis_connection,
-        prefix=f"{settings.APP_NAME}_limiter"
-    )
-    logger.info(FastAPILimiter.redis)
-    yield
-    await FastAPILimiter.close()
 
 
 def get_application() -> FastAPI:

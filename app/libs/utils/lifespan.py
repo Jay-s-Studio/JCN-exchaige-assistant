@@ -19,14 +19,8 @@ async def lifespan(_: FastAPI):
     """
     logger.info("Starting lifespan")
     redis_connection = RedisPool().create(db=1)
-    logger.info(redis_connection)
     await FastAPILimiter.init(
         redis=redis_connection,
         prefix=f"{settings.APP_NAME}_limiter"
     )
-    logger.info(FastAPILimiter.redis)
-    logger.info(FastAPILimiter.prefix)
-    try:
-        yield
-    finally:
-        await FastAPILimiter.close()
+    await FastAPILimiter.close()
