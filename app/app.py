@@ -144,8 +144,7 @@ async def run_application():
         config=uvicorn.Config(
             app=web_application,
             host=settings.HOST,
-            port=settings.PORT,
-            lifespan="on",
+            port=settings.PORT
         )
     )
 

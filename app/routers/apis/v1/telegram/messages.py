@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends
 from app.containers import Container
 from app.handlers.telegram import TelegramMessageHandler
 from app.libs.depends import check_all_authenticators, DEFAULT_RATE_LIMITERS
-from app.routing import LogRouting
+from app.route_classes import LogRoute
 from app.serializers.v1.telegram import TelegramBroadcast
 
 router = APIRouter(
@@ -15,7 +15,7 @@ router = APIRouter(
         Depends(check_all_authenticators),
         *DEFAULT_RATE_LIMITERS
     ],
-    route_class=LogRouting
+    route_class=LogRoute
 )
 
 

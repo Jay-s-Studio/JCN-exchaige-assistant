@@ -64,7 +64,7 @@ class TelegramAccountProvider:
             return None
         return TelegramAccount(**result.to_dict())
 
-    async def update_chat_group(self, chat_id: str, data: dict):
+    async def update_chat_group(self, chat_id: str, data: TelegramChatGroup):
         """
         update a chat group
         :param chat_id:
@@ -80,13 +80,17 @@ class TelegramAccountProvider:
             await self.firestore_client.update_document(
                 collection=_collection,
                 document=chat_id,
-                data=data
+                data={
+                    **data.model_dump(exclude={"custom_info"}),
+                    "custom_info.in_group": data.custom_info.in_group,
+                    "custom_info.bot_type": data.custom_info.bot_type,
+                }
             )
             return
         await self.firestore_client.set_document(
             collection=_collection,
             document=chat_id,
-            data=data
+            data=data.model_dump()
         )
 
     async def get_chat_group(self, chat_id: str):
@@ -152,6 +156,18 @@ class TelegramAccountProvider:
             data=data
         )
 
+    async def get_chat_group_members(self, chat_id: str) -> List[TelegramAccount]:
+        """
+        get chat group members
+        :param chat_id:
+        :return:
+        """
+        _collection = f"group_member:{chat_id}"
+        members = []
+        async for item in self.firestore_client.stream(collection=_collection):
+            members.append(TelegramAccount(**item.to_dict()))
+        return members
+
     async def delete_chat_group_member(self, chat_id: str, user_id: str):
         """
         delete chat group member
@@ -203,3 +219,30 @@ class TelegramAccountProvider:
             collection=_collection,
             document=chat_id
         )
+
+    async def update_group_customer_service(
+        self,
+        chat_id: str,
+        customer_service: TelegramAccount
+    ) -> bool:
+        """
+        update group customer service
+        :param chat_id:
+        :param customer_service:
+        :return:
+        """
+        _collection = "chat_group"
+        result = await self.firestore_client.get_document(
+            collection=_collection,
+            document=chat_id
+        )
+        if not result.exists:
+            return False
+        await self.firestore_client.update_document(
+            collection=_collection,
+            document=chat_id,
+            data={
+                "custom_info.customer_service": customer_service.model_dump()
+            }
+        )
+        return True

@@ -27,16 +27,7 @@ class Language(StrEnum):
 
 
 class GinaIntention(StrEnum):
-    """GinaIntention
-    swap
-    payment check
-    exchange rate
-    human customer service
-    get account
-    receipt
-    cancel order
-    hurry
-    """
+    """GinaIntention"""
     SWAP = "swap"
     PAYMENT_CHECK = "payment check"
     EXCHANGE_RATE = "exchange rate"
@@ -48,17 +39,8 @@ class GinaIntention(StrEnum):
 
 
 class GinaAction(StrEnum):
-    """GinaAction
-    swap_crypto
-    swap_legal
-    payment check
-    exchange rate
-    human customer service
-    get account
-    receipt
-    cancel order
-    hurry
-    """
+    """GinaAction"""
+    SWAP = "swap"
     SWAP_CRYPTO = "swap_crypto"
     SWAP_LEGAL = "swap_legal"
     PAYMENT_CHECK = "payment check"

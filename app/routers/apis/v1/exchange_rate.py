@@ -8,12 +8,12 @@ from starlette import status
 from app.containers import Container
 from app.handlers.exchange_rate import ExchangeRateHandler
 from app.libs.depends import check_all_authenticators, DEFAULT_RATE_LIMITERS
-from app.routing import LogRouting
+from app.route_classes import LogRoute
 from app.serializers.v1.exchange_rate import UpdateExchangeRate, GroupExchangeRate
 
 router = APIRouter(
     dependencies=DEFAULT_RATE_LIMITERS,
-    route_class=LogRouting
+    route_class=LogRoute
 )
 
 

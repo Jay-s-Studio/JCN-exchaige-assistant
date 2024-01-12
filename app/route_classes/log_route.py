@@ -10,12 +10,11 @@ from fastapi.routing import APIRoute
 from app.libs.logger import logger
 
 
-class LogRouting(APIRoute):
+class LogRoute(APIRoute):
     """LogRouting"""
 
     def get_route_handler(self) -> Callable:
         """
-
         :return:
         """
         origin_handler = super().get_route_handler()

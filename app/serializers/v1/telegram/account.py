@@ -6,17 +6,7 @@ from typing import Optional, List
 from pydantic import BaseModel, Field
 
 from app.libs.consts.enums import BotType
-
-
-class TelegramAccount(BaseModel):
-    """
-    Telegram Account
-    """
-    id: str
-    username: str
-    first_name: str
-    last_name: str
-    is_bot: bool
+from app.models.account.telegram import TelegramAccount
 
 
 class TelegramGroup(BaseModel):
@@ -28,6 +18,7 @@ class TelegramGroup(BaseModel):
     description: Optional[str] = Field(default=None, description="Group Description")
     has_bot: bool = Field(description="Group Has Bot")
     bot_type: BotType = Field(description="Group Bot Type")
+    customer_service: Optional[TelegramAccount] = Field(default=None, description="Group Customer Service")
 
 
 class GroupsResponse(BaseModel):
@@ -52,3 +43,19 @@ class CustomerResponse(BaseModel):
     """
     total: int = Field(default=0, description="Total Customers")
     customers: List[Optional[TelegramGroup]] = Field(default=[], description="Customer List")
+
+
+class GroupMembersResponse(BaseModel):
+    """
+    Group Members Response
+    """
+    total: int = Field(default=0, description="Total Group Members")
+    members: List[Optional[TelegramAccount]] = Field(default=[], description="Group Member List")
+
+
+# class UpdateCustomerService(BaseModel):
+#     """
+#     Update Customer Service
+#     """
+#     group_id: str = Field(description="Group ID")
+#     customer_service_id: str = Field(description="Customer Service ID")

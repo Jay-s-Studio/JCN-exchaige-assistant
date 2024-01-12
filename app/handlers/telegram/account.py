@@ -3,12 +3,14 @@ TelegramAccountHandler
 """
 from typing import List, Optional
 
+from starlette import status
 from telegram import Bot
 
+from app.exceptions.api_base import APIException
 from app.libs.consts.enums import BotType
-from app.models.account.telegram import TelegramChatGroup
+from app.models.account.telegram import TelegramChatGroup, TelegramAccount
 from app.providers import TelegramAccountProvider
-from app.serializers.v1.telegram import TelegramGroup, VendorResponse, GroupsResponse, CustomerResponse
+from app.serializers.v1.telegram import TelegramGroup, VendorResponse, GroupsResponse, CustomerResponse, GroupMembersResponse, UpdateCustomerService
 
 
 class TelegramAccountHandler:
@@ -49,7 +51,8 @@ class TelegramAccountHandler:
                 title=value.title,
                 description=value.custom_info.description,
                 has_bot=value.custom_info.in_group,
-                bot_type=value.custom_info.bot_type
+                bot_type=value.custom_info.bot_type,
+                customer_service=value.custom_info.customer_service
             ) for value in page_of_groups
         ]
         return GroupsResponse(
@@ -115,10 +118,61 @@ class TelegramAccountHandler:
                 title=value.title,
                 description=value.custom_info.description,
                 has_bot=value.custom_info.in_group,
-                bot_type=value.custom_info.bot_type
+                bot_type=value.custom_info.bot_type,
+                customer_service=value.custom_info.customer_service
             ) for value in page_of_customers
         ]
         return CustomerResponse(
             total=total,
             customers=customers
         )
+
+    async def get_group_members(
+        self,
+        group_id: str,
+        page_size: int = 20,
+        page_index: int = 0
+    ):
+        """
+
+        :param group_id:
+        :param page_size:
+        :param page_index:
+        :return:
+        """
+        accounts = await self._telegram_account_provider.get_chat_group_members(chat_id=group_id)
+        total = len(accounts)
+        if not accounts:
+            return
+        if page_index * page_size > total:
+            return
+        members: List[TelegramAccount] = self.get_pagination(data=accounts, page_size=page_size, page_index=page_index)
+        return GroupMembersResponse(
+            total=total,
+            members=members
+        )
+
+    # async def update_group_customer_service(
+    #     self,
+    #     model: UpdateCustomerService
+    # ):
+    #     """
+    #
+    #     :param model:
+    #     :return:
+    #     """
+    #     customer_service = await self._telegram_account_provider.get_account(user_id=model.customer_service_id)
+    #     if not customer_service:
+    #         raise APIException(
+    #             status_code=status.HTTP_404_NOT_FOUND,
+    #             message="Account Not Found"
+    #         )
+    #     result = await self._telegram_account_provider.update_group_customer_service(
+    #         chat_id=model.group_id,
+    #         customer_service=customer_service
+    #     )
+    #     if not result:
+    #         raise APIException(
+    #             status_code=status.HTTP_404_NOT_FOUND,
+    #             message="Group Not Found"
+    #         )

@@ -8,7 +8,7 @@ from starlette import status
 from app.containers import Container
 from app.handlers.handing_fee import HandingFeeHandler
 from app.libs.depends import check_all_authenticators, DEFAULT_RATE_LIMITERS
-from app.routing import LogRouting
+from app.route_classes import LogRoute
 from app.serializers.v1.handing_fee import HandingFee
 
 router = APIRouter(
@@ -16,7 +16,7 @@ router = APIRouter(
         Depends(check_all_authenticators),
         *DEFAULT_RATE_LIMITERS
     ],
-    route_class=LogRouting
+    route_class=LogRoute
 )
 
 

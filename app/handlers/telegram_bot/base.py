@@ -101,10 +101,10 @@ class TelegramBotBaseHandler:
             custom_info=chat_custom_info
         )
         user_data = telegram_account.model_dump()
-        group_chat_data = telegram_chat_group.model_dump()
+        group_chat_data = telegram_chat_group.model_dump(exclude_none=True)
         tasks = [
             self._telegram_account_provider.set_account(user_id=user_id, data=user_data),
-            self._telegram_account_provider.update_chat_group(chat_id=chat_id, data=group_chat_data),
+            self._telegram_account_provider.update_chat_group(chat_id=chat_id, data=telegram_chat_group),
             self._telegram_account_provider.update_chat_group_member(chat_id=chat_id, user_id=user_id, data=user_data),
             self._telegram_account_provider.update_account_exist_group(user_id=user_id, chat_id=chat_id, data=group_chat_data)
         ]

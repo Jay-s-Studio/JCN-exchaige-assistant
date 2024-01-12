@@ -8,12 +8,12 @@ from app.containers import Container
 from app.handlers import UserHandler
 from app.libs.contexts.api_context import APIContext, get_api_context
 from app.libs.depends import check_all_authenticators, DEFAULT_RATE_LIMITERS
-from app.routing import LogRouting
+from app.route_classes import LogRoute
 from app.serializers.v1.user import UserLogin, LoginResponse, TokenResponse, UserInfoResponse
 
 router = APIRouter(
     dependencies=DEFAULT_RATE_LIMITERS,
-    route_class=LogRouting
+    route_class=LogRoute
 )
 
 
@@ -31,7 +31,6 @@ async def get_user_info(
 ):
     """
 
-    :param request:
     :param api_context:
     :param user_handler:
     :return:
