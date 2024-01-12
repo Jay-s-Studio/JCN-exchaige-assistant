@@ -109,6 +109,7 @@ def get_application() -> FastAPI:
             docs_url="/swagger/api/documents",
             openapi_url="/open_api/documents/openapi.json",
             redoc_url=None,
+            lifespan=lifespan
         )
     # set container
     container = Container()
