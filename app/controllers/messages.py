@@ -36,7 +36,10 @@ class MessagesController:
         await update.effective_chat.send_chat_action("typing")
         result = await self._gina_provider.telegram_messages(update=update)
         if not result:
-            await update.effective_message.reply_text(text="Sorry, There is something wrong. Please try again later. 🙇🏼‍")
+            await update.effective_message.reply_text(
+                text="Sorry, There is something wrong. Please try again later. 🙇🏼‍",
+                parse_mode=ParseMode.MARKDOWN_V2
+            )
             return
         match result.intention:
             case GinaIntention.EXCHANGE_RATE:
@@ -55,7 +58,7 @@ class MessagesController:
         :param gina_resp:
         :return:
         """
-        await update.effective_message.reply_text(text=gina_resp.reply)
+        await update.effective_message.reply_text(text=gina_resp.reply, parse_mode=ParseMode.MARKDOWN_V2)
         exchange_rate_list = await self._exchange_rate_provider.get_all_exchange_rate()
         if gina_resp.payment_currency.upper() != "USDT":
             exchange_rate = self.get_lowest_buying_exchange_rate(
