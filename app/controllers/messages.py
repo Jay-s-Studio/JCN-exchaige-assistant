@@ -7,7 +7,7 @@ from telegram import Update
 from telegram.constants import ParseMode
 
 from app.libs.consts.enums import GinaIntention
-from app.libs.consts.messages import ExchangeRateMessage
+from app.libs.consts.message import ExchangeRateMessage, Message
 from app.libs.decorators.sentry_tracer import distributed_trace
 from app.models.exchange_rate import CurrentExchangeRate
 from app.models.gina import GinaResponse
@@ -36,22 +36,22 @@ class MessagesController:
         await update.effective_chat.send_chat_action("typing")
         result = await self._gina_provider.telegram_messages(update=update)
         if not result:
-            await update.effective_message.reply_text(
-                text="Sorry, There is something wrong. Please try again later. 🙇🏼‍",
-                parse_mode=ParseMode.MARKDOWN_V2
-            )
+            await update.effective_message.reply_text(text="Sorry, There is something wrong. Please try again later. 🙇🏼‍")
             return
         match result.intention:
             case GinaIntention.EXCHANGE_RATE:
-                reply_message = await self.exchange_rate(update=update, gina_resp=result)
+                message = await self.exchange_rate(update=update, gina_resp=result)
             case GinaIntention.SWAP:
-                reply_message = result.reply
+                message = Message(text=result.reply)
             case _:
-                reply_message = result.reply
-        await update.effective_message.reply_text(text=reply_message, parse_mode=ParseMode.MARKDOWN_V2)
+                message = Message(text=result.reply)
+        await update.effective_message.reply_text(
+            text=message.text,
+            parse_mode=message.parse_mode
+        )
 
     @distributed_trace()
-    async def exchange_rate(self, update: Update, gina_resp: GinaResponse) -> None:
+    async def exchange_rate(self, update: Update, gina_resp: GinaResponse) -> Message:
         """
         exchange rate
         :param update:
