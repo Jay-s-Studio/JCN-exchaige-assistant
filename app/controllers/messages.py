@@ -1,6 +1,7 @@
 """
 MessagesController
 """
+import asyncio
 from typing import List, Optional, Callable
 
 from telegram import Update
@@ -72,6 +73,7 @@ class MessagesController:
                 exchange_rate_list=exchange_rate_list
             )
             price = exchange_rate.sell
+        await asyncio.sleep(1.5)
         return ExchangeRateMessage.format(
             language=gina_resp.language,
             payment_currency=gina_resp.payment_currency,
