@@ -6,6 +6,7 @@ from starlette import status
 from telegram import Bot
 
 from app.exceptions.api_base import APIException
+from app.libs.decorators.sentry_tracer import distributed_trace
 from app.providers import TelegramAccountProvider
 from app.serializers.v1.telegram import TelegramBroadcast
 
@@ -17,6 +18,7 @@ class TelegramMessageHandler:
         self._bot = bot
         self._telegram_account_provider = telegram_account_provider
 
+    @distributed_trace()
     async def broadcast_message(self, model: TelegramBroadcast):
         """
         broadcast message

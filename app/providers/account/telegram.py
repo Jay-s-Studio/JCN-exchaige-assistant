@@ -8,6 +8,7 @@ from redis.asyncio import Redis
 from app.clients.firebase.firestore import GoogleFirestoreClient
 from app.libs.consts.enums import BotType
 from app.libs.database import RedisPool
+from app.libs.decorators.sentry_tracer import distributed_trace
 from app.models.account.telegram import TelegramAccount, TelegramChatGroup
 
 
@@ -25,6 +26,7 @@ class TelegramAccountProvider:
         :return:
         """
 
+    @distributed_trace()
     async def set_account(self, user_id: str, data: dict):
         """
         set account
@@ -50,6 +52,7 @@ class TelegramAccountProvider:
             data=data
         )
 
+    @distributed_trace()
     async def get_account(self, user_id: str) -> Optional[TelegramAccount]:
         """
         get account
@@ -64,6 +67,7 @@ class TelegramAccountProvider:
             return None
         return TelegramAccount(**result.to_dict())
 
+    @distributed_trace()
     async def update_chat_group(self, chat_id: str, data: TelegramChatGroup):
         """
         update a chat group
@@ -77,14 +81,18 @@ class TelegramAccountProvider:
             document=chat_id
         )
         if result.exists:
+            raw_data = TelegramChatGroup(**result.to_dict())
+            update_data = {
+                **data.model_dump(exclude={"custom_info"}),
+                "custom_info.in_group": data.custom_info.in_group,
+                "custom_info.bot_type": data.custom_info.bot_type,
+            }
+            if raw_data.custom_info.customer_service is None:
+                update_data["custom_info.customer_service"] = data.custom_info.customer_service.model_dump()
             await self.firestore_client.update_document(
                 collection=_collection,
                 document=chat_id,
-                data={
-                    **data.model_dump(exclude={"custom_info"}),
-                    "custom_info.in_group": data.custom_info.in_group,
-                    "custom_info.bot_type": data.custom_info.bot_type,
-                }
+                data=update_data
             )
             return
         await self.firestore_client.set_document(
@@ -93,6 +101,7 @@ class TelegramAccountProvider:
             data=data.model_dump()
         )
 
+    @distributed_trace()
     async def get_chat_group(self, chat_id: str) -> Optional[TelegramChatGroup]:
         """
         get a chat group
@@ -107,6 +116,7 @@ class TelegramAccountProvider:
             return None
         return TelegramChatGroup(**result.to_dict())
 
+    @distributed_trace()
     async def get_all_chat_group(self) -> List[TelegramChatGroup]:
         """
         get all chat group
@@ -117,6 +127,7 @@ class TelegramAccountProvider:
             chat_groups.append(TelegramChatGroup(**item.to_dict()))
         return chat_groups
 
+    @distributed_trace()
     async def get_chat_groups_by_bot_type(self, bot_type: BotType) -> List[TelegramChatGroup]:
         """
         get chat groups by bot type
@@ -130,6 +141,7 @@ class TelegramAccountProvider:
                 chat_groups.append(item)
         return chat_groups
 
+    @distributed_trace()
     async def update_chat_group_member(self, chat_id: str, user_id: str, data: dict):
         """
         update chat group member
@@ -156,6 +168,7 @@ class TelegramAccountProvider:
             data=data
         )
 
+    @distributed_trace()
     async def get_chat_group_members(self, chat_id: str) -> List[TelegramAccount]:
         """
         get chat group members
@@ -168,6 +181,7 @@ class TelegramAccountProvider:
             members.append(TelegramAccount(**item.to_dict()))
         return members
 
+    @distributed_trace()
     async def delete_chat_group_member(self, chat_id: str, user_id: str):
         """
         delete chat group member
@@ -181,6 +195,7 @@ class TelegramAccountProvider:
             document=user_id
         )
 
+    @distributed_trace()
     async def update_account_exist_group(self, user_id: str, chat_id: str, data: dict):
         """
         update account exist group
@@ -207,6 +222,7 @@ class TelegramAccountProvider:
             data=data
         )
 
+    @distributed_trace()
     async def delete_account_exist_group(self, user_id: str, chat_id: str):
         """
         delete account exist group
@@ -220,6 +236,7 @@ class TelegramAccountProvider:
             document=chat_id
         )
 
+    @distributed_trace()
     async def update_group_custom_info(
         self,
         chat_id: str,

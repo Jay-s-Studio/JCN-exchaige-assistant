@@ -4,6 +4,7 @@ ExchangeRateHandler
 from starlette import status
 
 from app.exceptions.api_base import APIException
+from app.libs.decorators.sentry_tracer import distributed_trace
 from app.providers import ExchangeRateProvider
 from app.serializers.v1.exchange_rate import UpdateExchangeRate, GroupExchangeRate
 
@@ -14,6 +15,7 @@ class ExchangeRateHandler:
     def __init__(self, exchange_rate_provider: ExchangeRateProvider):
         self.exchange_rate_provider = exchange_rate_provider
 
+    @distributed_trace()
     async def get_exchange_rate(self, group_id: str) -> GroupExchangeRate:
         """
         Get exchange rate
@@ -27,6 +29,7 @@ class ExchangeRateHandler:
             group_id=group_id
         )
 
+    @distributed_trace()
     async def update_exchange_rate(self, model: UpdateExchangeRate):
         """
         Update exchange rate

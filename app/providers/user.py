@@ -12,6 +12,7 @@ from app.clients.firebase.firestore import GoogleFirestoreClient
 from app.libs.consts.enums import ExpireTime
 from app.libs.consts.redis_keys import get_user_key
 from app.libs.database import RedisPool
+from app.libs.decorators.sentry_tracer import distributed_trace
 from app.models.user import User
 
 
@@ -22,6 +23,7 @@ class UserProvider:
         self._redis: Redis = redis.create()
         self.firestore_client = GoogleFirestoreClient()
 
+    @distributed_trace()
     async def create_user(self, user: User) -> None:
         """
         Create user
@@ -34,6 +36,7 @@ class UserProvider:
             data=user.model_dump()
         )
 
+    @distributed_trace()
     async def get_user_by_username(self, username: str) -> Optional[User]:
         """
         Get user by username
@@ -50,6 +53,7 @@ class UserProvider:
             return None
         return User(**raw_user.to_dict())
 
+    @distributed_trace()
     async def get_user_by_id(self, user_id: str) -> Optional[User]:
         """
         Get user by id
@@ -74,6 +78,7 @@ class UserProvider:
         )
         return user
 
+    @distributed_trace()
     async def update_last_login(self, user_id: str, last_login: datetime):
         """
         Update last login

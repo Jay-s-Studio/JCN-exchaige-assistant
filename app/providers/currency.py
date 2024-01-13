@@ -7,6 +7,7 @@ from redis.asyncio import Redis
 
 from app.clients.firebase.firestore import GoogleFirestoreClient
 from app.libs.database import RedisPool
+from app.libs.decorators.sentry_tracer import distributed_trace
 
 
 class CurrencyProvider:
@@ -17,6 +18,7 @@ class CurrencyProvider:
         self.firestore_client = GoogleFirestoreClient()
         self.redis_name = "currencies"
 
+    @distributed_trace()
     async def get_currencies(self):
         """
         get currencies
@@ -34,6 +36,7 @@ class CurrencyProvider:
         await self._redis.set(self.redis_name, json.dumps(result.to_dict()), ex=60 * 60 * 24)
         return result.to_dict()
 
+    @distributed_trace()
     async def update_currencies(self, data: dict):
         """
         update currencies

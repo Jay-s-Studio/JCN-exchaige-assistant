@@ -168,21 +168,3 @@ async def get_group_members(
         page_size=page_size,
         page_index=page_index
     )
-
-
-# @router.post(
-#     path="/customer_service",
-#     status_code=status.HTTP_200_OK
-# )
-# @inject
-# async def update_customer_service(
-#     model: UpdateCustomerService,
-#     telegram_account_handler: TelegramAccountHandler = Depends(Provide[Container.telegram_account_handler])
-# ):
-#     """
-#
-#     :param model:
-#     :param telegram_account_handler:
-#     :return:
-#     """
-#     return await telegram_account_handler.update_customer_service(model=model)

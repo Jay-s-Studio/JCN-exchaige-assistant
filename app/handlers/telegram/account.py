@@ -8,6 +8,7 @@ from telegram import Bot
 
 from app.exceptions.api_base import APIException
 from app.libs.consts.enums import BotType
+from app.libs.decorators.sentry_tracer import distributed_trace
 from app.models.account.telegram import TelegramChatGroup, TelegramAccount
 from app.providers import TelegramAccountProvider
 from app.serializers.v1.telegram import TelegramGroup, VendorResponse, GroupsResponse, CustomerResponse, GroupMembersResponse, UpdateTelegramGroup
@@ -31,6 +32,7 @@ class TelegramAccountHandler:
         """
         return data[page_index * page_size: (page_index + 1) * page_size]
 
+    @distributed_trace()
     async def get_groups(self, page_size: int = 20, page_index: int = 0):
         """
 
@@ -60,6 +62,7 @@ class TelegramAccountHandler:
             groups=groups
         )
 
+    @distributed_trace()
     async def get_vendors(self, page_size: int = 20, page_index: int = 0) -> VendorResponse:
         """
         get vendors
@@ -93,6 +96,7 @@ class TelegramAccountHandler:
             vendors=vendors
         )
 
+    @distributed_trace()
     async def get_customers(self, page_size: int = 20, page_index: int = 0) -> CustomerResponse:
         """
         get customers
@@ -127,6 +131,7 @@ class TelegramAccountHandler:
             customers=customers
         )
 
+    @distributed_trace()
     async def get_group(self, group_id: str) -> TelegramGroup:
         """
 
@@ -148,6 +153,7 @@ class TelegramAccountHandler:
             customer_service=group.custom_info.customer_service
         )
 
+    @distributed_trace()
     async def update_group(
         self,
         group_id: str,
@@ -176,6 +182,7 @@ class TelegramAccountHandler:
                 message="Group Not Found"
             )
 
+    @distributed_trace()
     async def get_group_members(
         self,
         group_id: str,

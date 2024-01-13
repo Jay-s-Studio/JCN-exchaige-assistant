@@ -54,6 +54,7 @@ class UserHandler:
         """
         return bcrypt.checkpw(input_password.encode(), hashed_password)
 
+    @distributed_trace()
     async def check_user_exist(self, username: str) -> bool:
         """
         Check user exist

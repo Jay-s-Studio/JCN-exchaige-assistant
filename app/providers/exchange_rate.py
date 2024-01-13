@@ -9,6 +9,7 @@ from redis.asyncio import Redis
 from app.clients.firebase.firestore import GoogleFirestoreClient
 from app.libs.consts.enums import ExpireTime
 from app.libs.database import RedisPool
+from app.libs.decorators.sentry_tracer import distributed_trace
 from app.serializers.v1.exchange_rate import ExchangeRate, GroupExchangeRate
 
 
@@ -19,6 +20,7 @@ class ExchangeRateProvider:
         self._redis: Redis = redis.create()
         self.firestore_client = GoogleFirestoreClient()
 
+    @distributed_trace()
     async def get_all_exchange_rate(self) -> List[GroupExchangeRate]:
         """
         Get all exchange rate
@@ -29,6 +31,7 @@ class ExchangeRateProvider:
             results.append(GroupExchangeRate(**document.to_dict(), group_id=document.id))
         return results
 
+    @distributed_trace()
     async def get_exchange_rate(self, group_id: str):
         """
         Get exchange rate
@@ -48,6 +51,7 @@ class ExchangeRateProvider:
         await self._redis.set(name=redis_name, value=json.dumps(result.to_dict()), ex=ExpireTime.ONE_HOUR.value * 6)
         return result.to_dict()
 
+    @distributed_trace()
     async def update_exchange_rate(self, group_id: str, exchange_rates: dict):
         """
         Update exchange rate

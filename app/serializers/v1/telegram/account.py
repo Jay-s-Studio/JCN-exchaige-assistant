@@ -57,5 +57,5 @@ class UpdateTelegramGroup(BaseModel):
     """
     Update Telegram Group
     """
+    customer_service_id: int = Field(description="Group Customer Service ID")
     description: Optional[str] = Field(default=None, description="Group Description")
-    customer_service_id: Optional[int] = Field(default=None, description="Group Customer Service ID")
