@@ -58,7 +58,7 @@ class MessagesController:
         :param gina_resp:
         :return:
         """
-        await update.effective_message.reply_text(text=gina_resp.reply, parse_mode=ParseMode.MARKDOWN_V2)
+        await update.effective_message.reply_text(text=gina_resp.reply)
         exchange_rate_list = await self._exchange_rate_provider.get_all_exchange_rate()
         if gina_resp.payment_currency.upper() != "USDT":
             exchange_rate = self.get_lowest_buying_exchange_rate(
