@@ -37,7 +37,7 @@ jobs:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
             type=sha,prefix=,enable=${{ github.ref == format('refs/heads/{0}', 'main') }}
-            type=semver,pattern={{version}},enable=${{ github.ref == format('refs/tags/{0}', 'v*') }}
+            type=semver,pattern={{version}},enable=${{ github.ref == format('refs/tags/{0}', 'v*.*.*') }}
       - name: Test
         run: |-
           echo "REGISTRY: ${{ env.REGISTRY }}"
