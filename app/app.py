@@ -123,7 +123,7 @@ async def run_application():
         """
         try:
             response: Response = await callback(request)
-            if not settings.IS_DEV:
+            if not settings.IS_DEV and request.url.path not in settings.ALLOWED_PATHS:
                 await asyncio.sleep(1.5)
             return response
         finally:
