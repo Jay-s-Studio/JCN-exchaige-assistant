@@ -56,13 +56,26 @@ class GinaResponse(BaseModel):
     amount_to_exchange: Optional[float] = Field(default=None, description="Amount to Exchange")
     language: Optional[Language] = Field(default=Language.ZH_TW, description="Language")
 
-    @field_validator("intention", "action", mode="before")
-    def check_intention_and_action(cls, value: str):
+    @field_validator("intention", mode="before")
+    def check_intention(cls, value: str):
         """
-        check intention and action
+        check intention
         :param value:
         :return:
         """
-        if not value:
+        try:
+            return GinaIntention(value)
+        except ValueError:
             return None
-        return value
+
+    @field_validator("action", mode="before")
+    def check_action(cls, value: str):
+        """
+        check action
+        :param value:
+        :return:
+        """
+        try:
+            return GinaAction(value)
+        except ValueError:
+            return None
