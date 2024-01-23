@@ -2,18 +2,26 @@
 MessagesController
 """
 import asyncio
+from dataclasses import dataclass
 from typing import List, Optional, Callable
 
-from telegram import Update
+from telegram import Update, User
 from telegram.constants import ParseMode
 
 from app.libs.consts.enums import GinaIntention
 from app.libs.consts.message import ExchangeRateMessage, Message
 from app.libs.decorators.sentry_tracer import distributed_trace
+from app.libs.logger import logger
 from app.models.exchange_rate import CurrentExchangeRate
 from app.models.gina import GinaResponse
-from app.providers import GinaProvider, ExchangeRateProvider
+from app.providers import GinaProvider, ExchangeRateProvider, TelegramAccountProvider
 from app.serializers.v1.exchange_rate import GroupExchangeRate
+
+
+@dataclass
+class FormatOptions:
+    """FormatOptions"""
+    customer_service: bool = True
 
 
 class MessagesController:
@@ -22,10 +30,54 @@ class MessagesController:
     def __init__(
         self,
         gina_provider: GinaProvider,
+        telegram_account_provider: TelegramAccountProvider,
         exchange_rate_provider: ExchangeRateProvider,
     ):
         self._gina_provider = gina_provider
+        self._telegram_account_provider = telegram_account_provider
         self._exchange_rate_provider = exchange_rate_provider
+
+    async def format_message(
+        self,
+        message: str,
+        group_id: int,
+        options: FormatOptions = None
+    ) -> str:
+        """
+        format message
+        :param message:
+        :param group_id:
+        :param options:
+        :return:
+        """
+        if not options:
+            return message
+        if options.customer_service:
+            message = await self._format_customer_service(message=message, group_id=group_id)
+        return message
+
+    async def _format_customer_service(self, message: str, group_id: int) -> str:
+        """
+
+        :param message:
+        :param group_id:
+        :return:
+        """
+        group = await self._telegram_account_provider.get_chat_group(chat_id=str(group_id))
+        if not group.custom_info.customer_service:
+            return message
+        user = User(
+            id=group.custom_info.customer_service.id,
+            first_name=group.custom_info.customer_service.first_name,
+            is_bot=group.custom_info.customer_service.is_bot,
+            last_name=group.custom_info.customer_service.last_name,
+            username=group.custom_info.customer_service.username,
+            language_code=group.custom_info.customer_service.language_code,
+            is_premium=group.custom_info.customer_service.is_premium
+        )
+        customer_service = user.mention_html(name=f"@{user.username}")
+        message = message.replace("#CUSTOMER_SERVICE#", customer_service)
+        return message
 
     @distributed_trace()
     async def receive_message(self, update: Update) -> None:
@@ -44,8 +96,18 @@ class MessagesController:
                 message = await self.exchange_rate(update=update, gina_resp=result)
             case GinaIntention.SWAP:
                 message = Message(text=result.reply)
+            case GinaIntention.HUMAN_CUSTOMER_SERVICE:
+                message = Message(
+                    text=await self.format_message(
+                        message=result.reply,
+                        group_id=update.effective_chat.id,
+                        options=FormatOptions()
+                    ),
+                    parse_mode=ParseMode.HTML
+                )
             case _:
                 message = Message(text=result.reply)
+        logger.info(f"Gina response: {result}")
         await update.effective_message.reply_text(
             text=message.text,
             parse_mode=message.parse_mode

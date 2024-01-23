@@ -52,8 +52,8 @@ class TelegramAccountHandler:
                 id=value.id,
                 title=value.title,
                 description=value.custom_info.description,
-                has_bot=value.custom_info.in_group,
-                bot_type=value.custom_info.bot_type,
+                has_bot=value.in_group,
+                bot_type=value.bot_type,
                 customer_service=value.custom_info.customer_service
             ) for value in page_of_groups
         ]

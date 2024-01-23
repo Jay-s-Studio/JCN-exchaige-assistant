@@ -55,7 +55,7 @@ class Configuration(BaseSettings):
     BASE_URL: str = f"https://{APP_FQDN}"
 
     # [Special]
-    ALLOWED_PATHS: List[str] = os.getenv(key="ALLOWED_PATHS", default="").split(",")
+    ALLOWED_PATHS: List[str] = os.getenv(key="ALLOWED_PATHS", default="/api/healthcheck").split(",")
 
     # [FastAPI]
     HOST: str = os.getenv(key="HOST", default="127.0.0.1")

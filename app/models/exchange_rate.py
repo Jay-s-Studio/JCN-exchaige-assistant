@@ -1,6 +1,8 @@
 """
 Model for Exchange Rate
 """
+from typing import Optional
+
 from pydantic import BaseModel
 
 
@@ -10,5 +12,5 @@ class CurrentExchangeRate(BaseModel):
     """
     group_id: str
     currency: str
-    buy: float
-    sell: float
+    buy: Optional[float]
+    sell: Optional[float]

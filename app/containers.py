@@ -72,6 +72,7 @@ class Container(containers.DeclarativeContainer):
     messages_controller = providers.Factory(
         MessagesController,
         gina_provider=gina_provider,
+        telegram_account_provider=telegram_account_provider,
         exchange_rate_provider=exchange_rate_provider,
     )
 

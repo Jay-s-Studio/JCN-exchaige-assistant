@@ -8,6 +8,7 @@ from app.context import CustomContext
 from app.controllers import MessagesController
 from app.libs.database import RedisPool
 from app.libs.decorators.sentry_tracer import distributed_trace
+from app.models.account.telegram import TelegramAccount, TelegramChatGroup
 from app.providers import TelegramAccountProvider
 from .base import TelegramBotBaseHandler
 
@@ -44,5 +45,12 @@ class TelegramBotMessagesHandler(TelegramBotBaseHandler):
         :param context:
         :return:
         """
-        await self.setup_account_info(user=update.effective_user, chat=update.effective_chat)
+        await self.setup_account_info(
+            telegram_account=TelegramAccount(**update.effective_user.to_dict()),
+            telegram_chat_group=TelegramChatGroup(
+                **update.effective_chat.to_dict(),
+                in_group=True,
+                bot_type=settings.TELEGRAM_BOT_TYPE
+            )
+        )
         await self._messages_controller.receive_message(update=update)
