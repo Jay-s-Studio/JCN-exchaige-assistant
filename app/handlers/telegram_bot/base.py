@@ -12,7 +12,7 @@ from app.context import CustomContext
 from app.libs.database import RedisPool
 from app.libs.decorators.sentry_tracer import distributed_trace
 from app.libs.logger import logger
-from app.models.account.telegram import CustomGroupInfo, TelegramAccount, TelegramChatGroup, CustomAccountInfo
+from app.schemas.account.telegram import CustomGroupInfo, TelegramAccount, TelegramChatGroup, CustomAccountInfo
 from app.providers import TelegramAccountProvider
 
 

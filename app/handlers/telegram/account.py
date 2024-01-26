@@ -9,7 +9,7 @@ from telegram import Bot
 from app.exceptions.api_base import APIException
 from app.libs.consts.enums import BotType
 from app.libs.decorators.sentry_tracer import distributed_trace
-from app.models.account.telegram import TelegramChatGroup, TelegramAccount
+from app.schemas.account.telegram import TelegramChatGroup, TelegramAccount
 from app.providers import TelegramAccountProvider
 from app.serializers.v1.telegram import TelegramGroup, VendorResponse, GroupsResponse, CustomerResponse, GroupMembersResponse, UpdateTelegramGroup
 

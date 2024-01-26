@@ -9,7 +9,7 @@ from app.clients.firebase.firestore import GoogleFirestoreClient
 from app.libs.consts.enums import BotType
 from app.libs.database import RedisPool
 from app.libs.decorators.sentry_tracer import distributed_trace
-from app.models.account.telegram import TelegramAccount, TelegramChatGroup
+from app.schemas.account.telegram import TelegramAccount, TelegramChatGroup
 
 
 class TelegramAccountProvider:

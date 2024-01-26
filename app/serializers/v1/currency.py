@@ -3,7 +3,25 @@ Serializers for currency API
 """
 from typing import List
 
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, field_validator, Field
+
+
+class PaymentMethod(BaseModel):
+    """
+    PaymentMethod
+    """
+    name: str
+    description: str
+    sequence: int
+
+    @field_validator("name", mode="before")
+    def validate_name(cls, value: str):
+        """
+        Validate name
+        :param value:
+        :return:
+        """
+        return value.upper()
 
 
 class Currency(BaseModel):
@@ -13,6 +31,7 @@ class Currency(BaseModel):
     name: str
     description: str
     sequence: int
+    payment_methods: List[PaymentMethod] = Field(default=[], description="Payment Methods")
 
     @field_validator("name", mode="before")
     def validate_name(cls, value: str):

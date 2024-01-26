@@ -16,7 +16,7 @@ from app.libs.consts.enums import ExpireTime
 from app.libs.consts.redis_keys import get_user_access_token_key
 from app.libs.database import RedisPool
 from app.libs.decorators.sentry_tracer import distributed_trace
-from app.models.user import User
+from app.schemas.user import User
 from app.providers import UserProvider
 from app.serializers.v1.user import UserLogin, UserRegister, LoginResponse, TokenResponse, UserInfoResponse
 

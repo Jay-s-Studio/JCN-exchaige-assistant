@@ -4,7 +4,7 @@ Test the GINA client.
 import pytest
 
 from app.clients.gina import GinaClient
-from app.models.gina import GinaHeaders, GinaMessage, GinaPayload
+from app.schemas.gina import GinaHeaders, GinaMessage, GinaPayload
 
 
 @pytest.mark.asyncio

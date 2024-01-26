@@ -6,7 +6,7 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from app.models.mixins import UUIDBaseModel
+from app.schemas.mixins import UUIDBaseModel
 
 
 class UserRegister(BaseModel):

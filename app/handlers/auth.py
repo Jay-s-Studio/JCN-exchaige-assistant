@@ -8,8 +8,8 @@ import pytz
 
 from app.config import settings
 from app.exceptions.auth import InvalidTokenException
-from app.models.auth import JWTPayload
-from app.models.user import User
+from app.schemas.auth import JWTPayload
+from app.schemas.user import User
 
 import jwt
 
@@ -18,7 +18,7 @@ class AuthHandler:
     """AuthHandler"""
 
     def __init__(self):
-        self._token_expire_time = 3600
+        self._token_expire_time = 60 * 60 * 24 * 3  # 3 days
 
     @staticmethod
     def verify_password_strength(password: str) -> bool:
