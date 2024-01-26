@@ -9,7 +9,7 @@ from telegram import Update
 from app.clients.gina import GinaClient
 from app.libs.decorators.sentry_tracer import distributed_trace
 from app.libs.logger import logger
-from app.models.gina import GinaHeaders, GinaPayload, GinaMessage, GinaResponse
+from app.schemas.gina import GinaHeaders, GinaPayload, GinaMessage, GinaResponse
 
 
 class GinaProvider:

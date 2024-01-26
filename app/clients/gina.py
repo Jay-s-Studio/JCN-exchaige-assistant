@@ -12,7 +12,7 @@ from app.config import settings
 from app.libs.decorators.sentry_tracer import distributed_trace
 from app.libs.http_client import http_client
 from app.libs.logger import logger
-from app.models.gina import GinaHeaders, GinaPayload
+from app.schemas.gina import GinaHeaders, GinaPayload
 
 
 class GinaClient:

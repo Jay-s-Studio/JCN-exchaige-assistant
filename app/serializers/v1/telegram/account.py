@@ -6,7 +6,7 @@ from typing import Optional, List
 from pydantic import BaseModel, Field
 
 from app.libs.consts.enums import BotType
-from app.models.account.telegram import TelegramAccount
+from app.schemas.account.telegram import TelegramAccount
 
 
 class TelegramGroup(BaseModel):

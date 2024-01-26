@@ -7,7 +7,7 @@ from uuid import UUID
 import pytest
 
 from app.handlers import AuthHandler
-from app.models.user import User
+from app.schemas.user import User
 
 dummy_user = User(
     id=UUID("00000000-0000-0000-0000-000000000000"),

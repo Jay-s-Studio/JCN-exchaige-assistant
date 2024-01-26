@@ -8,7 +8,7 @@ from app.context import CustomContext
 from app.controllers import MessagesController
 from app.libs.database import RedisPool
 from app.libs.decorators.sentry_tracer import distributed_trace
-from app.models.account.telegram import TelegramAccount, TelegramChatGroup
+from app.schemas.account.telegram import TelegramAccount, TelegramChatGroup
 from app.providers import TelegramAccountProvider
 from .base import TelegramBotBaseHandler
 

@@ -20,11 +20,15 @@ dependency-injector = "*"
 bcrypt = "^4.1.2"
 pytz = "^2023.3.post1"
 fastapi-limiter = "^0.1.6"
+asyncpg = "^0.29.0"
+sqlalchemy = "^2.0.25"
+psycopg2-binary = "^2.9.9"
 
 
 [tool.poetry.group.dev.dependencies]
 pytest = "*"
 pytest-asyncio = "*"
+alembic = "*"
 
 [build-system]
 requires = ["poetry-core"]

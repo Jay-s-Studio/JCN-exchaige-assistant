@@ -13,7 +13,7 @@ from app.libs.consts.enums import ExpireTime
 from app.libs.consts.redis_keys import get_user_key
 from app.libs.database import RedisPool
 from app.libs.decorators.sentry_tracer import distributed_trace
-from app.models.user import User
+from app.schemas.user import User
 
 
 class UserProvider:

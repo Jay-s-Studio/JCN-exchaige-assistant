@@ -12,8 +12,8 @@ from app.libs.consts.enums import GinaIntention
 from app.libs.consts.message import ExchangeRateMessage, Message
 from app.libs.decorators.sentry_tracer import distributed_trace
 from app.libs.logger import logger
-from app.models.exchange_rate import CurrentExchangeRate
-from app.models.gina import GinaResponse
+from app.schemas.exchange_rate import CurrentExchangeRate
+from app.schemas.gina import GinaResponse
 from app.providers import GinaProvider, ExchangeRateProvider, TelegramAccountProvider
 from app.serializers.v1.exchange_rate import GroupExchangeRate
 

@@ -31,6 +31,7 @@ class TelegramAccount(BaseModel):
 class CustomGroupInfo(BaseModel):
     """CustomGroupInfo"""
     description: Optional[str] = None
+    default_currency: Optional[str] = None
     customer_service: Optional[TelegramAccount] = None
 
 

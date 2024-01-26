@@ -3,6 +3,7 @@ Configuration
 """
 import json
 import os
+from distutils.util import strtobool
 from pathlib import Path, PosixPath
 from typing import List, Optional, Any, Type, Tuple
 
@@ -70,6 +71,23 @@ class Configuration(BaseSettings):
 
     # [Redis]
     REDIS_URL: str = os.getenv(key="REDIS_URL", default="redis://localhost:6379")
+
+    # [postgresql]
+    DATABASE_HOST: str = os.getenv(key="DATABASE_HOST", default="localhost")
+    DATABASE_USER: str = os.getenv(key="DATABASE_USER", default="postgres")
+    DATABASE_PASSWORD: str = os.getenv(key="DATABASE_PASSWORD", default="")
+    DATABASE_PORT: str = os.getenv(key="DATABASE_PORT", default="5432")
+    DATABASE_NAME: str = os.getenv(key="DATABASE_NAME", default="postgres")
+    DATABASE_SCHEMA: Optional[str] = os.getenv(key="DATABASE_SCHEMA")
+    DATABASE_APPLICATION_NAME: str = APP_NAME
+
+    # [database]
+    DATABASE_POOL: bool = strtobool(os.getenv("DATABASE_POOL", "true"))
+    SQL_ECHO: bool = strtobool(os.getenv("SQL_ECHO", "false"))
+    SQLALCHEMY_DATABASE_URI: str = f'postgresql://{DATABASE_USER}:{DATABASE_PASSWORD}@' \
+                                   f'{DATABASE_HOST}:{DATABASE_PORT}/{DATABASE_NAME}'
+    ASYNC_DATABASE_URL: str = f'postgresql+asyncpg://{DATABASE_USER}:{DATABASE_PASSWORD}@' \
+                              f'{DATABASE_HOST}:{DATABASE_PORT}/{DATABASE_NAME}'
 
     # [Telegram]
     TELEGRAM_BOT_USERNAME: str = os.getenv(key="TELEGRAM_BOT_USERNAME")
