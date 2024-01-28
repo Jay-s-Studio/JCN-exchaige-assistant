@@ -21,12 +21,13 @@ bcrypt = "^4.1.2"
 pytz = "^2023.3.post1"
 fastapi-limiter = "^0.1.6"
 asyncpg = "^0.29.0"
-sqlalchemy = "^2.0.25"
+sqlalchemy = "<2.0"
 psycopg2-binary = "^2.9.9"
+ujson = "^5.9.0"
 
 
 [tool.poetry.group.dev.dependencies]
-pytest = "*"
+pytest = "<8.0"
 pytest-asyncio = "*"
 alembic = "*"
 

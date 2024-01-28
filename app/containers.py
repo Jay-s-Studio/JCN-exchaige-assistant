@@ -5,16 +5,7 @@ from dependency_injector import containers, providers
 from telegram import Bot
 
 from app.config import settings
-from app.libs.database import RedisPool
 from app.controllers import MessagesController
-from app.providers import (
-    TelegramAccountProvider,
-    CurrencyProvider,
-    ExchangeRateProvider,
-    GinaProvider,
-    HandingFeeProvider,
-    UserProvider
-)
 from app.handlers import (
     AuthHandler,
     CurrencyHandler,
@@ -24,6 +15,15 @@ from app.handlers import (
     TelegramMessageHandler,
     TelegramBotMessagesHandler,
     UserHandler,
+)
+from app.libs.database import RedisPool, Session
+from app.providers import (
+    TelegramAccountProvider,
+    CurrencyProvider,
+    ExchangeRateProvider,
+    GinaProvider,
+    HandingFeeProvider,
+    UserProvider,
 )
 
 
@@ -43,11 +43,13 @@ class Container(containers.DeclarativeContainer):
     )
 
     # [database]
+    aio_session = providers.Singleton(Session)
     redis_pool = providers.Singleton(RedisPool)
 
     # [providers]
     telegram_account_provider = providers.Factory(
         TelegramAccountProvider,
+        session=aio_session,
         redis=redis_pool
     )
     currency_provider = providers.Factory(

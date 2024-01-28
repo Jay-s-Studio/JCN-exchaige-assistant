@@ -13,7 +13,7 @@ from typing import TypeVar, List, Type, Union, Any
 
 import ujson
 
-from chatbot.libs.exceptions import (
+from app.exceptions.validation_errors import (
     ValidationError,
     ConvertError,
     IntError,
@@ -24,8 +24,8 @@ from chatbot.libs.exceptions import (
     UUIDError,
     ListError
 )
-from chatbot.libs.reflection import dinspect
-from chatbot.libs.shared import validator
+from app.libs.reflection import dinspect
+from app.libs.shared import validator
 
 T = TypeVar('T')
 

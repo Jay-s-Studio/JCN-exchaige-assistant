@@ -1,13 +1,14 @@
 """
 Top-level package for models.
 """
-from .telegram import TelegramAccount, TelegramChatGroup
-from .user import User
+from .telegram import SysTelegramAccount, SysTelegramChatGroup, SysTelegramAccountGroupRelation
+from .user import SysUser
 
 __all__ = [
     # telegram
-    "TelegramAccount",
-    "TelegramChatGroup",
+    "SysTelegramAccount",
+    "SysTelegramChatGroup",
+    "SysTelegramAccountGroupRelation",
     # user
-    "User"
+    "SysUser"
 ]

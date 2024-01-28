@@ -185,7 +185,7 @@ class TelegramAccountHandler:
     @distributed_trace()
     async def get_group_members(
         self,
-        group_id: str,
+        group_id: int,
         page_size: int = 20,
         page_index: int = 0
     ):
@@ -196,13 +196,11 @@ class TelegramAccountHandler:
         :param page_index:
         :return:
         """
-        accounts = await self._telegram_account_provider.get_chat_group_members(chat_id=group_id)
-        total = len(accounts)
-        if not accounts:
-            return
-        if page_index * page_size > total:
-            return
-        members: List[TelegramAccount] = self.get_pagination(data=accounts, page_size=page_size, page_index=page_index)
+        members, total = await self._telegram_account_provider.get_chat_group_members(
+            chat_id=group_id,
+            page_size=page_size,
+            page_index=page_index
+        )
         return GroupMembersResponse(
             total=total,
             members=members

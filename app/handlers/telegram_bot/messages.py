@@ -46,11 +46,11 @@ class TelegramBotMessagesHandler(TelegramBotBaseHandler):
         :return:
         """
         await self.setup_account_info(
-            telegram_account=TelegramAccount(**update.effective_user.to_dict()),
-            telegram_chat_group=TelegramChatGroup(
+            account=TelegramAccount(**update.effective_user.to_dict()),
+            chat_group=TelegramChatGroup(
                 **update.effective_chat.to_dict(),
                 in_group=True,
                 bot_type=settings.TELEGRAM_BOT_TYPE
             )
         )
-        await self._messages_controller.receive_message(update=update)
+        # await self._messages_controller.receive_message(update=update)

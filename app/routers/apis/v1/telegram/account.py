@@ -150,7 +150,7 @@ async def update_group(
 )
 @inject
 async def get_group_members(
-    group_id: str,
+    group_id: int,
     page_size: int = Query(default=20, description="Page Size", lt=100, gt=0),
     page_index: int = Query(default=0, description="Page Index", ge=0),
     telegram_account_handler: TelegramAccountHandler = Depends(Provide[Container.telegram_account_handler])

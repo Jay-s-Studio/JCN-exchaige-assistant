@@ -9,19 +9,20 @@ from typing import List, Callable, overload, Tuple, Union, TypeVar, Type, Any, O
 import asyncpg
 import sqlalchemy as sa
 from asyncpg.transaction import TransactionState
+from pydantic import BaseModel
 from sqlalchemy import String, Numeric, Integer, Float, Boolean, DateTime, Date
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.dialects.postgresql.dml import Insert as PgInsert
-from sqlalchemy.orm import Query
+from sqlalchemy.orm import Query, aliased
 from sqlalchemy.sql import FromClause
 from sqlalchemy.sql.dml import Update, Delete, Insert
 
 from app.config import settings
-from app.libs.logger import logger
-from app.libs.shared import Converter, Assert, validator
 from app.libs.database.aio_pg import create_connection, create_pool
 from app.libs.database.orm import Base, ModelBase
+from app.libs.logger import logger
+from app.libs.shared import Converter, Assert, validator
 
 dialect = postgresql.dialect()
 
@@ -36,11 +37,11 @@ def _format_value(value):
     return Converter.format_value(value)
 
 
-def _format_dict(item, as_class=None):
+def _format_dict(item, as_model: Type[BaseModel] = None):
     if item is None:
         return {}
-    if as_class:
-        return Converter.as_dataclass(dict(item), as_class=as_class)
+    if as_model:
+        return as_model(**item)
     else:
         data = {}
         for name, value in dict(item).items():
@@ -54,9 +55,11 @@ def _format_dict(item, as_class=None):
 def _format_where(clauses: tuple) -> tuple:
     Assert.is_not_null(clauses, 'clauses')
     if len(clauses) > 2:
-        raise TypeError('There are too many where condition parameters, '
-                        'please use multiple where for multiple conditions or '
-                        'use or_, and_ for splicing')
+        raise TypeError(
+            'There are too many where condition parameters, '
+            'please use multiple where for multiple conditions or '
+            'use or_, and_ for splicing'
+        )
     if len(clauses) == 2:
         whereclause = condition_clause(clauses[0], clauses[1])
     else:
@@ -308,8 +311,6 @@ class _Select:
             self._select = self._select.order_by(order_clause)
         return self
 
-        return self
-
     def group_by(self, *clauses):
         """
         :param clauses:
@@ -367,20 +368,20 @@ class _Select:
         """
         return self._select.cte(name, recursive=recursive)
 
-    async def fetch(self, as_clsss: Type[T] = None) -> List[T]:
-        return await self._session.fetch(self._select.statement, as_clsss=as_clsss)
+    async def fetch(self, as_model: Type[BaseModel] = None) -> List[T]:
+        return await self._session.fetch(self._select.statement, as_model=as_model)
 
-    async def fetchgroup(self, groupby: str, as_clsss: Type[T] = None):
+    async def fetchgroup(self, groupby: str, as_model: Type[BaseModel] = None):
         """
-        :param as_clsss:
+        :param as_model:
         :param groupby:
         :return:
         """
-        return await self._session.fetchgroup(self._select.statement, groupby=groupby, as_clsss=as_clsss)
+        return await self._session.fetchgroup(self._select.statement, groupby=groupby, as_model=as_model)
 
-    async def fetchpages(self, no_order_by: bool = True, as_clsss: Type[T] = None) -> Tuple[List[T], int]:
+    async def fetchpages(self, no_order_by: bool = True, as_model: Type[BaseModel] = None) -> Tuple[List[T], int]:
         """
-        :param as_clsss:
+        :param as_model:
         :param no_order_by:
         :return:
         """
@@ -391,17 +392,17 @@ class _Select:
             counter._order_by = None
         counter = counter.from_self(sa.func.count(sa.literal_column("*")))
         count = await self._session.fetchval(counter.statement)
-        data = await self._session.fetch(self._select.statement, as_clsss=as_clsss)
+        data = await self._session.fetch(self._select.statement, as_model=as_model)
         return data, count
 
-    async def fetchdict(self, key: str, value: str = None, as_clsss: Type[T] = None) -> dict:
+    async def fetchdict(self, key: str, value: str = None, as_model: Type[BaseModel] = None) -> dict:
         """
         :param key:
         :param value:
-        :param as_clsss:
+        :param as_model:
         :return:
         """
-        return await self._session.fetchdict(self._select.statement, key=key, value=value, as_clsss=as_clsss)
+        return await self._session.fetchdict(self._select.statement, key=key, value=value, as_model=as_model)
 
     async def fetchval(self):
         """
@@ -409,15 +410,15 @@ class _Select:
         """
         return await self._session.fetchval(self._select.statement)
 
-    async def fetchrow(self, as_clsss: Type[T] = None) -> T:
-        return await self._session.fetchrow(self._select.statement, as_clsss=as_clsss)
+    async def fetchrow(self, as_model: Type[BaseModel] = None) -> T:
+        return await self._session.fetchrow(self._select.statement, as_model=as_model)
 
     async def fetchvals(self):
         return await self._session.fetchvals(self._select.statement)
 
     async def count(self):
         col = sa.func.count(sa.literal_column("*"))
-        select = self._select.from_self(col)
+        select = self._select.select_from(col)
         return await self._session.fetchval(select.statement)
 
     def __str__(self):
@@ -760,16 +761,16 @@ class Session(ISession):
         statement,
         *params,
         timeout: float = None,
-        as_clsss: Type[T] = None
+        as_model: Type[BaseModel] = None
     ) -> List[T]:
         """
         :param statement:
         :param params:
         :param timeout:
-        :param as_clsss:
+        :param as_model:
         :return:
         """
-        return await self._fetch('fetch', statement, params, timeout=timeout, as_clsss=as_clsss)
+        return await self._fetch('fetch', statement, params, timeout=timeout, as_model=as_model)
 
     async def fetchgroup(
         self,
@@ -777,16 +778,25 @@ class Session(ISession):
         *params,
         timeout: float = None,
         groupby: str,
-        as_clsss: T = None
+        as_model: Type[BaseModel] = None
     ):
+        """
+
+        :param statement:
+        :param params:
+        :param timeout:
+        :param groupby:
+        :param as_model:
+        :return:
+        """
         import itertools
-        items = await self.fetch(statement, *params, timeout=timeout, as_clsss=as_clsss)
-        if as_clsss:
+        items = await self.fetch(statement, *params, timeout=timeout, as_model=as_model)
+        if as_model:
             return itertools.groupby(items, key=lambda item: getattr(item, groupby))
         return itertools.groupby(items, key=lambda item: item[groupby])
 
-    async def fetchrow(self, statement, *params, timeout: float = None, as_clsss: Type[T] = None):
-        return await self._fetch('fetchrow', statement, params, timeout=timeout, as_clsss=as_clsss)
+    async def fetchrow(self, statement, *params, timeout: float = None, as_model: Type[BaseModel] = None):
+        return await self._fetch('fetchrow', statement, params, timeout=timeout, as_model=as_model)
 
     async def fetchval(self, statement: Union[str, Any], *params, timeout: float = None):
         """
@@ -810,22 +820,22 @@ class Session(ISession):
         timeout: float = None,
         key: str,
         value: str = None,
-        as_clsss: Type[T] = None
+        as_model: Type[BaseModel] = None
     ) -> dict:
         Assert.is_not_null(key, 'key')
-        items = await self.fetch(statement, *params, timeout=timeout, as_clsss=as_clsss)
+        items = await self.fetch(statement, *params, timeout=timeout, as_model=as_model)
         results = {}
         if not items:
             return results
         for item in items:
-            if as_clsss:
+            if as_model:
                 _key = getattr(item, key)
             else:
                 _key = item.get(key, None)
             if value is None:
                 results[_key] = item
             else:
-                if as_clsss:
+                if as_model:
                     _value = getattr(item, value)
                 else:
                     _value = item.get(value, None)
@@ -839,7 +849,7 @@ class Session(ISession):
         params,
         append_statement: str = None,
         timeout: float = None,
-        as_clsss: Type[T] = None
+        as_model: Type[BaseModel] = None
     ):
         try:
             await self._locker.acquire()
@@ -850,10 +860,10 @@ class Session(ISession):
                 return _format_value(value)
             elif method == 'fetchrow':
                 value = await self._conn.fetchrow(sql, *params, timeout=timeout)
-                return _format_dict(value, as_clsss)
+                return _format_dict(item=value, as_model=as_model)
             elif method == 'fetch':
                 rows = await self._conn.fetch(sql, *params, timeout=timeout) or []
-                return [_format_dict(item, as_clsss) for item in rows]
+                return [_format_dict(item=item, as_model=as_model) for item in rows]
             else:
                 raise NotImplementedError()
         except Exception:
