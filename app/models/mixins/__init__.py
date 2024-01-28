@@ -6,8 +6,9 @@ from .audit_mixin import *
 __all__ = [
     "AuditMixin",
     "DeletedMixin",
+    "DescriptionMixin",
     "RemarkMixin",
-    "OrderableMixin",
+    "SortableMixin",
     "AuditCreatedAtMixin",
     "AuditCreatedByMixin",
     "AuditCreatedMixin",

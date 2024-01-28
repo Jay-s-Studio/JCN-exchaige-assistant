@@ -1,6 +1,6 @@
 import inspect
-from chatbot.libs.exceptions import ParamError
-from chatbot.libs.shared import validator
+from app.exceptions.api_base import ParamError
+from app.libs.shared import validator
 
 
 class Assert:

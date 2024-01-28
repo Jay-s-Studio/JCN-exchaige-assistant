@@ -5,7 +5,7 @@ def get_current_username():
     try:
         return get_api_context().username
     except:
-        return None
+        return "system"
 
 
 def get_current_id():

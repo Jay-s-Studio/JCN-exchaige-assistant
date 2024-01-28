@@ -22,8 +22,11 @@ import uvicorn
 from fastapi import FastAPI, HTTPException
 from fastapi.exception_handlers import http_exception_handler
 from fastapi.middleware.cors import CORSMiddleware
+from sentry_sdk.integrations.asyncpg import AsyncPGIntegration
 from sentry_sdk.integrations.fastapi import FastApiIntegration
 from sentry_sdk.integrations.httpx import HttpxIntegration
+from sentry_sdk.integrations.redis import RedisIntegration
+from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
 from starlette.requests import Request
 from starlette.responses import Response
 from telegram import Update
@@ -37,9 +40,11 @@ from .libs.utils.lifespan import lifespan
 sentry_sdk.init(
     dsn=settings.SENTRY_URL,
     integrations=[
+        AsyncPGIntegration(),
         FastApiIntegration(),
         HttpxIntegration(),
-        # RedisIntegration(),
+        RedisIntegration(),
+        SqlalchemyIntegration(),
     ],
     traces_sample_rate=1.0,
     profiles_sample_rate=1.0,

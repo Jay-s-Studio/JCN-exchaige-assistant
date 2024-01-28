@@ -1,21 +1,29 @@
 """
 AccountProvider
 """
-from typing import Optional, List
+from datetime import datetime
+from typing import Optional, List, Tuple
 
 from redis.asyncio import Redis
 
 from app.clients.firebase.firestore import GoogleFirestoreClient
 from app.libs.consts.enums import BotType
-from app.libs.database import RedisPool
+from app.libs.database import RedisPool, Session
 from app.libs.decorators.sentry_tracer import distributed_trace
+from app.libs.logger import logger
+from app.models import SysTelegramAccount, SysTelegramChatGroup, SysTelegramAccountGroupRelation
 from app.schemas.account.telegram import TelegramAccount, TelegramChatGroup
 
 
 class TelegramAccountProvider:
     """TelegramAccountProvider"""
 
-    def __init__(self, redis: RedisPool):
+    def __init__(
+        self,
+        session: Session,
+        redis: RedisPool
+    ):
+        self._session = session
         self._redis: Redis = redis.create()
         self.firestore_client = GoogleFirestoreClient()
 
@@ -27,30 +35,27 @@ class TelegramAccountProvider:
         """
 
     @distributed_trace()
-    async def set_account(self, user_id: str, data: dict):
+    async def set_account(self, account: TelegramAccount):
         """
         set account
-        :param user_id:
-        :param data:
+        :param account:
         :return:
         """
-        _collection = "account"
-        result = await self.firestore_client.get_document(
-            collection=_collection,
-            document=user_id
-        )
-        if result.exists:
-            await self.firestore_client.update_document(
-                collection=_collection,
-                document=user_id,
-                data=data
+        data = account.model_dump(exclude={"updated_at"}, exclude_none=True)
+        update_data = account.model_dump(exclude={"id", "created_at", "created_by", "updated_by"}, exclude_none=True)
+        try:
+            await (
+                self._session.insert(SysTelegramAccount)
+                .values(**data)
+                .on_conflict_do_update(index_elements=["id"], set_=update_data)
+                .execute()
             )
-            return
-        await self.firestore_client.set_document(
-            collection=_collection,
-            document=user_id,
-            data=data
-        )
+            await self._session.commit()
+        except Exception as e:
+            await self._session.rollback()
+            raise e
+        finally:
+            await self._session.close()
 
     @distributed_trace()
     async def get_account(self, user_id: str) -> Optional[TelegramAccount]:
@@ -68,59 +73,43 @@ class TelegramAccountProvider:
         return TelegramAccount(**result.to_dict())
 
     @distributed_trace()
-    async def update_chat_group(self, chat_id: str, data: TelegramChatGroup):
+    async def update_chat_group(self, chat_group: TelegramChatGroup):
         """
         update a chat group
-        :param chat_id:
-        :param data:
+        :param chat_group:
         :return:
         """
-        _collection = "chat_group"
-        result = await self.firestore_client.get_document(
-            collection=_collection,
-            document=chat_id
-        )
-        if result.exists:
-            raw_dict = result.to_dict()
-            raw_data = TelegramChatGroup(
-                id=raw_dict.get("id"),
-                title=raw_dict.get("title"),
-                type=raw_dict.get("type"),
-                in_group=data.in_group,
-                bot_type=data.bot_type,
-                custom_info=raw_dict.get("custom_info")
+        data = chat_group.model_dump(exclude={"updated_at"}, exclude_none=True)
+        update_data = chat_group.model_dump(exclude={"id", "created_at", "created_by", "updated_by"}, exclude_none=True)
+        try:
+            await (
+                self._session.insert(SysTelegramChatGroup)
+                .values(**data)
+                .on_conflict_do_update(index_elements=["id"], set_=update_data)
+                .execute()
             )
-            update_data = {
-                **data.model_dump(exclude={"custom_info"})
-            }
-            if data.custom_info.customer_service and raw_data.custom_info.customer_service is None:
-                update_data["custom_info.customer_service"] = data.custom_info.customer_service.model_dump()
-            await self.firestore_client.update_document(
-                collection=_collection,
-                document=chat_id,
-                data=update_data
-            )
-            return
-        await self.firestore_client.set_document(
-            collection=_collection,
-            document=chat_id,
-            data=data.model_dump()
-        )
+            await self._session.commit()
+        except Exception as e:
+            await self._session.rollback()
+            raise e
+        finally:
+            await self._session.close()
 
     @distributed_trace()
-    async def get_chat_group(self, chat_id: str) -> Optional[TelegramChatGroup]:
+    async def get_chat_group(self, chat_id: int) -> Optional[TelegramChatGroup]:
         """
         get a chat group
         :param chat_id:
         :return:
         """
-        result = await self.firestore_client.get_document(
-            collection="chat_group",
-            document=chat_id
+        result = await (
+            self._session.select(SysTelegramChatGroup)
+            .where(SysTelegramChatGroup.id == chat_id)
+            .fetchrow(as_model=TelegramChatGroup)
         )
-        if not result.exists:
+        if not result:
             return None
-        return TelegramChatGroup(**result.to_dict())
+        return result
 
     @distributed_trace()
     async def get_all_chat_group(self) -> List[TelegramChatGroup]:
@@ -148,99 +137,79 @@ class TelegramAccountProvider:
         return chat_groups
 
     @distributed_trace()
-    async def update_chat_group_member(self, chat_id: str, user_id: str, data: dict):
+    async def update_account_group_relation(self, account_id: int, chat_group_id: int):
         """
         update chat group member
-        :param chat_id:
-        :param user_id:
-        :param data:
+        :param account_id:
+        :param chat_group_id:
         :return:
         """
-        _collection = f"group_member:{chat_id}"
-        result = await self.firestore_client.get_document(
-            collection=_collection,
-            document=user_id
-        )
-        if result.exists:
-            await self.firestore_client.update_document(
-                collection=_collection,
-                document=user_id,
-                data=data
+        data = {
+            "account_id": account_id,
+            "chat_group_id": chat_group_id
+        }
+        try:
+            await (
+                self._session.insert(SysTelegramAccountGroupRelation)
+                .values(**data)
+                .on_conflict_do_nothing(constraint="unique_telegram_account_group_relation_uc")
+                .execute()
             )
-            return
-        await self.firestore_client.set_document(
-            collection=_collection,
-            document=user_id,
-            data=data
-        )
+            await self._session.commit()
+        except Exception as e:
+            await self._session.rollback()
+            raise e
+        finally:
+            await self._session.close()
 
     @distributed_trace()
-    async def get_chat_group_members(self, chat_id: str) -> List[TelegramAccount]:
+    async def get_chat_group_members(
+        self,
+        chat_id: int,
+        page_size: int = 20,
+        page_index: int = 0
+    ) -> Tuple[List[TelegramAccount], int]:
         """
         get chat group members
         :param chat_id:
+        :param page_size:
+        :param page_index:
         :return:
         """
-        _collection = f"group_member:{chat_id}"
-        members = []
-        async for item in self.firestore_client.stream(collection=_collection):
-            members.append(TelegramAccount(**item.to_dict()))
-        return members
+        accounts, count = await (
+            self._session.select(SysTelegramAccount)
+            .outerjoin(
+                SysTelegramAccountGroupRelation,
+                SysTelegramAccountGroupRelation.account_id == SysTelegramAccount.id
+            )
+            .where(SysTelegramAccountGroupRelation.chat_group_id == chat_id)
+            .limit(page_size)
+            .offset(page_index * page_size)
+            .fetchpages(as_model=TelegramAccount)
+        )
+        return accounts, count
 
     @distributed_trace()
-    async def delete_chat_group_member(self, chat_id: str, user_id: str):
+    async def delete_chat_group_member(self, chat_id: int, user_id: int):
         """
         delete chat group member
         :param chat_id:
         :param user_id:
         :return:
         """
-        _collection = f"group_member:{chat_id}"
-        await self.firestore_client.delete_document(
-            collection=_collection,
-            document=user_id
-        )
-
-    @distributed_trace()
-    async def update_account_exist_group(self, user_id: str, chat_id: str, data: dict):
-        """
-        update account exist group
-        :param user_id:
-        :param chat_id:
-        :param data:
-        :return:
-        """
-        _collection = f"account_group:{user_id}"
-        result = await self.firestore_client.get_document(
-            collection=_collection,
-            document=chat_id
-        )
-        if result.exists:
-            await self.firestore_client.update_document(
-                collection=_collection,
-                document=chat_id,
-                data=data
+        try:
+            await (
+                self._session.delete(SysTelegramAccountGroupRelation)
+                .where(SysTelegramAccountGroupRelation.chat_group_id == chat_id)
+                .where(SysTelegramAccountGroupRelation.account_id == user_id)
+                .execute()
             )
-            return
-        await self.firestore_client.set_document(
-            collection=_collection,
-            document=chat_id,
-            data=data
-        )
-
-    @distributed_trace()
-    async def delete_account_exist_group(self, user_id: str, chat_id: str):
-        """
-        delete account exist group
-        :param user_id:
-        :param chat_id:
-        :return:
-        """
-        _collection = f"account_group:{user_id}"
-        await self.firestore_client.delete_document(
-            collection=_collection,
-            document=chat_id
-        )
+            await self._session.commit()
+        except Exception as e:
+            await self._session.rollback()
+            raise e
+        finally:
+            await self._session.close()
 
     @distributed_trace()
     async def update_group_custom_info(

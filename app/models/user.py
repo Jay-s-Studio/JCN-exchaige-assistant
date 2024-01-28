@@ -8,8 +8,8 @@ from app.libs.database.orm import ModelBase
 from .mixins import AuditMixin, DeletedMixin
 
 
-class User(ModelBase, AuditMixin, DeletedMixin):
-    """User"""
+class SysUser(ModelBase, AuditMixin, DeletedMixin):
+    """SysUser"""
     __tablename__ = "user"
     __table_args__ = {"schema": "public"}
 
