@@ -153,6 +153,6 @@ class TelegramBotBaseHandler:
             if left_member.is_bot:
                 continue
             await self._telegram_account_provider.delete_chat_group_member(
-                chat_id=update.effective_chat.id,
-                user_id=left_member.id
+                account_id=left_member.id,
+                group_id=update.effective_chat.id
             )

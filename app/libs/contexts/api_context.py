@@ -12,9 +12,9 @@ auth_context = ContextVar("APIContext")
 
 class APIContext(BaseModel):
     """API Context"""
-    token: str
+    token: Optional[str] = None
     api_key: Optional[str] = None
-    user_id: UUID
+    user_id: Optional[UUID] = None
     username: Optional[str] = None
     display_name: Optional[str] = None
     host: Optional[str] = None

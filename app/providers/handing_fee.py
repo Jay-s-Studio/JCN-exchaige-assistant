@@ -1,7 +1,6 @@
 """
 HandingFeeProvider
 """
-from app.clients.firebase.firestore import GoogleFirestoreClient
 from app.libs.database import RedisPool
 from app.libs.decorators.sentry_tracer import distributed_trace
 
@@ -11,7 +10,6 @@ class HandingFeeProvider:
 
     def __init__(self, redis: RedisPool):
         self._redis = redis.create()
-        self.firestore_client = GoogleFirestoreClient()
 
     @distributed_trace()
     async def set_global_handing_fee(self, data: dict):
@@ -20,11 +18,6 @@ class HandingFeeProvider:
         :param data:
         :return:
         """
-        await self.firestore_client.set_document(
-            collection="handing_fee",
-            document="global",
-            data=data
-        )
 
     @distributed_trace()
     async def get_global_handing_fee(self):
@@ -32,11 +25,6 @@ class HandingFeeProvider:
         get global handing fee
         :return:
         """
-        result = await self.firestore_client.get_document(
-            collection="handing_fee",
-            document="global"
-        )
-        return result.to_dict()
 
     @distributed_trace()
     async def get_handing_fee(self, group_id: str):
@@ -45,11 +33,6 @@ class HandingFeeProvider:
         :param group_id:
         :return:
         """
-        result = await self.firestore_client.get_document(
-            collection="handing_fee",
-            document=group_id
-        )
-        return result.to_dict()
 
     @distributed_trace()
     async def update_handing_fee(self, group_id: str, data: dict):
@@ -59,9 +42,3 @@ class HandingFeeProvider:
         :param data:
         :return:
         """
-        await self.firestore_client.set_document(
-            collection="handing_fee",
-            document=group_id,
-            data=data
-        )
-

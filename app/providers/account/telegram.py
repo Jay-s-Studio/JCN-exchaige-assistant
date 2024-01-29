@@ -5,7 +5,6 @@ from typing import Optional, List, Tuple
 
 from redis.asyncio import Redis
 
-from app.clients.firebase.firestore import GoogleFirestoreClient
 from app.libs.consts.enums import BotType
 from app.libs.database import RedisPool, Session
 from app.libs.decorators.sentry_tracer import distributed_trace
@@ -23,7 +22,6 @@ class TelegramAccountProvider:
     ):
         self._session = session
         self._redis: Redis = redis.create()
-        self.firestore_client = GoogleFirestoreClient()
 
     @staticmethod
     def redis_name():
@@ -62,13 +60,14 @@ class TelegramAccountProvider:
         :param user_id:
         :return:
         """
-        result = await self.firestore_client.get_document(
-            collection="account",
-            document=user_id
+        result = await (
+            self._session.select(SysTelegramAccount)
+            .where(SysTelegramAccount.id == user_id)
+            .fetchrow(as_model=TelegramAccount)
         )
-        if not result.exists:
+        if not result:
             return None
-        return TelegramAccount(**result.to_dict())
+        return result
 
     @distributed_trace()
     async def update_chat_group(self, chat_group: TelegramChatGroup):
@@ -110,29 +109,36 @@ class TelegramAccountProvider:
         return result
 
     @distributed_trace()
-    async def get_all_chat_group(self) -> List[TelegramChatGroup]:
+    async def get_chat_group_by_page(
+        self,
+        page_size: int = 20,
+        page_index: int = 0
+    ) -> Tuple[List[TelegramChatGroup], int]:
         """
         get all chat group
         :return:
         """
-        chat_groups = []
-        async for item in self.firestore_client.stream(collection="chat_group"):
-            chat_groups.append(TelegramChatGroup(**item.to_dict()))
-        return chat_groups
+        result, count = await (
+            self._session.select(SysTelegramChatGroup)
+            .limit(page_size)
+            .offset(page_index * page_size)
+            .fetchpages(as_model=TelegramChatGroup)
+        )
+        return result, count
 
     @distributed_trace()
-    async def get_chat_groups_by_bot_type(self, bot_type: BotType) -> List[TelegramChatGroup]:
+    async def get_chat_group_by_bot_type(self, bot_type: BotType) -> List[TelegramChatGroup]:
         """
-        get chat groups by bot type
+        get chat group by bot type
         :param bot_type:
         :return:
         """
-        result: List[TelegramChatGroup] = await self.get_all_chat_group()
-        chat_groups = []
-        for item in result:
-            if item.custom_info.bot_type == bot_type:
-                chat_groups.append(item)
-        return chat_groups
+        result = await (
+            self._session.select(SysTelegramChatGroup)
+            .where(SysTelegramChatGroup.bot_type == bot_type)
+            .fetch(as_model=TelegramChatGroup)
+        )
+        return result
 
     @distributed_trace()
     async def update_account_group_relation(self, account_id: int, chat_group_id: int):
@@ -188,18 +194,18 @@ class TelegramAccountProvider:
         return accounts, count
 
     @distributed_trace()
-    async def delete_chat_group_member(self, chat_id: int, user_id: int):
+    async def delete_chat_group_member(self, account_id: int, group_id: int):
         """
         delete chat group member
-        :param chat_id:
-        :param user_id:
+        :param account_id:
+        :param group_id:
         :return:
         """
         try:
             await (
                 self._session.delete(SysTelegramAccountGroupRelation)
-                .where(SysTelegramAccountGroupRelation.chat_group_id == chat_id)
-                .where(SysTelegramAccountGroupRelation.account_id == user_id)
+                .where(SysTelegramAccountGroupRelation.account_id == account_id)
+                .where(SysTelegramAccountGroupRelation.chat_group_id == group_id)
                 .execute()
             )
             await self._session.commit()
@@ -208,29 +214,3 @@ class TelegramAccountProvider:
             raise e
         finally:
             await self._session.close()
-
-    @distributed_trace()
-    async def update_group_custom_info(
-        self,
-        chat_id: str,
-        data: dict,
-    ) -> bool:
-        """
-        update group customer service
-        :param chat_id:
-        :param data:
-        :return:
-        """
-        _collection = "chat_group"
-        result = await self.firestore_client.get_document(
-            collection=_collection,
-            document=chat_id
-        )
-        if not result.exists:
-            return False
-        await self.firestore_client.update_document(
-            collection=_collection,
-            document=chat_id,
-            data=data
-        )
-        return True

@@ -32,7 +32,7 @@ class TelegramGroup(BaseModel):
     id: int = Field(description="Group ID")
     title: str = Field(description="Group Title")
     description: Optional[str] = Field(default=None, description="Group Description")
-    has_bot: bool = Field(description="Group Has Bot")
+    in_group: bool = Field(description="Is In Group")
     bot_type: BotType = Field(description="Group Bot Type")
     customer_service: Optional[TelegramAccount] = Field(default=None, description="Group Customer Service")
 
@@ -42,23 +42,21 @@ class GroupsResponse(BaseModel):
     Groups Response
     """
     total: int = Field(default=0, description="Total Groups")
-    groups: List[Optional[TelegramGroup]] = Field(default=[], description="Group List")
+    groups: List[TelegramGroup] = Field(default=[], description="Group List")
 
 
 class VendorResponse(BaseModel):
     """
     Vendor Response
     """
-    total: int = Field(default=0, description="Total Vendors")
-    vendors: List[Optional[TelegramGroup]] = Field(default=[], description="Vendor List")
+    vendors: List[TelegramGroup] = Field(default=[], description="Vendor List")
 
 
 class CustomerResponse(BaseModel):
     """
     Customer Response
     """
-    total: int = Field(default=0, description="Total Customers")
-    customers: List[Optional[TelegramGroup]] = Field(default=[], description="Customer List")
+    customers: List[TelegramGroup] = Field(default=[], description="Customer List")
 
 
 class GroupMembersResponse(BaseModel):

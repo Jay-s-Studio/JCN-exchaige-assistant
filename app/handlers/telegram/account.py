@@ -24,7 +24,7 @@ class TelegramAccountHandler:
     @distributed_trace()
     async def set_account(self, telegram_account: TelegramAccount):
         """
-
+        set account
         :param telegram_account:
         :return:
         """
@@ -33,7 +33,7 @@ class TelegramAccountHandler:
     @distributed_trace()
     async def set_group(self, telegram_group: TelegramChatGroup):
         """
-
+        set group
         :param telegram_group:
         :return:
         """
@@ -42,12 +42,22 @@ class TelegramAccountHandler:
     @distributed_trace()
     async def update_account_group_relation(self, account_id: int, group_id: int):
         """
-
+        update account group relation
         :param account_id:
         :param group_id:
         :return:
         """
         await self._telegram_account_provider.update_account_group_relation(account_id=account_id, chat_group_id=group_id)
+
+    @distributed_trace()
+    async def delete_chat_group_member(self, account_id: int, group_id: int):
+        """
+        delete chat group member
+        :param account_id:
+        :param group_id:
+        :return:
+        """
+        await self._telegram_account_provider.delete_chat_group_member(account_id=account_id, chat_group_id=group_id)
 
     @staticmethod
     def get_pagination(data: list, page_size: int = 20, page_index: int = 0) -> Optional[list]:
@@ -61,125 +71,48 @@ class TelegramAccountHandler:
         return data[page_index * page_size: (page_index + 1) * page_size]
 
     @distributed_trace()
-    async def get_groups(self, page_size: int = 20, page_index: int = 0):
+    async def get_chat_group_by_page(
+        self,
+        page_size: int = 20,
+        page_index: int = 0
+    ) -> GroupsResponse:
         """
 
         :param page_size:
         :param page_index:
         :return:
         """
-        accounts = await self._telegram_account_provider.get_all_chat_group()
-        total = len(accounts)
-        if not accounts:
-            return
-        if page_index * page_size > total:
-            return
-        page_of_groups: List[TelegramChatGroup] = self.get_pagination(data=accounts, page_size=page_size, page_index=page_index)
-        groups = [
-            TelegramGroup(
-                id=value.id,
-                title=value.title,
-                description=value.custom_info.description,
-                has_bot=value.in_group,
-                bot_type=value.bot_type,
-                customer_service=value.custom_info.customer_service
-            ) for value in page_of_groups
-        ]
+        groups, total = await self._telegram_account_provider.get_chat_group_by_page()
         return GroupsResponse(
             total=total,
-            groups=groups
+            groups=[TelegramGroup(**group.model_dump()) for group in groups]
         )
 
     @distributed_trace()
-    async def get_vendors(self, page_size: int = 20, page_index: int = 0) -> VendorResponse:
+    async def get_vendors(self) -> VendorResponse:
         """
         get vendors
-        :param page_size:
-        :param page_index:
         :return:
         """
-        accounts = await self._telegram_account_provider.get_all_chat_group()
-        vendors_list: List[TelegramChatGroup] = list(
-            filter(
-                lambda x: x.custom_info.bot_type == BotType.VENDORS if x.custom_info else False, accounts
-            )
-        )
-        total = len(vendors_list)
-        if not vendors_list:
-            return VendorResponse()
-        if page_index * page_size > total:
-            return VendorResponse(total=total)
-        page_of_vendors: List[TelegramChatGroup] = self.get_pagination(data=vendors_list, page_size=page_size, page_index=page_index)
-        vendors = [
-            TelegramGroup(
-                id=value.id,
-                title=value.title,
-                description=value.custom_info.description,
-                has_bot=value.custom_info.in_group,
-                bot_type=value.custom_info.bot_type
-            ) for value in page_of_vendors
-        ]
-        return VendorResponse(
-            total=total,
-            vendors=vendors
-        )
+        vendors = await self._telegram_account_provider.get_chat_group_by_bot_type(bot_type=BotType.VENDORS)
+        return VendorResponse(vendors=[TelegramGroup(**vendor.model_dump()) for vendor in vendors])
 
     @distributed_trace()
-    async def get_customers(self, page_size: int = 20, page_index: int = 0) -> CustomerResponse:
+    async def get_customers(self) -> CustomerResponse:
         """
         get customers
-        :param page_size:
-        :param page_index:
         :return:
         """
-        accounts = await self._telegram_account_provider.get_all_chat_group()
-        customers_list: List[TelegramChatGroup] = list(
-            filter(
-                lambda x: x.custom_info.bot_type == BotType.CUSTOMER if x.custom_info else False, accounts
-            )
-        )
-        total = len(customers_list)
-        if not customers_list:
-            return CustomerResponse()
-        if page_index * page_size > total:
-            return CustomerResponse(total=total)
-        page_of_customers: List[TelegramChatGroup] = self.get_pagination(data=customers_list, page_size=page_size, page_index=page_index)
-        customers = [
-            TelegramGroup(
-                id=value.id,
-                title=value.title,
-                description=value.custom_info.description,
-                has_bot=value.custom_info.in_group,
-                bot_type=value.custom_info.bot_type,
-                customer_service=value.custom_info.customer_service
-            ) for value in page_of_customers
-        ]
-        return CustomerResponse(
-            total=total,
-            customers=customers
-        )
+        customers = await self._telegram_account_provider.get_chat_group_by_bot_type(bot_type=BotType.CUSTOMER)
+        return CustomerResponse(customers=[TelegramGroup(**customer.model_dump()) for customer in customers])
 
     @distributed_trace()
-    async def get_group(self, group_id: str) -> TelegramGroup:
+    async def get_group(self, group_id: int) -> TelegramGroup:
         """
 
         :param group_id:
         :return:
         """
-        group = await self._telegram_account_provider.get_chat_group(chat_id=group_id)
-        if not group:
-            raise APIException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                message="Group Not Found"
-            )
-        return TelegramGroup(
-            id=group.id,
-            title=group.title,
-            description=group.custom_info.description,
-            has_bot=group.custom_info.in_group,
-            bot_type=group.custom_info.bot_type,
-            customer_service=group.custom_info.customer_service
-        )
 
     @distributed_trace()
     async def update_group(
@@ -193,22 +126,7 @@ class TelegramAccountHandler:
         :param model:
         :return:
         """
-        customer_service = await self._telegram_account_provider.get_account(user_id=str(model.customer_service_id))
-        if not customer_service:
-            raise APIException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                message="Account Not Found"
-            )
-        data = {
-            "custom_info.description": model.description,
-            "custom_info.customer_service": customer_service.model_dump()
-        }
-        result = await self._telegram_account_provider.update_group_custom_info(chat_id=group_id, data=data)
-        if not result:
-            raise APIException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                message="Group Not Found"
-            )
+        pass
 
     @distributed_trace()
     async def get_group_members(
@@ -233,28 +151,3 @@ class TelegramAccountHandler:
             total=total,
             members=members
         )
-
-    # async def update_group_customer_service(
-    #     self,
-    #     model: UpdateCustomerService
-    # ):
-    #     """
-    #
-    #     :param model:
-    #     :return:
-    #     """
-    #     customer_service = await self._telegram_account_provider.get_account(user_id=model.customer_service_id)
-    #     if not customer_service:
-    #         raise APIException(
-    #             status_code=status.HTTP_404_NOT_FOUND,
-    #             message="Account Not Found"
-    #         )
-    #     result = await self._telegram_account_provider.update_group_customer_service(
-    #         chat_id=model.group_id,
-    #         customer_service=customer_service
-    #     )
-    #     if not result:
-    #         raise APIException(
-    #             status_code=status.HTTP_404_NOT_FOUND,
-    #             message="Group Not Found"
-    #         )

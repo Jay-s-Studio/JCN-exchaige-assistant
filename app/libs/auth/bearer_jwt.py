@@ -6,9 +6,8 @@ from typing import Optional
 from fastapi import Request
 from fastapi.security.http import HTTPAuthorizationCredentials, HTTPBearer
 
-from app.exceptions.auth import UnauthorizedException
 from app.handlers import AuthHandler
-from app.libs.contexts.api_context import APIContext, set_api_context
+from app.libs.contexts.api_context import APIContext
 
 
 class BearerJWTAuth(HTTPBearer):
@@ -17,12 +16,12 @@ class BearerJWTAuth(HTTPBearer):
     def __init__(self) -> None:
         super().__init__(auto_error=False)
 
-    async def __call__(self, request: Request) -> APIContext:
+    async def __call__(self, request: Request) -> Optional[APIContext]:
         result: Optional[HTTPAuthorizationCredentials] = await super().__call__(
             request=request
         )
         if not result:
-            raise UnauthorizedException()
+            return None
         api_context = await self.authenticate(request=request, token=result.credentials)
         return api_context
 
