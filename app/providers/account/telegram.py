@@ -1,7 +1,6 @@
 """
 AccountProvider
 """
-from datetime import datetime
 from typing import Optional, List, Tuple
 
 from redis.asyncio import Redis
@@ -10,7 +9,6 @@ from app.clients.firebase.firestore import GoogleFirestoreClient
 from app.libs.consts.enums import BotType
 from app.libs.database import RedisPool, Session
 from app.libs.decorators.sentry_tracer import distributed_trace
-from app.libs.logger import logger
 from app.models import SysTelegramAccount, SysTelegramChatGroup, SysTelegramAccountGroupRelation
 from app.schemas.account.telegram import TelegramAccount, TelegramChatGroup
 

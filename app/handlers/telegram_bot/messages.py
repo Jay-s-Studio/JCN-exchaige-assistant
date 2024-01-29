@@ -53,4 +53,4 @@ class TelegramBotMessagesHandler(TelegramBotBaseHandler):
                 bot_type=settings.TELEGRAM_BOT_TYPE
             )
         )
-        # await self._messages_controller.receive_message(update=update)
+        await self._messages_controller.receive_message(update=update)

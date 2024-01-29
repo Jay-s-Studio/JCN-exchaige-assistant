@@ -54,10 +54,12 @@ class Container(containers.DeclarativeContainer):
     )
     currency_provider = providers.Factory(
         CurrencyProvider,
+        session=aio_session,
         redis=redis_pool
     )
     exchange_rate_provider = providers.Factory(
         ExchangeRateProvider,
+        session=aio_session,
         redis=redis_pool
     )
     gina_provider = providers.Factory(GinaProvider)

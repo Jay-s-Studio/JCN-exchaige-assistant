@@ -63,20 +63,20 @@ class MessagesController:
         :param group_id:
         :return:
         """
-        group = await self._telegram_account_provider.get_chat_group(chat_id=str(group_id))
-        if not group.custom_info.customer_service:
-            return message
-        user = User(
-            id=group.custom_info.customer_service.id,
-            first_name=group.custom_info.customer_service.first_name,
-            is_bot=group.custom_info.customer_service.is_bot,
-            last_name=group.custom_info.customer_service.last_name,
-            username=group.custom_info.customer_service.username,
-            language_code=group.custom_info.customer_service.language_code,
-            is_premium=group.custom_info.customer_service.is_premium
-        )
-        customer_service = user.mention_html(name=f"@{user.username}")
-        message = message.replace("#CUSTOMER_SERVICE#", customer_service)
+        # group = await self._telegram_account_provider.get_chat_group(chat_id=group_id)
+        # if not group.custom_info.customer_service:
+        #     return message
+        # user = User(
+        #     id=group.custom_info.customer_service.id,
+        #     first_name=group.custom_info.customer_service.first_name,
+        #     is_bot=group.custom_info.customer_service.is_bot,
+        #     last_name=group.custom_info.customer_service.last_name,
+        #     username=group.custom_info.customer_service.username,
+        #     language_code=group.custom_info.customer_service.language_code,
+        #     is_premium=group.custom_info.customer_service.is_premium
+        # )
+        # customer_service = user.mention_html(name=f"@{user.username}")
+        # message = message.replace("#CUSTOMER_SERVICE#", customer_service)
         return message
 
     @distributed_trace()
@@ -122,19 +122,19 @@ class MessagesController:
         :return:
         """
         await update.effective_message.reply_text(text=gina_resp.reply)
-        exchange_rate_list = await self._exchange_rate_provider.get_all_exchange_rate()
+        # exchange_rate_list = await self._exchange_rate_provider.get_all_exchange_rate()
         if gina_resp.payment_currency.upper() != "USDT":
-            exchange_rate = self.get_lowest_buying_exchange_rate(
-                currency=gina_resp.payment_currency,
-                exchange_rate_list=exchange_rate_list
-            )
-            price = exchange_rate.buy
+            # exchange_rate = self.get_lowest_buying_exchange_rate(
+            #     currency=gina_resp.payment_currency,
+            #     exchange_rate_list=exchange_rate_list
+            # )
+            price = 34.5
         else:
-            exchange_rate = self.get_highest_selling_exchange_rate(
-                currency=gina_resp.exchange_currency,
-                exchange_rate_list=exchange_rate_list
-            )
-            price = exchange_rate.sell
+            # exchange_rate = self.get_highest_selling_exchange_rate(
+            #     currency=gina_resp.exchange_currency,
+            #     exchange_rate_list=exchange_rate_list
+            # )
+            price = 34.2
         await asyncio.sleep(1.5)
         return ExchangeRateMessage.format(
             language=gina_resp.language,

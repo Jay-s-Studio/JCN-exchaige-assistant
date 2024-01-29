@@ -8,7 +8,7 @@ from redis.asyncio import Redis
 
 from app.clients.firebase.firestore import GoogleFirestoreClient
 from app.libs.consts.enums import ExpireTime
-from app.libs.database import RedisPool
+from app.libs.database import RedisPool, Session
 from app.libs.decorators.sentry_tracer import distributed_trace
 from app.serializers.v1.exchange_rate import ExchangeRate, GroupExchangeRate
 
@@ -16,7 +16,12 @@ from app.serializers.v1.exchange_rate import ExchangeRate, GroupExchangeRate
 class ExchangeRateProvider:
     """ExchangeRateProvider"""
 
-    def __init__(self, redis: RedisPool):
+    def __init__(
+        self,
+        session: Session,
+        redis: RedisPool
+    ):
+        self._session = session
         self._redis: Redis = redis.create()
         self.firestore_client = GoogleFirestoreClient()
 

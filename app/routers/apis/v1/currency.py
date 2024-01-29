@@ -8,7 +8,7 @@ from app.containers import Container
 from app.handlers.currency import CurrencyHandler
 from app.libs.depends import check_all_authenticators, DEFAULT_RATE_LIMITERS
 from app.route_classes import LogRoute
-from app.serializers.v1.currency import Currencies
+from app.serializers.v1.currency import CurrencyInfo
 
 router = APIRouter(
     dependencies=DEFAULT_RATE_LIMITERS,
@@ -16,9 +16,25 @@ router = APIRouter(
 )
 
 
+@router.post(
+    path="/",
+    dependencies=[Depends(check_all_authenticators)]
+)
+@inject
+async def create_currency(
+    currency_info: CurrencyInfo,
+    currency_handler: CurrencyHandler = Depends(Provide[Container.currency_handler])
+):
+    """
+    Update currency
+    :return:
+    """
+    await currency_handler.create_currency(currency_info=currency_info)
+
+
 @router.get(
     path="/all",
-    response_model=Currencies
+    # response_model=Currencies
 )
 @inject
 async def all_currency(
@@ -29,19 +45,3 @@ async def all_currency(
     :return:
     """
     return await currency_handler.get_all_currency()
-
-
-@router.post(
-    path="/update",
-    dependencies=[Depends(check_all_authenticators)]
-)
-@inject
-async def update_currencies(
-    currency_list: Currencies,
-    currency_handler: CurrencyHandler = Depends(Provide[Container.currency_handler])
-):
-    """
-    Update currencies
-    :return:
-    """
-    await currency_handler.update_currencies(currency_list=currency_list)
