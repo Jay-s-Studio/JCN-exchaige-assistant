@@ -10,11 +10,6 @@ from pydantic import BaseModel, Field
 from app.libs.consts.enums import BotType
 
 
-class CustomAccountInfo(BaseModel):
-    """CustomAccountInfo"""
-    description: Optional[str] = None
-
-
 class TelegramAccount(BaseModel):
     """TelegramAccount"""
     id: int
@@ -36,13 +31,6 @@ class TelegramAccount(BaseModel):
     delete_reason: Optional[str] = Field(default=None, description="Delete Reason")
     is_deleted: bool = Field(default=False, description="Is Deleted")
     description: Optional[str] = Field(default=None, description="Description")
-
-
-class CustomGroupInfo(BaseModel):
-    """CustomGroupInfo"""
-    description: Optional[str] = None
-    default_currency: Optional[str] = None
-    customer_service: Optional[TelegramAccount] = None
 
 
 class TelegramChatGroup(BaseModel):

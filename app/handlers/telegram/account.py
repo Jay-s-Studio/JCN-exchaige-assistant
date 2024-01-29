@@ -21,6 +21,34 @@ class TelegramAccountHandler:
         self._bot = bot
         self._telegram_account_provider = telegram_account_provider
 
+    @distributed_trace()
+    async def set_account(self, telegram_account: TelegramAccount):
+        """
+
+        :param telegram_account:
+        :return:
+        """
+        await self._telegram_account_provider.set_account(account=telegram_account)
+
+    @distributed_trace()
+    async def set_group(self, telegram_group: TelegramChatGroup):
+        """
+
+        :param telegram_group:
+        :return:
+        """
+        await self._telegram_account_provider.update_chat_group(chat_group=telegram_group)
+
+    @distributed_trace()
+    async def update_account_group_relation(self, account_id: int, group_id: int):
+        """
+
+        :param account_id:
+        :param group_id:
+        :return:
+        """
+        await self._telegram_account_provider.update_account_group_relation(account_id=account_id, chat_group_id=group_id)
+
     @staticmethod
     def get_pagination(data: list, page_size: int = 20, page_index: int = 0) -> Optional[list]:
         """

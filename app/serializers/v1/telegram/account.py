@@ -6,7 +6,23 @@ from typing import Optional, List
 from pydantic import BaseModel, Field
 
 from app.libs.consts.enums import BotType
-from app.schemas.account.telegram import TelegramAccount
+from app.schemas.account.telegram import TelegramAccount, TelegramChatGroup
+
+
+class RawTelegramAccount(TelegramAccount):  # noqa
+    pass
+
+
+class RawTelegramGroup(TelegramChatGroup):
+    pass
+
+
+class AccountGroupRelation(BaseModel):
+    """
+    Account Group Relation
+    """
+    account_id: int = Field(description="Account ID")
+    group_id: int = Field(description="Group ID")
 
 
 class TelegramGroup(BaseModel):
