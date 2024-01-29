@@ -26,6 +26,12 @@ class Language(StrEnum):
     ZH_CN = "zh-cn"
 
 
+class CurrencyType(StrEnum):
+    """CurrencyType"""
+    GENERAL = "general"
+    PAYMENT = "payment"
+
+
 class GinaIntention(StrEnum):
     """GinaIntention"""
     SWAP = "swap"
