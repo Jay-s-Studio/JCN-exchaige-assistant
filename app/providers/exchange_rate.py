@@ -7,7 +7,7 @@ from redis.asyncio import Redis
 
 from app.libs.database import RedisPool, Session
 from app.libs.decorators.sentry_tracer import distributed_trace
-from app.serializers.v1.exchange_rate import GroupExchangeRate
+from app.serializers.v1.exchange_rate import GroupExchangeRate, ExchangeRate
 from app.models import SysExchangeRate
 
 
@@ -30,11 +30,21 @@ class ExchangeRateProvider:
         """
 
     @distributed_trace()
-    async def get_exchange_rate(self, group_id: int):
+    async def get_exchange_rate(self, group_id: int) -> List[ExchangeRate]:
         """
         Get exchange rate
         :return:
         """
+        result = await (
+            self._session.select(
+                SysExchangeRate.currency_id,
+                SysExchangeRate.buy_rate,
+                SysExchangeRate.sell_rate,
+            )
+            .where(SysExchangeRate.telegram_chat_group_id == group_id)
+            .fetch(as_model=ExchangeRate)
+        )
+        return result
 
     @distributed_trace()
     async def update_exchange_rate(self, group_id: int, exchange_rate: dict):

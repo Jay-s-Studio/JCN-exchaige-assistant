@@ -9,7 +9,7 @@ from app.containers import Container
 from app.handlers.exchange_rate import ExchangeRateHandler
 from app.libs.depends import check_all_authenticators, DEFAULT_RATE_LIMITERS
 from app.route_classes import LogRoute
-from app.serializers.v1.exchange_rate import UpdateExchangeRate, GroupExchangeRate
+from app.serializers.v1.exchange_rate import UpdateExchangeRate, ExchangeRateResponse
 
 router = APIRouter(
     dependencies=[
@@ -22,7 +22,7 @@ router = APIRouter(
 
 @router.get(
     path="/{group_id}",
-    response_model=GroupExchangeRate,
+    response_model=ExchangeRateResponse,
 )
 @inject
 async def get_exchange_rate(

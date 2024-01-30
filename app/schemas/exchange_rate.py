@@ -10,7 +10,7 @@ class CurrentExchangeRate(BaseModel):
     """
     Model for Exchange Rate
     """
-    group_id: str
+    group_id: int
     currency: str
     buy: Optional[float]
     sell: Optional[float]

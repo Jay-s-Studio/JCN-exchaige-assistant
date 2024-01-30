@@ -7,7 +7,7 @@ from app.exceptions.api_base import APIException
 from app.libs.decorators.sentry_tracer import distributed_trace
 from app.libs.logger import logger
 from app.providers import ExchangeRateProvider
-from app.serializers.v1.exchange_rate import UpdateExchangeRate, GroupExchangeRate
+from app.serializers.v1.exchange_rate import UpdateExchangeRate, ExchangeRateResponse
 
 
 class ExchangeRateHandler:
@@ -17,18 +17,13 @@ class ExchangeRateHandler:
         self.exchange_rate_provider = exchange_rate_provider
 
     @distributed_trace()
-    async def get_exchange_rate(self, group_id: int) -> GroupExchangeRate:
+    async def get_exchange_rate(self, group_id: int) -> ExchangeRateResponse:
         """
         Get exchange rate
         :return:
         """
         result = await self.exchange_rate_provider.get_exchange_rate(group_id=group_id)
-        if result is None:
-            raise APIException(status_code=status.HTTP_404_NOT_FOUND, message="Group not found")
-        return GroupExchangeRate(
-            **result,
-            group_id=group_id
-        )
+        return ExchangeRateResponse(exchange_rates=result)
 
     @distributed_trace()
     async def update_exchange_rate(self, model: UpdateExchangeRate):
