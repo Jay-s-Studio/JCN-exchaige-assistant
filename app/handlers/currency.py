@@ -53,7 +53,7 @@ class CurrencyHandler:
         currency = Currency(
             **currency_info.model_dump(),
             type=CurrencyType.PAYMENT if currency_info.parent_id else CurrencyType.GENERAL,
-            path=f"{currency_info.parent_id}/{currency_info.id}" if currency_info.parent_id else currency_info.id
+            path=f"{str(currency_info.parent_id)}/{str(currency_info.id)}" if currency_info.parent_id else str(currency_info.id)
         )
         return await self.currency_provider.create_currency(currency=currency)
 
@@ -70,7 +70,7 @@ class CurrencyHandler:
         currency = Currency(
             **currency_info.model_dump(),
             type=CurrencyType.PAYMENT if currency_info.parent_id else CurrencyType.GENERAL,
-            path=f"{currency_info.parent_id}/{currency_info.id}" if currency_info.parent_id else currency_info.id
+            path=f"{str(currency_info.parent_id)}/{str(currency_info.id)}" if currency_info.parent_id else str(currency_info.id)
         )
         return await self.currency_provider.update_currency(currency_id=currency_id, currency=currency)
 
