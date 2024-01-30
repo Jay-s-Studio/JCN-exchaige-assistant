@@ -54,22 +54,3 @@ async def login(
     :return:
     """
     return await user_handler.login(model=model)
-
-
-@router.post(
-    path="/refresh_token",
-    response_model=TokenResponse,
-    dependencies=[Depends(check_all_authenticators)]
-)
-@inject
-async def refresh_token(
-    api_context: APIContext = Depends(get_api_context),
-    user_handler: UserHandler = Depends(Provide[Container.user_handler])
-):
-    """
-
-    :param api_context:
-    :param user_handler:
-    :return:
-    """
-    return await user_handler.refresh_token(user_id=api_context.user_id, token=api_context.token)

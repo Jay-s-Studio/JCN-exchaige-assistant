@@ -4,6 +4,7 @@ UserProvider
 import json
 from datetime import datetime
 from typing import Optional
+from uuid import UUID
 
 from redis.asyncio import Redis
 
@@ -11,6 +12,7 @@ from app.libs.consts.enums import ExpireTime
 from app.libs.consts.redis_keys import get_user_key
 from app.libs.database import RedisPool, Session
 from app.libs.decorators.sentry_tracer import distributed_trace
+from app.models import SysUser
 from app.schemas.user import User
 
 
@@ -32,11 +34,20 @@ class UserProvider:
         :param user:
         :return:
         """
-        # await self.firestore_client.set_document(
-        #     collection="users",
-        #     document=user.id.hex,
-        #     data=user.model_dump()
-        # )
+        data = user.model_dump()
+        try:
+            await (
+                self._session.insert(SysUser)
+                .values(data)
+                .execute()
+            )
+        except Exception as e:
+            await self._session.rollback()
+            raise e
+        else:
+            await self._session.commit()
+        finally:
+            await self._session.close()
 
     @distributed_trace()
     async def get_user_by_username(self, username: str) -> Optional[User]:
@@ -45,52 +56,46 @@ class UserProvider:
         :param username:
         :return:
         """
-        # collection = self.firestore_client.gen_collection(collection="users")
-        # field_filter = FieldFilter(field_path="username", op_string="==", value=username)
-        # results = await collection.where(filter=field_filter).get()
-        # if not results:
-        #     return None
-        # raw_user: DocumentSnapshot = results[0]
-        # if not raw_user.exists:
-        #     return None
-        # return User(**raw_user.to_dict())
+        return await (
+            self._session.select(SysUser)
+            .where(SysUser.username == username)
+            .fetchrow(as_model=User)
+        )
 
     @distributed_trace()
-    async def get_user_by_id(self, user_id: str) -> Optional[User]:
+    async def get_user_by_id(self, user_id: UUID) -> Optional[User]:
         """
         Get user by id
+        TODO: cache user data
         :param user_id:
         :return:
         """
-        # redis_key = get_user_key(user_id=user_id)
-        # if await self._redis.exists(redis_key):
-        #     user_data = await self._redis.get(redis_key)
-        #     return User(**json.loads(user_data))
-        # raw_user: DocumentSnapshot = await self.firestore_client.get_document(
-        #     collection="users",
-        #     document=user_id
-        # )
-        # if not raw_user.exists:
-        #     return None
-        # user = User(**raw_user.to_dict())
-        # await self._redis.set(
-        #     name=redis_key,
-        #     value=user.model_dump_json(),
-        #     ex=ExpireTime.ONE_WEEK.value
-        # )
-        # return user
+        return await (
+            self._session.select(SysUser)
+            .where(SysUser.id == user_id)
+            .fetchrow(as_model=User)
+        )
 
     @distributed_trace()
-    async def update_last_login(self, user_id: str, last_login: datetime):
+    async def update_last_login(self, user_id: UUID, last_login: datetime):
         """
         Update last login
         :param user_id:
         :param last_login:
         :return:
         """
-        # await self.firestore_client.update_document(
-        #     collection="users",
-        #     document=user_id,
-        #     data={"last_login": last_login}
-        # )
-        # await self._redis.delete(get_user_key(user_id=user_id))
+        last_login_at = last_login.strftime("%Y-%m-%d %H:%M:%S")
+        try:
+            await (
+                self._session.update(SysUser)
+                .values(last_login_at=last_login_at)
+                .where(SysUser.id == user_id)
+                .execute()
+            )
+        except Exception as e:
+            await self._session.rollback()
+            raise e
+        else:
+            await self._session.commit()
+        finally:
+            await self._session.close()

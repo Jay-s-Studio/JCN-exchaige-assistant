@@ -1,8 +1,8 @@
 """initdb
 
-Revision ID: 0f1fe4dd7501
+Revision ID: 028938fda4a9
 Revises: 
-Create Date: 2024-01-30 15:33:29.869472
+Create Date: 2024-01-30 17:46:16.713541
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision: str = '0f1fe4dd7501'
+revision: str = '028938fda4a9'
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -27,9 +27,9 @@ def upgrade() -> None:
     sa.Column('path', sa.String(length=128), nullable=False, comment='Path(Up to two levels), e.g. currency.id/currency.id'),
     sa.Column('parent_id', postgresql.UUID(), nullable=True, comment='Parent ID'),
     sa.Column('created_by_id', postgresql.UUID(), nullable=True, comment='Create User ID'),
-    sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False, comment='Create Date'),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False, comment='Create Date'),
     sa.Column('created_by', sa.String(length=64), nullable=False, comment='Create User Name'),
-    sa.Column('updated_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False, comment='Update Date'),
+    sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False, comment='Update Date'),
     sa.Column('updated_by_id', postgresql.UUID(), nullable=True, comment='Update User ID'),
     sa.Column('updated_by', sa.String(length=32), nullable=False, comment='Update User Name'),
     sa.Column('delete_reason', sa.String(length=64), nullable=True, comment='Delete Reason'),
@@ -52,9 +52,9 @@ def upgrade() -> None:
     sa.Column('is_premium', sa.Boolean(), nullable=True, comment='Is Premium'),
     sa.Column('link', sa.String(length=255), nullable=True, comment='Link'),
     sa.Column('created_by_id', postgresql.UUID(), nullable=True, comment='Create User ID'),
-    sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False, comment='Create Date'),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False, comment='Create Date'),
     sa.Column('created_by', sa.String(length=64), nullable=False, comment='Create User Name'),
-    sa.Column('updated_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False, comment='Update Date'),
+    sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False, comment='Update Date'),
     sa.Column('updated_by_id', postgresql.UUID(), nullable=True, comment='Update User ID'),
     sa.Column('updated_by', sa.String(length=32), nullable=False, comment='Update User Name'),
     sa.Column('delete_reason', sa.String(length=64), nullable=True, comment='Delete Reason'),
@@ -72,11 +72,11 @@ def upgrade() -> None:
     sa.Column('is_superuser', sa.Boolean(), server_default=sa.text('false'), nullable=False, comment='Is Superuser'),
     sa.Column('is_active', sa.Boolean(), server_default=sa.text('false'), nullable=False, comment='Is Active'),
     sa.Column('gac', sa.String(length=16), nullable=True, comment='Google verification code secret_key'),
-    sa.Column('last_login_at', sa.DateTime(), nullable=True, comment='最登入时间'),
+    sa.Column('last_login_at', sa.DateTime(timezone=True), nullable=True, comment='最登入时间'),
     sa.Column('created_by_id', postgresql.UUID(), nullable=True, comment='Create User ID'),
-    sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False, comment='Create Date'),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False, comment='Create Date'),
     sa.Column('created_by', sa.String(length=64), nullable=False, comment='Create User Name'),
-    sa.Column('updated_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False, comment='Update Date'),
+    sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False, comment='Update Date'),
     sa.Column('updated_by_id', postgresql.UUID(), nullable=True, comment='Update User ID'),
     sa.Column('updated_by', sa.String(length=32), nullable=False, comment='Update User Name'),
     sa.Column('delete_reason', sa.String(length=64), nullable=True, comment='Delete Reason'),
@@ -92,9 +92,9 @@ def upgrade() -> None:
     sa.Column('bot_type', sa.String(length=255), nullable=True, comment='Bot Type'),
     sa.Column('currency_id', postgresql.UUID(), nullable=True, comment='Currency ID'),
     sa.Column('created_by_id', postgresql.UUID(), nullable=True, comment='Create User ID'),
-    sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False, comment='Create Date'),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False, comment='Create Date'),
     sa.Column('created_by', sa.String(length=64), nullable=False, comment='Create User Name'),
-    sa.Column('updated_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False, comment='Update Date'),
+    sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False, comment='Update Date'),
     sa.Column('updated_by_id', postgresql.UUID(), nullable=True, comment='Update User ID'),
     sa.Column('updated_by', sa.String(length=32), nullable=False, comment='Update User Name'),
     sa.Column('delete_reason', sa.String(length=64), nullable=True, comment='Delete Reason'),
@@ -111,9 +111,9 @@ def upgrade() -> None:
     sa.Column('buy_rate', sa.Float(), nullable=True, comment='Buy Rate'),
     sa.Column('sell_rate', sa.Float(), nullable=True, comment='Sell Rate'),
     sa.Column('created_by_id', postgresql.UUID(), nullable=True, comment='Create User ID'),
-    sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False, comment='Create Date'),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False, comment='Create Date'),
     sa.Column('created_by', sa.String(length=64), nullable=False, comment='Create User Name'),
-    sa.Column('updated_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False, comment='Update Date'),
+    sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False, comment='Update Date'),
     sa.Column('updated_by_id', postgresql.UUID(), nullable=True, comment='Update User ID'),
     sa.Column('updated_by', sa.String(length=32), nullable=False, comment='Update User Name'),
     sa.ForeignKeyConstraint(['currency_id'], ['public.currency.id'], name='exchange_rate_currency_id_fkey', ondelete='CASCADE'),
@@ -128,9 +128,9 @@ def upgrade() -> None:
     sa.Column('account_id', sa.BigInteger(), nullable=False, comment='Account ID'),
     sa.Column('is_customer_service', sa.Boolean(), server_default=sa.text('false'), nullable=True, comment='Is Customer Service'),
     sa.Column('created_by_id', postgresql.UUID(), nullable=True, comment='Create User ID'),
-    sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False, comment='Create Date'),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False, comment='Create Date'),
     sa.Column('created_by', sa.String(length=64), nullable=False, comment='Create User Name'),
-    sa.Column('updated_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False, comment='Update Date'),
+    sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False, comment='Update Date'),
     sa.Column('updated_by_id', postgresql.UUID(), nullable=True, comment='Update User ID'),
     sa.Column('updated_by', sa.String(length=32), nullable=False, comment='Update User Name'),
     sa.Column('delete_reason', sa.String(length=64), nullable=True, comment='Delete Reason'),

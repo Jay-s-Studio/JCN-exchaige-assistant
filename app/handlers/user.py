@@ -62,7 +62,7 @@ class UserHandler:
         :return:
         """
         user = await self.user_provider.get_user_by_username(username=username)
-        if user is None:
+        if not user:
             return False
         return user.username == username
 
@@ -91,7 +91,6 @@ class UserHandler:
             hash_password=hash_password.decode(),
             password_salt=salt.decode(),
             is_active=True,
-            created_at=datetime.now(tz=pytz.UTC)
         )
         await self.user_provider.create_user(user=user)
 
@@ -102,7 +101,7 @@ class UserHandler:
         :param user_id:
         :return:
         """
-        user: Optional[User] = await self.user_provider.get_user_by_id(user_id=user_id.hex)
+        user: Optional[User] = await self.user_provider.get_user_by_id(user_id=user_id)
         if user is None:
             raise APIException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
@@ -113,7 +112,7 @@ class UserHandler:
             username=user.username,
             display_name=user.display_name,
             is_active=user.is_active,
-            last_login=user.last_login
+            last_login=user.last_login_at
         )
 
     @distributed_trace()
@@ -133,42 +132,12 @@ class UserHandler:
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 message="Unauthorized"
             )
-        last_login = datetime.now(tz=pytz.UTC)
-        await self.user_provider.update_last_login(user_id=user.id.hex, last_login=last_login)
+        last_login = datetime.now()
+        await self.user_provider.update_last_login(user_id=user.id, last_login=last_login)
         access_token = self.auth_handler.generate_token(user=user)
         await self.redis.set(
             name=get_user_access_token_key(user_id=user.id.hex),
             value=access_token,
-            ex=ExpireTime.ONE_HOUR.value * 2
+            ex=ExpireTime.ONE_DAY.value * 3
         )
         return LoginResponse(access_token=access_token)
-
-    @distributed_trace()
-    async def refresh_token(self, user_id: uuid.UUID, token: str) -> TokenResponse:
-        """
-        Refresh token
-        :param user_id:
-        :param token:
-        :return:
-        """
-        access_token = await self.redis.get(name=get_user_access_token_key(user_id=user_id.hex))
-        if access_token is None:
-            raise APIException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                message="Unauthorized"
-            )
-        if access_token != token:
-            raise APIException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                message="Unauthorized"
-            )
-        user = await self.user_provider.get_user_by_id(user_id=user_id.hex)
-        if user is None:
-            raise Exception("User not found")
-        new_token = self.auth_handler.generate_token(user=user)
-        await self.redis.set(
-            name=get_user_access_token_key(user_id=user_id.hex),
-            value=new_token,
-            ex=ExpireTime.ONE_HOUR.value * 2
-        )
-        return TokenResponse(access_token=new_token)

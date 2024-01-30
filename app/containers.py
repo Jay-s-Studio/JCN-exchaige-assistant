@@ -65,10 +65,12 @@ class Container(containers.DeclarativeContainer):
     gina_provider = providers.Factory(GinaProvider)
     handing_fee_provider = providers.Factory(
         HandingFeeProvider,
+        session=aio_session,
         redis=redis_pool
     )
     user_provider = providers.Factory(
         UserProvider,
+        session=aio_session,
         redis=redis_pool
     )
 

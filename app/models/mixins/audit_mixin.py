@@ -1,6 +1,7 @@
 """
 审计信息
 """
+import pytz
 import sqlalchemy as sa
 
 from datetime import datetime
@@ -20,8 +21,8 @@ class AuditCreatedAtMixin(object):
         :return:
         """
         return Column(
-            DateTime,
-            server_default=sa.func.now(),
+            DateTime(timezone=True),
+            server_default=sa.func.now(tz=pytz.UTC),
             comment="Create Date",
             nullable=False
         )
@@ -66,8 +67,9 @@ class AuditUpdatedMixin(object):
         :return:
         """
         return Column(
-            DateTime, server_default=sa.func.now(),
-            onupdate=datetime.now,
+            DateTime(timezone=True),
+            server_default=sa.func.now(tz=pytz.UTC),
+            onupdate=datetime.utcnow,
             comment="Update Date",
             nullable=False
         )

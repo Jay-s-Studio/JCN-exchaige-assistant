@@ -1,6 +1,8 @@
 """
 Test user handler
 """
+from uuid import UUID
+
 import pytest
 from fastapi import HTTPException
 
@@ -16,7 +18,7 @@ async def test_create_user(user_handler: UserHandler):
     :return:
     """
     model = UserRegister(
-        username="account1",
+        username="admin",
         password="!QAZ2wsx3edc4rfv",
     )
     await user_handler.create_user(model=model)
@@ -40,6 +42,19 @@ async def test_create_user_with_week_password(user_handler: UserHandler):
 
 
 @pytest.mark.asyncio
+async def test_get_user_info(user_handler: UserHandler):
+    """
+    Test get_user_info
+    :param user_handler:
+    :return:
+    """
+    user_id = UUID("54737ccd-8fbf-4fea-a31b-e4e938a75237")
+    user = await user_handler.get_user_info(user_id=user_id)
+    assert user is not None
+    assert user.username == "admin"
+
+
+@pytest.mark.asyncio
 async def test_login(user_handler: UserHandler):
     """
     Test login
@@ -48,7 +63,7 @@ async def test_login(user_handler: UserHandler):
     """
     user = await user_handler.login(
         model=UserLogin(
-            username="account1",
+            username="admin",
             password="!QAZ2wsx3edc4rfv"
         )
     )
