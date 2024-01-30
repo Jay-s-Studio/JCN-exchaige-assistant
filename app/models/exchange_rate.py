@@ -12,7 +12,10 @@ from .mixins import AuditMixin
 class SysExchangeRate(ModelBase, AuditMixin):
     """SysExchangeRate"""
     __tablename__ = "exchange_rate"
-    __table_args__ = {"schema": "public"}
+    __table_args__ = (
+        sa.UniqueConstraint("telegram_chat_group_id", "currency_id", name="exchange_rate_telegram_chat_group_id_currency_id_key"),
+        {"schema": "public"}
+    )
 
     telegram_chat_group_id = Column(
         sa.BigInteger,

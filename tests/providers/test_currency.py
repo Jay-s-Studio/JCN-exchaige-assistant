@@ -185,5 +185,5 @@ async def test_get_currencies(currency_provider: CurrencyProvider):
     :param currency_provider:
     :return:
     """
-    currencies = await currency_provider.get_currencies()
+    currencies = await currency_provider.get_currency_tree_data()
     assert isinstance(currencies, list)

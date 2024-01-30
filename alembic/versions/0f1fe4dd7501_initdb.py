@@ -1,8 +1,8 @@
 """initdb
 
-Revision ID: d653395adde3
+Revision ID: 0f1fe4dd7501
 Revises: 
-Create Date: 2024-01-30 11:01:52.934518
+Create Date: 2024-01-30 15:33:29.869472
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision: str = 'd653395adde3'
+revision: str = '0f1fe4dd7501'
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -119,6 +119,7 @@ def upgrade() -> None:
     sa.ForeignKeyConstraint(['currency_id'], ['public.currency.id'], name='exchange_rate_currency_id_fkey', ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['telegram_chat_group_id'], ['public.telegram_chat_group.id'], name='exchange_rate_telegram_chat_group_id_fkey', ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('telegram_chat_group_id', 'currency_id', name='exchange_rate_telegram_chat_group_id_currency_id_key'),
     schema='public'
     )
     op.create_table('telegram_chat_group_member',

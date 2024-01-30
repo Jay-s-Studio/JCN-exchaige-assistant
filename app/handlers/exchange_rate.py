@@ -5,6 +5,7 @@ from starlette import status
 
 from app.exceptions.api_base import APIException
 from app.libs.decorators.sentry_tracer import distributed_trace
+from app.libs.logger import logger
 from app.providers import ExchangeRateProvider
 from app.serializers.v1.exchange_rate import UpdateExchangeRate, GroupExchangeRate
 
@@ -16,7 +17,7 @@ class ExchangeRateHandler:
         self.exchange_rate_provider = exchange_rate_provider
 
     @distributed_trace()
-    async def get_exchange_rate(self, group_id: str) -> GroupExchangeRate:
+    async def get_exchange_rate(self, group_id: int) -> GroupExchangeRate:
         """
         Get exchange rate
         :return:
@@ -35,7 +36,12 @@ class ExchangeRateHandler:
         Update exchange rate
         :return:
         """
-        return await self.exchange_rate_provider.update_exchange_rate(
-            group_id=model.group_id,
-            exchange_rates={"exchange_rates": [currency_rate.model_dump() for currency_rate in model.currency_rates]}
-        )
+        for exchange_rate in model.currency_rates:
+            try:
+                await self.exchange_rate_provider.update_exchange_rate(
+                    group_id=model.group_id,
+                    exchange_rate=exchange_rate.model_dump()
+                )
+            except Exception as e:
+                logger.error(e)
+                continue

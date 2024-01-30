@@ -2,6 +2,7 @@
 CurrencyProvider
 """
 from typing import List
+from uuid import UUID
 
 from redis.asyncio import Redis
 
@@ -26,11 +27,48 @@ class CurrencyProvider:
     @distributed_trace()
     async def get_currencies(self) -> List[Currency]:
         """
-        get currencies
+        Get currencies
         :return:
         """
         try:
-            return await self._session.select(SysCurrency).fetch(as_model=Currency)
+            return await (
+                self._session.select(
+                    SysCurrency.id,
+                    SysCurrency.symbol,
+                    SysCurrency.type,
+                    SysCurrency.path,
+                    SysCurrency.description,
+                    SysCurrency.sequence,
+                    SysCurrency.parent_id,
+                )
+                .order_by(SysCurrency.sequence)
+                .fetch(as_model=Currency)
+            )
+        except Exception as e:
+            raise e
+        finally:
+            await self._session.close()
+
+    @distributed_trace()
+    async def get_currency_tree_data(self):
+        """
+        get currency tree data
+        :return:
+        """
+        try:
+            return await (
+                self._session.select(
+                    SysCurrency.id,
+                    SysCurrency.symbol,
+                    SysCurrency.type,
+                    SysCurrency.path,
+                    SysCurrency.description,
+                    SysCurrency.sequence,
+                    SysCurrency.parent_id,
+                )
+                .order_by(SysCurrency.sequence)
+                .fetchdict("id", as_model=Currency)
+            )
         except Exception as e:
             raise e
         finally:
@@ -59,9 +97,10 @@ class CurrencyProvider:
             await self._session.close()
 
     @distributed_trace()
-    async def update_currency(self, currency: Currency):
+    async def update_currency(self, currency_id: UUID, currency: Currency):
         """
         update currencies
+        :param currency_id:
         :param currency:
         :return:
         """
@@ -73,7 +112,7 @@ class CurrencyProvider:
             await (
                 self._session.update(SysCurrency)
                 .values(**data)
-                .where(SysCurrency.id == currency.id)
+                .where(SysCurrency.id == currency_id)
                 .execute()
             )
             await self._session.commit()

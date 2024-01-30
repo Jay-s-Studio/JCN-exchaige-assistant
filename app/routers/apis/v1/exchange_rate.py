@@ -12,7 +12,10 @@ from app.route_classes import LogRoute
 from app.serializers.v1.exchange_rate import UpdateExchangeRate, GroupExchangeRate
 
 router = APIRouter(
-    dependencies=DEFAULT_RATE_LIMITERS,
+    dependencies=[
+        Depends(check_all_authenticators),
+        *DEFAULT_RATE_LIMITERS
+    ],
     route_class=LogRoute
 )
 
@@ -20,11 +23,10 @@ router = APIRouter(
 @router.get(
     path="/{group_id}",
     response_model=GroupExchangeRate,
-    dependencies=[Depends(check_all_authenticators)],
 )
 @inject
 async def get_exchange_rate(
-    group_id: str,
+    group_id: int,
     exchange_rate_handler: ExchangeRateHandler = Depends(Provide[Container.exchange_rate_handler])
 ):
     """

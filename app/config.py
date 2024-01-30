@@ -59,7 +59,6 @@ class Configuration(BaseSettings):
     JWT_SECRET: str = os.getenv(key="JWT_SECRET")
 
     # [Special]
-    ALLOWED_PATHS: List[str] = os.getenv(key="ALLOWED_PATHS", default="/api/healthcheck").split(",")
     API_KEY: str = JWT_SECRET
 
     # [FastAPI]

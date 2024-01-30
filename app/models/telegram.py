@@ -48,7 +48,7 @@ class SysTelegramChatGroupMember(ModelBase, AuditMixin, DeletedMixin):
     """SysTelegramChatGroupMember"""
     __tablename__ = "telegram_chat_group_member"
     __table_args__ = (
-        sa.UniqueConstraint('account_id', 'chat_group_id', name='unique_telegram_chat_group_member_uc'),
+        sa.UniqueConstraint("account_id", "chat_group_id", name="unique_telegram_chat_group_member_uc"),
         {"schema": "public"}
     )
     chat_group_id = Column(
