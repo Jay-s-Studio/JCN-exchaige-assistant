@@ -17,12 +17,19 @@ class RawTelegramGroup(TelegramChatGroup):
     pass
 
 
-class AccountGroupRelation(BaseModel):
+class GroupMemberBase(BaseModel):
     """
-    Account Group Relation
+    Group Member
     """
     account_id: int = Field(description="Account ID")
-    group_id: int = Field(description="Group ID")
+    chat_group_id: int = Field(description="Group ID")
+
+
+class InitGroupMember(GroupMemberBase):
+    """
+    Init Group Member
+    """
+    is_customer_service: bool = Field(default=False, description="Is Customer Service")
 
 
 class TelegramGroup(BaseModel):
@@ -63,7 +70,6 @@ class GroupMembersResponse(BaseModel):
     """
     Group Members Response
     """
-    total: int = Field(default=0, description="Total Group Members")
     members: List[Optional[TelegramAccount]] = Field(default=[], description="Group Member List")
 
 

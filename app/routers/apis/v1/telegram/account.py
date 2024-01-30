@@ -18,7 +18,8 @@ from app.serializers.v1.telegram import (
     RawTelegramGroup,
     TelegramGroup,
     UpdateTelegramGroup,
-    AccountGroupRelation,
+    GroupMemberBase,
+    InitGroupMember,
 )
 
 router = APIRouter(
@@ -67,12 +68,12 @@ async def set_group(
 
 
 @router.post(
-    path="/update_account_group_relation",
+    path="/init_chat_group_member",
     status_code=status.HTTP_204_NO_CONTENT
 )
 @inject
-async def update_account_group_relation(
-    model: AccountGroupRelation,
+async def init_chat_group_member(
+    model: InitGroupMember,
     telegram_account_handler: TelegramAccountHandler = Depends(Provide[Container.telegram_account_handler])
 ):
     """
@@ -81,10 +82,7 @@ async def update_account_group_relation(
     :param telegram_account_handler:
     :return:
     """
-    return await telegram_account_handler.update_account_group_relation(
-        account_id=model.account_id,
-        group_id=model.group_id
-    )
+    return await telegram_account_handler.init_chat_group_member(model=model)
 
 
 @router.delete(
@@ -93,7 +91,7 @@ async def update_account_group_relation(
 )
 @inject
 async def delete_chat_group_member(
-    model: AccountGroupRelation,
+    model: GroupMemberBase,
     telegram_account_handler: TelegramAccountHandler = Depends(Provide[Container.telegram_account_handler])
 ):
     """
@@ -214,22 +212,14 @@ async def update_group(
     status_code=status.HTTP_200_OK
 )
 @inject
-async def get_group_members(
+async def get_all_chat_group_members(
     group_id: int,
-    page_size: int = Query(default=20, description="Page Size", lt=100, gt=0),
-    page_index: int = Query(default=0, description="Page Index", ge=0),
     telegram_account_handler: TelegramAccountHandler = Depends(Provide[Container.telegram_account_handler])
 ):
     """
 
     :param group_id:
-    :param page_size:
-    :param page_index:
     :param telegram_account_handler:
     :return:
     """
-    return await telegram_account_handler.get_group_members(
-        group_id=group_id,
-        page_size=page_size,
-        page_index=page_index
-    )
+    return await telegram_account_handler.get_all_chat_group_members(group_id=group_id)

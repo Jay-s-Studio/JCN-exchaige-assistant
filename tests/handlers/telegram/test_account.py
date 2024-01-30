@@ -37,7 +37,7 @@ async def test_get_group(telegram_account_handler: TelegramAccountHandler):
     :param telegram_account_handler:
     :return:
     """
-    group_id = "-1002050270240"
+    group_id = -1002050270240
     group = await telegram_account_handler.get_group(group_id=group_id)
     assert group is not None
 
@@ -65,5 +65,5 @@ async def test_get_group_members(telegram_account_handler: TelegramAccountHandle
     :return:
     """
     group_id = -1002050270240
-    group_members = await telegram_account_handler.get_group_members(group_id=group_id)
+    group_members = await telegram_account_handler.get_all_chat_group_members(group_id=group_id)
     assert group_members is not None

@@ -11,7 +11,15 @@ from app.libs.consts.enums import BotType
 from app.libs.decorators.sentry_tracer import distributed_trace
 from app.schemas.account.telegram import TelegramChatGroup, TelegramAccount
 from app.providers import TelegramAccountProvider
-from app.serializers.v1.telegram import TelegramGroup, VendorResponse, GroupsResponse, CustomerResponse, GroupMembersResponse, UpdateTelegramGroup
+from app.serializers.v1.telegram import (
+    TelegramGroup,
+    VendorResponse,
+    GroupsResponse,
+    CustomerResponse,
+    GroupMembersResponse,
+    UpdateTelegramGroup,
+    InitGroupMember,
+)
 
 
 class TelegramAccountHandler:
@@ -40,14 +48,13 @@ class TelegramAccountHandler:
         await self._telegram_account_provider.update_chat_group(chat_group=telegram_group)
 
     @distributed_trace()
-    async def update_account_group_relation(self, account_id: int, group_id: int):
+    async def init_chat_group_member(self, model: InitGroupMember):
         """
         update account group relation
-        :param account_id:
-        :param group_id:
+        :param model:
         :return:
         """
-        await self._telegram_account_provider.update_account_group_relation(account_id=account_id, chat_group_id=group_id)
+        await self._telegram_account_provider.init_chat_group_member(data=model.model_dump())
 
     @distributed_trace()
     async def delete_chat_group_member(self, account_id: int, group_id: int):
@@ -58,17 +65,6 @@ class TelegramAccountHandler:
         :return:
         """
         await self._telegram_account_provider.delete_chat_group_member(account_id=account_id, chat_group_id=group_id)
-
-    @staticmethod
-    def get_pagination(data: list, page_size: int = 20, page_index: int = 0) -> Optional[list]:
-        """
-
-        :param data:
-        :param page_size:
-        :param page_index:
-        :return:
-        """
-        return data[page_index * page_size: (page_index + 1) * page_size]
 
     @distributed_trace()
     async def get_chat_group_by_page(
@@ -82,7 +78,10 @@ class TelegramAccountHandler:
         :param page_index:
         :return:
         """
-        groups, total = await self._telegram_account_provider.get_chat_group_by_page()
+        groups, total = await self._telegram_account_provider.get_chat_group_by_page(
+            page_size=page_size,
+            page_index=page_index
+        )
         return GroupsResponse(
             total=total,
             groups=[TelegramGroup(**group.model_dump()) for group in groups]
@@ -129,25 +128,11 @@ class TelegramAccountHandler:
         pass
 
     @distributed_trace()
-    async def get_group_members(
-        self,
-        group_id: int,
-        page_size: int = 20,
-        page_index: int = 0
-    ):
+    async def get_all_chat_group_members(self, group_id: int):
         """
 
         :param group_id:
-        :param page_size:
-        :param page_index:
         :return:
         """
-        members, total = await self._telegram_account_provider.get_chat_group_members(
-            chat_id=group_id,
-            page_size=page_size,
-            page_index=page_index
-        )
-        return GroupMembersResponse(
-            total=total,
-            members=members
-        )
+        members = await self._telegram_account_provider.get_all_chat_group_members(chat_id=group_id)
+        return GroupMembersResponse(members=members)

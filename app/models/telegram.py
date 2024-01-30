@@ -3,6 +3,7 @@ Model for Telegram
 """
 import sqlalchemy as sa
 from sqlalchemy import Column
+from sqlalchemy.dialects.postgresql import UUID
 
 from app.libs.database.orm import Base, ModelBase
 from .mixins import AuditMixin, DeletedMixin, DescriptionMixin
@@ -35,25 +36,20 @@ class SysTelegramChatGroup(Base, AuditMixin, DeletedMixin, DescriptionMixin):
     type = Column(sa.String(255), nullable=True, comment="Type")
     in_group = Column(sa.Boolean, nullable=True, comment="In Group")
     bot_type = Column(sa.String(255), nullable=True, comment="Bot Type")
-    # default_currency = Column(sa.String(255), nullable=True, comment="Default Currency")
-
-
-class SysTelegramAccountGroupRelation(ModelBase):
-    """SysTelegramAccountGroupRelation"""
-    __tablename__ = "telegram_account_group_relation"
-    __table_args__ = (
-        sa.UniqueConstraint('account_id', 'chat_group_id', name='unique_telegram_account_group_relation_uc'),
-        {"schema": "public"}
+    currency_id = Column(
+        UUID,
+        sa.ForeignKey("public.currency.id", name="currency_id_fkey", ondelete="SET NULL"),
+        nullable=True,
+        comment="Currency ID"
     )
-    account_id = Column(
-        sa.BigInteger,
-        sa.ForeignKey(
-            column=SysTelegramAccount.id,
-            name="telegram_account_relation_account_id_fkey",
-            ondelete="CASCADE",
-        ),
-        nullable=False,
-        comment="Account ID",
+
+
+class SysTelegramChatGroupMember(ModelBase, AuditMixin, DeletedMixin):
+    """SysTelegramChatGroupMember"""
+    __tablename__ = "telegram_chat_group_member"
+    __table_args__ = (
+        sa.UniqueConstraint('account_id', 'chat_group_id', name='unique_telegram_chat_group_member_uc'),
+        {"schema": "public"}
     )
     chat_group_id = Column(
         sa.BigInteger,
@@ -65,3 +61,14 @@ class SysTelegramAccountGroupRelation(ModelBase):
         nullable=False,
         comment="Chat Group ID",
     )
+    account_id = Column(
+        sa.BigInteger,
+        sa.ForeignKey(
+            column=SysTelegramAccount.id,
+            name="telegram_account_relation_account_id_fkey",
+            ondelete="CASCADE",
+        ),
+        nullable=False,
+        comment="Account ID",
+    )
+    is_customer_service = Column(sa.Boolean, server_default=sa.text("false"), comment="Is Customer Service")

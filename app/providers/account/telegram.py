@@ -8,7 +8,7 @@ from redis.asyncio import Redis
 from app.libs.consts.enums import BotType
 from app.libs.database import RedisPool, Session
 from app.libs.decorators.sentry_tracer import distributed_trace
-from app.models import SysTelegramAccount, SysTelegramChatGroup, SysTelegramAccountGroupRelation
+from app.models import SysTelegramAccount, SysTelegramChatGroup, SysTelegramChatGroupMember
 from app.schemas.account.telegram import TelegramAccount, TelegramChatGroup
 
 
@@ -115,7 +115,7 @@ class TelegramAccountProvider:
         page_index: int = 0
     ) -> Tuple[List[TelegramChatGroup], int]:
         """
-        get all chat group
+        get the chat group by page
         :return:
         """
         result, count = await (
@@ -141,22 +141,17 @@ class TelegramAccountProvider:
         return result
 
     @distributed_trace()
-    async def update_account_group_relation(self, account_id: int, chat_group_id: int):
+    async def init_chat_group_member(self, data: dict):
         """
-        update chat group member
-        :param account_id:
-        :param chat_group_id:
+        Initialize chat group member
+        :param data:
         :return:
         """
-        data = {
-            "account_id": account_id,
-            "chat_group_id": chat_group_id
-        }
         try:
             await (
-                self._session.insert(SysTelegramAccountGroupRelation)
+                self._session.insert(SysTelegramChatGroupMember)
                 .values(**data)
-                .on_conflict_do_nothing(constraint="unique_telegram_account_group_relation_uc")
+                .on_conflict_do_nothing(constraint="unique_telegram_chat_group_member_uc")
                 .execute()
             )
             await self._session.commit()
@@ -167,47 +162,60 @@ class TelegramAccountProvider:
             await self._session.close()
 
     @distributed_trace()
-    async def get_chat_group_members(
+    async def update_chat_group_member(self, data: dict):
+        """
+        update chat group member
+        :param data:
+        :return:
+        """
+
+    @distributed_trace()
+    async def get_all_chat_group_members(
         self,
-        chat_id: int,
-        page_size: int = 20,
-        page_index: int = 0
-    ) -> Tuple[List[TelegramAccount], int]:
+        chat_id: int
+    ) -> List[TelegramAccount]:
         """
         get chat group members
         :param chat_id:
-        :param page_size:
-        :param page_index:
         :return:
         """
-        accounts, count = await (
+        members = await (
             self._session.select(SysTelegramAccount)
             .outerjoin(
-                SysTelegramAccountGroupRelation,
-                SysTelegramAccountGroupRelation.account_id == SysTelegramAccount.id
+                SysTelegramChatGroupMember,
+                SysTelegramChatGroupMember.account_id == SysTelegramAccount.id
             )
-            .where(SysTelegramAccountGroupRelation.chat_group_id == chat_id)
-            .limit(page_size)
-            .offset(page_index * page_size)
-            .fetchpages(as_model=TelegramAccount)
+            .where(SysTelegramChatGroupMember.chat_group_id == chat_id)
+            .where(SysTelegramChatGroupMember.is_deleted.is_(False))
+            .fetch(as_model=TelegramAccount)
         )
-        return accounts, count
+        return members
 
     @distributed_trace()
-    async def delete_chat_group_member(self, account_id: int, group_id: int):
+    async def delete_chat_group_member(self, account_id: int, group_id: int, force: bool = False):
         """
         delete chat group member
         :param account_id:
         :param group_id:
+        :param force:
         :return:
         """
         try:
-            await (
-                self._session.delete(SysTelegramAccountGroupRelation)
-                .where(SysTelegramAccountGroupRelation.account_id == account_id)
-                .where(SysTelegramAccountGroupRelation.chat_group_id == group_id)
-                .execute()
-            )
+            if force:
+                await (
+                    self._session.delete(SysTelegramChatGroupMember)
+                    .where(SysTelegramChatGroupMember.account_id == account_id)
+                    .where(SysTelegramChatGroupMember.chat_group_id == group_id)
+                    .execute()
+                )
+            else:
+                await (
+                    self._session.update(SysTelegramChatGroupMember)
+                    .where(SysTelegramChatGroupMember.account_id == account_id)
+                    .where(SysTelegramChatGroupMember.chat_group_id == group_id)
+                    .values(is_deleted=True)
+                    .execute()
+                )
             await self._session.commit()
         except Exception as e:
             await self._session.rollback()

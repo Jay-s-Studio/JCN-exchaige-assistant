@@ -1,8 +1,8 @@
 """initdb
 
-Revision ID: a903f02e95e3
+Revision ID: d653395adde3
 Revises: 
-Create Date: 2024-01-29 15:36:18.493100
+Create Date: 2024-01-30 11:01:52.934518
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision: str = 'a903f02e95e3'
+revision: str = 'd653395adde3'
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -63,24 +63,6 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('id'),
     schema='public'
     )
-    op.create_table('telegram_chat_group',
-    sa.Column('id', sa.BigInteger(), nullable=False, comment='Chat Group ID'),
-    sa.Column('title', sa.String(length=255), nullable=True, comment='Title'),
-    sa.Column('type', sa.String(length=255), nullable=True, comment='Type'),
-    sa.Column('in_group', sa.Boolean(), nullable=True, comment='In Group'),
-    sa.Column('bot_type', sa.String(length=255), nullable=True, comment='Bot Type'),
-    sa.Column('created_by_id', postgresql.UUID(), nullable=True, comment='Create User ID'),
-    sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False, comment='Create Date'),
-    sa.Column('created_by', sa.String(length=64), nullable=False, comment='Create User Name'),
-    sa.Column('updated_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False, comment='Update Date'),
-    sa.Column('updated_by_id', postgresql.UUID(), nullable=True, comment='Update User ID'),
-    sa.Column('updated_by', sa.String(length=32), nullable=False, comment='Update User Name'),
-    sa.Column('delete_reason', sa.String(length=64), nullable=True, comment='Delete Reason'),
-    sa.Column('is_deleted', sa.Boolean(), server_default=sa.text('false'), nullable=False, comment='Is Deleted(Logical Delete)'),
-    sa.Column('description', sa.Text(), nullable=True, comment='Description'),
-    sa.PrimaryKeyConstraint('id'),
-    schema='public'
-    )
     op.create_table('user',
     sa.Column('id', postgresql.UUID(), server_default=sa.text('gen_random_uuid()'), nullable=False, comment='Primary Key'),
     sa.Column('username', sa.String(length=255), nullable=True, comment='Username'),
@@ -102,6 +84,26 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('id'),
     schema='public'
     )
+    op.create_table('telegram_chat_group',
+    sa.Column('id', sa.BigInteger(), nullable=False, comment='Chat Group ID'),
+    sa.Column('title', sa.String(length=255), nullable=True, comment='Title'),
+    sa.Column('type', sa.String(length=255), nullable=True, comment='Type'),
+    sa.Column('in_group', sa.Boolean(), nullable=True, comment='In Group'),
+    sa.Column('bot_type', sa.String(length=255), nullable=True, comment='Bot Type'),
+    sa.Column('currency_id', postgresql.UUID(), nullable=True, comment='Currency ID'),
+    sa.Column('created_by_id', postgresql.UUID(), nullable=True, comment='Create User ID'),
+    sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False, comment='Create Date'),
+    sa.Column('created_by', sa.String(length=64), nullable=False, comment='Create User Name'),
+    sa.Column('updated_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False, comment='Update Date'),
+    sa.Column('updated_by_id', postgresql.UUID(), nullable=True, comment='Update User ID'),
+    sa.Column('updated_by', sa.String(length=32), nullable=False, comment='Update User Name'),
+    sa.Column('delete_reason', sa.String(length=64), nullable=True, comment='Delete Reason'),
+    sa.Column('is_deleted', sa.Boolean(), server_default=sa.text('false'), nullable=False, comment='Is Deleted(Logical Delete)'),
+    sa.Column('description', sa.Text(), nullable=True, comment='Description'),
+    sa.ForeignKeyConstraint(['currency_id'], ['public.currency.id'], name='currency_id_fkey', ondelete='SET NULL'),
+    sa.PrimaryKeyConstraint('id'),
+    schema='public'
+    )
     op.create_table('exchange_rate',
     sa.Column('id', postgresql.UUID(), server_default=sa.text('gen_random_uuid()'), nullable=False, comment='Primary Key'),
     sa.Column('telegram_chat_group_id', sa.BigInteger(), nullable=False, comment='Telegram Chat Group ID'),
@@ -119,14 +121,23 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('id'),
     schema='public'
     )
-    op.create_table('telegram_account_group_relation',
+    op.create_table('telegram_chat_group_member',
     sa.Column('id', postgresql.UUID(), server_default=sa.text('gen_random_uuid()'), nullable=False, comment='Primary Key'),
-    sa.Column('account_id', sa.BigInteger(), nullable=False, comment='Account ID'),
     sa.Column('chat_group_id', sa.BigInteger(), nullable=False, comment='Chat Group ID'),
+    sa.Column('account_id', sa.BigInteger(), nullable=False, comment='Account ID'),
+    sa.Column('is_customer_service', sa.Boolean(), server_default=sa.text('false'), nullable=True, comment='Is Customer Service'),
+    sa.Column('created_by_id', postgresql.UUID(), nullable=True, comment='Create User ID'),
+    sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False, comment='Create Date'),
+    sa.Column('created_by', sa.String(length=64), nullable=False, comment='Create User Name'),
+    sa.Column('updated_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False, comment='Update Date'),
+    sa.Column('updated_by_id', postgresql.UUID(), nullable=True, comment='Update User ID'),
+    sa.Column('updated_by', sa.String(length=32), nullable=False, comment='Update User Name'),
+    sa.Column('delete_reason', sa.String(length=64), nullable=True, comment='Delete Reason'),
+    sa.Column('is_deleted', sa.Boolean(), server_default=sa.text('false'), nullable=False, comment='Is Deleted(Logical Delete)'),
     sa.ForeignKeyConstraint(['account_id'], ['public.telegram_account.id'], name='telegram_account_relation_account_id_fkey', ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['chat_group_id'], ['public.telegram_chat_group.id'], name='telegram_account_relation_chat_group_id_fkey', ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id'),
-    sa.UniqueConstraint('account_id', 'chat_group_id', name='unique_telegram_account_group_relation_uc'),
+    sa.UniqueConstraint('account_id', 'chat_group_id', name='unique_telegram_chat_group_member_uc'),
     schema='public'
     )
     # ### end Alembic commands ###
@@ -134,10 +145,10 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     # ### commands auto generated by Alembic - please adjust! ###
-    op.drop_table('telegram_account_group_relation', schema='public')
+    op.drop_table('telegram_chat_group_member', schema='public')
     op.drop_table('exchange_rate', schema='public')
-    op.drop_table('user', schema='public')
     op.drop_table('telegram_chat_group', schema='public')
+    op.drop_table('user', schema='public')
     op.drop_table('telegram_account', schema='public')
     op.drop_table('currency', schema='public')
     # ### end Alembic commands ###

@@ -46,9 +46,6 @@ class TelegramBotBaseHandler:
         """
         status_change = chat_member_update.difference().get("status")
         old_is_member, new_is_member = chat_member_update.difference().get("is_member", (None, None))
-        logger.info(f"status_change: {status_change}")
-        logger.info(f"old_is_member: {old_is_member}")
-        logger.info(f"new_is_member: {new_is_member}")
 
         if status_change is None:
             return None
@@ -72,19 +69,26 @@ class TelegramBotBaseHandler:
         self,
         account: TelegramAccount,
         chat_group: TelegramChatGroup,
+        is_customer_service: bool = False
     ) -> None:
         """
         setup account info
         :param account:
         :param chat_group:
+        :param is_customer_service:
         :return:
         """
         tasks = [
             self._telegram_account_provider.set_account(account=account),
             self._telegram_account_provider.update_chat_group(chat_group=chat_group),
-            self._telegram_account_provider.update_account_group_relation(account_id=account.id, chat_group_id=chat_group.id)
         ]
         await asyncio.gather(*tasks)
+        group_member = {
+            "account_id": account.id,
+            "chat_group_id": chat_group.id,
+            "is_customer_service": is_customer_service
+        }
+        await self._telegram_account_provider.init_chat_group_member(group_member)
 
     @distributed_trace()
     async def track_chats(self, update: Update, context: CustomContext) -> None:
@@ -118,7 +122,8 @@ class TelegramBotBaseHandler:
                 **chat.to_dict(),
                 in_group=is_member,
                 bot_type=settings.TELEGRAM_BOT_TYPE
-            )
+            ),
+            is_customer_service=True
         )
 
     @distributed_trace()
@@ -149,10 +154,10 @@ class TelegramBotBaseHandler:
         :param context:
         :return:
         """
-        for left_member in update.message.left_chat_member:  # type: User
-            if left_member.is_bot:
-                continue
-            await self._telegram_account_provider.delete_chat_group_member(
-                account_id=left_member.id,
-                group_id=update.effective_chat.id
-            )
+        left_member: User = update.message.left_chat_member
+        if left_member.is_bot:
+            return
+        await self._telegram_account_provider.delete_chat_group_member(
+            account_id=left_member.id,
+            group_id=update.effective_chat.id
+        )

@@ -3,7 +3,7 @@ Top-level package for models.
 """
 from .currency import SysCurrency
 from .exchange_rate import SysExchangeRate
-from .telegram import SysTelegramAccount, SysTelegramChatGroup, SysTelegramAccountGroupRelation
+from .telegram import SysTelegramAccount, SysTelegramChatGroup, SysTelegramChatGroupMember
 from .user import SysUser
 
 __all__ = [
@@ -14,7 +14,7 @@ __all__ = [
     # telegram
     "SysTelegramAccount",
     "SysTelegramChatGroup",
-    "SysTelegramAccountGroupRelation",
+    "SysTelegramChatGroupMember",
     # user
     "SysUser"
 ]

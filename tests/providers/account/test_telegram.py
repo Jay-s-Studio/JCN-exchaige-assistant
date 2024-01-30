@@ -25,7 +25,7 @@ async def test_get_chat_group_members(telegram_account_provider: TelegramAccount
     :param telegram_account_provider:
     :return:
     """
-    members = await telegram_account_provider.get_chat_group_members(
+    members = await telegram_account_provider.get_all_chat_group_members(
         chat_id=-1002050270240
     )
     assert members
