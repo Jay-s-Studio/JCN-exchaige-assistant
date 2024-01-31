@@ -41,7 +41,7 @@ def _format_dict(item, as_model: Type[BaseModel] = None):
     if item is None:
         return {}
     if as_model:
-        return as_model(**item)
+        return as_model.model_validate(dict(item))
     else:
         data = {}
         for name, value in dict(item).items():

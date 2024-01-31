@@ -122,19 +122,19 @@ class MessagesController:
         :return:
         """
         await update.effective_message.reply_text(text=gina_resp.reply)
-        # exchange_rate_list = await self._exchange_rate_provider.get_all_exchange_rate()
+        exchange_rate_list = await self._exchange_rate_provider.get_all_exchange_rate()
         if gina_resp.payment_currency.upper() != "USDT":
-            # exchange_rate = self.get_lowest_buying_exchange_rate(
-            #     currency=gina_resp.payment_currency,
-            #     exchange_rate_list=exchange_rate_list
-            # )
-            price = 34.5
+            exchange_rate = self.get_lowest_buying_exchange_rate(
+                currency=gina_resp.payment_currency,
+                exchange_rate_list=exchange_rate_list
+            )
+            price = exchange_rate.buy
         else:
-            # exchange_rate = self.get_highest_selling_exchange_rate(
-            #     currency=gina_resp.exchange_currency,
-            #     exchange_rate_list=exchange_rate_list
-            # )
-            price = 34.2
+            exchange_rate = self.get_highest_selling_exchange_rate(
+                currency=gina_resp.exchange_currency,
+                exchange_rate_list=exchange_rate_list
+            )
+            price = exchange_rate.sell
         await asyncio.sleep(1.5)
         return ExchangeRateMessage.format(
             language=gina_resp.language,
@@ -158,23 +158,23 @@ class MessagesController:
         """
         optimal_rate = None
         for group_rate in exchange_rate_list:
-            for rate in group_rate.exchange_rates:
-                if rate.currency != currency:
+            for exchange_rate in group_rate.exchange_rates:
+                if exchange_rate.currency != currency:
                     continue
                 if optimal_rate is None:
                     optimal_rate = CurrentExchangeRate(
                         group_id=group_rate.group_id,
                         currency=currency,
-                        buy=rate.buy_rate,
-                        sell=rate.sell_rate
+                        buy=exchange_rate.buy_rate,
+                        sell=exchange_rate.sell_rate
                     )
                     continue
-                if compare_func(rate, optimal_rate):
+                if compare_func(exchange_rate, optimal_rate):
                     optimal_rate = CurrentExchangeRate(
                         group_id=group_rate.group_id,
                         currency=currency,
-                        buy=rate.buy_rate,
-                        sell=rate.sell_rate
+                        buy=exchange_rate.buy_rate,
+                        sell=exchange_rate.sell_rate
                     )
         return optimal_rate
 
