@@ -25,9 +25,9 @@ class TelegramMessageHandler:
         :param model:
         :return:
         """
-        group = await self._telegram_account_provider.get_chat_group(chat_id=model.chat_id)
-        if not group:
-            raise APIException(status_code=status.HTTP_404_NOT_FOUND, message="chat group not found")
+        # group = await self._telegram_account_provider.get_chat_group(chat_id=model.chat_id)
+        # if not group:
+        #     raise APIException(status_code=status.HTTP_404_NOT_FOUND, message="chat group not found")
         try:
             message = await self._bot.send_message(chat_id=model.chat_id, text=model.message)
         except telegram.error.BadRequest as e:

@@ -13,7 +13,7 @@ from app.libs.database import RedisPool
 from app.libs.decorators.sentry_tracer import distributed_trace
 from app.libs.logger import logger
 from app.providers import TelegramAccountProvider
-from app.schemas.account.telegram import TelegramAccount, TelegramChatGroup
+from app.serializers.v1.telegram import TelegramAccount, TelegramChatGroup
 
 
 class TelegramBotBaseHandler:

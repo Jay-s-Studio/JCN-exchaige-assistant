@@ -9,16 +9,12 @@ from telegram import Bot
 from app.exceptions.api_base import APIException
 from app.libs.consts.enums import BotType
 from app.libs.decorators.sentry_tracer import distributed_trace
-from app.schemas.account.telegram import TelegramChatGroup, TelegramAccount
 from app.providers import TelegramAccountProvider
 from app.serializers.v1.telegram import (
-    TelegramGroup,
-    VendorResponse,
-    GroupsResponse,
-    CustomerResponse,
-    GroupMembersResponse,
-    UpdateTelegramGroup,
+    TelegramChatGroup,
+    TelegramAccount,
     InitGroupMember,
+    VendorResponse, GroupMembers, GroupList,
 )
 
 
@@ -67,72 +63,44 @@ class TelegramAccountHandler:
         await self._telegram_account_provider.delete_chat_group_member(account_id=account_id, chat_group_id=group_id)
 
     @distributed_trace()
-    async def get_chat_group_by_page(
-        self,
-        page_size: int = 20,
-        page_index: int = 0
-    ) -> GroupsResponse:
-        """
-
-        :param page_size:
-        :param page_index:
-        :return:
-        """
-        groups, total = await self._telegram_account_provider.get_chat_group_by_page(
-            page_size=page_size,
-            page_index=page_index
-        )
-        return GroupsResponse(
-            total=total,
-            groups=[TelegramGroup(**group.model_dump()) for group in groups]
-        )
-
-    @distributed_trace()
     async def get_vendors(self) -> VendorResponse:
         """
         get vendors
         :return:
         """
         vendors = await self._telegram_account_provider.get_chat_group_by_bot_type(bot_type=BotType.VENDORS)
-        return VendorResponse(vendors=[TelegramGroup(**vendor.model_dump()) for vendor in vendors])
+        return VendorResponse(vendors=vendors)
 
     @distributed_trace()
-    async def get_customers(self) -> CustomerResponse:
-        """
-        get customers
-        :return:
-        """
-        customers = await self._telegram_account_provider.get_chat_group_by_bot_type(bot_type=BotType.CUSTOMER)
-        return CustomerResponse(customers=[TelegramGroup(**customer.model_dump()) for customer in customers])
-
-    @distributed_trace()
-    async def get_group(self, group_id: int) -> TelegramGroup:
-        """
-
-        :param group_id:
-        :return:
-        """
-
-    @distributed_trace()
-    async def update_group(
+    async def get_chat_groups(
         self,
-        group_id: str,
-        model: UpdateTelegramGroup
-    ):
+        page_size: int = 20,
+        page_index: int = 0
+    ) -> GroupList:
         """
 
-        :param group_id:
-        :param model:
+        :param page_size:
+        :param page_index:
         :return:
         """
-        pass
+        groups, total = await self._telegram_account_provider.get_chat_groups(
+            page_size=page_size,
+            page_index=page_index
+        )
+        return GroupList(
+            total=total,
+            groups=groups
+        )
 
     @distributed_trace()
-    async def get_all_chat_group_members(self, group_id: int):
+    async def get_chat_group_members(self, group_id: int) -> GroupMembers:
         """
-
+        get chat group members
         :param group_id:
         :return:
         """
-        members = await self._telegram_account_provider.get_all_chat_group_members(chat_id=group_id)
-        return GroupMembersResponse(members=members)
+        members = await self._telegram_account_provider.get_chat_group_members(chat_group_id=group_id)
+        return GroupMembers(
+            total=len(members),
+            members=members
+        )

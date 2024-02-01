@@ -87,7 +87,7 @@ class HandingFeeProvider:
         :return:
         """
         count = await (
-            self._session.select(sa.func.count(SysHandingFeeConfig.id))
+            self._session.select(sa.func.total(SysHandingFeeConfig.id))
             .where(SysHandingFeeConfig.is_global.is_(True))
             .fetchval()
         )

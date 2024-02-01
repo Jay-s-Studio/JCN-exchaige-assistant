@@ -10,16 +10,11 @@ from app.handlers.telegram import TelegramAccountHandler
 from app.libs.depends import check_all_authenticators, DEFAULT_RATE_LIMITERS
 from app.route_classes import LogRoute
 from app.serializers.v1.telegram import (
-    GroupsResponse,
-    GroupMembersResponse,
-    CustomerResponse,
+    TelegramAccount,
+    TelegramChatGroup,
     VendorResponse,
-    RawTelegramAccount,
-    RawTelegramGroup,
-    TelegramGroup,
-    UpdateTelegramGroup,
     GroupMemberBase,
-    InitGroupMember,
+    InitGroupMember, GroupList,
 )
 
 router = APIRouter(
@@ -33,11 +28,12 @@ router = APIRouter(
 
 @router.post(
     path="/raw/account",
-    status_code=status.HTTP_204_NO_CONTENT
+    status_code=status.HTTP_204_NO_CONTENT,
+    tags=["Vendors Bot API"]
 )
 @inject
 async def set_account(
-    telegram_account: RawTelegramAccount,
+    telegram_account: TelegramAccount,
     telegram_account_handler: TelegramAccountHandler = Depends(Provide[Container.telegram_account_handler])
 ):
     """
@@ -51,11 +47,12 @@ async def set_account(
 
 @router.post(
     path="/raw/group",
-    status_code=status.HTTP_204_NO_CONTENT
+    status_code=status.HTTP_204_NO_CONTENT,
+    tags=["Vendors Bot API"]
 )
 @inject
 async def set_group(
-    telegram_group: RawTelegramGroup,
+    telegram_group: TelegramChatGroup,
     telegram_account_handler: TelegramAccountHandler = Depends(Provide[Container.telegram_account_handler])
 ):
     """
@@ -69,7 +66,8 @@ async def set_group(
 
 @router.post(
     path="/init_chat_group_member",
-    status_code=status.HTTP_204_NO_CONTENT
+    status_code=status.HTTP_204_NO_CONTENT,
+    tags=["Vendors Bot API"]
 )
 @inject
 async def init_chat_group_member(
@@ -87,7 +85,8 @@ async def init_chat_group_member(
 
 @router.delete(
     path="/delete_chat_group_member",
-    status_code=status.HTTP_204_NO_CONTENT
+    status_code=status.HTTP_204_NO_CONTENT,
+    tags=["Vendors Bot API"]
 )
 @inject
 async def delete_chat_group_member(
@@ -107,8 +106,26 @@ async def delete_chat_group_member(
 
 
 @router.get(
+    path="/vendors",
+    response_model=VendorResponse,
+    status_code=status.HTTP_200_OK,
+    tags=["Vendors Bot API"]
+)
+@inject
+async def get_vendors(
+    telegram_account_handler: TelegramAccountHandler = Depends(Provide[Container.telegram_account_handler])
+):
+    """
+
+    :param telegram_account_handler:
+    :return:
+    """
+    return await telegram_account_handler.get_vendors()
+
+
+@router.get(
     path="/groups",
-    response_model=GroupsResponse,
+    response_model=GroupList,
     status_code=status.HTTP_200_OK
 )
 @inject
@@ -124,49 +141,14 @@ async def get_accounts(
     :param telegram_account_handler:
     :return:
     """
-    return await telegram_account_handler.get_chat_group_by_page(
+    return await telegram_account_handler.get_chat_groups(
         page_size=page_size,
         page_index=page_index
     )
 
 
 @router.get(
-    path="/vendors",
-    response_model=VendorResponse,
-    status_code=status.HTTP_200_OK
-)
-@inject
-async def get_vendors(
-    telegram_account_handler: TelegramAccountHandler = Depends(Provide[Container.telegram_account_handler])
-):
-    """
-
-    :param telegram_account_handler:
-    :return:
-    """
-    return await telegram_account_handler.get_vendors()
-
-
-@router.get(
-    path="/customers",
-    response_model=CustomerResponse,
-    status_code=status.HTTP_200_OK
-)
-@inject
-async def get_customers(
-    telegram_account_handler: TelegramAccountHandler = Depends(Provide[Container.telegram_account_handler])
-):
-    """
-
-    :param telegram_account_handler:
-    :return:
-    """
-    return await telegram_account_handler.get_customers()
-
-
-@router.get(
     path="/group/{group_id}",
-    response_model=TelegramGroup,
     status_code=status.HTTP_200_OK
 )
 @inject
@@ -180,7 +162,6 @@ async def get_group(
     :param telegram_account_handler:
     :return:
     """
-    return await telegram_account_handler.get_group(group_id=group_id)
 
 
 @router.put(
@@ -189,8 +170,8 @@ async def get_group(
 )
 @inject
 async def update_group(
-    group_id: str,
-    model: UpdateTelegramGroup,
+    group_id: int,
+    # model: UpdateTelegramGroup,
     telegram_account_handler: TelegramAccountHandler = Depends(Provide[Container.telegram_account_handler])
 ):
     """
@@ -200,15 +181,10 @@ async def update_group(
     :param telegram_account_handler:
     :return:
     """
-    return await telegram_account_handler.update_group(
-        group_id=group_id,
-        model=model
-    )
 
 
 @router.get(
     path="/group/{group_id}/members",
-    response_model=GroupMembersResponse,
     status_code=status.HTTP_200_OK
 )
 @inject
@@ -222,4 +198,3 @@ async def get_all_chat_group_members(
     :param telegram_account_handler:
     :return:
     """
-    return await telegram_account_handler.get_all_chat_group_members(group_id=group_id)

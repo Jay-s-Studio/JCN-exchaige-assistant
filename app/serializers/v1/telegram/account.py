@@ -1,20 +1,47 @@
 """
 Serializers for Telegram Account API
 """
+from datetime import datetime
 from typing import Optional, List
+from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_serializer
 
 from app.libs.consts.enums import BotType
-from app.schemas.account.telegram import TelegramAccount, TelegramChatGroup
 
 
-class RawTelegramAccount(TelegramAccount):  # noqa
-    pass
+class TelegramAccount(BaseModel):
+    """TelegramAccount"""
+    id: int
+    username: Optional[str] = Field(default=None, description="Username")
+    first_name: Optional[str] = Field(default=None, description="First Name")
+    last_name: Optional[str] = Field(default=None, description="Last Name")
+    full_name: Optional[str] = Field(default=None, description="Full Name")
+    name: Optional[str] = Field(default=None, description="Name")
+    language_code: Optional[str] = Field(default=None, description="Language Code")
+    is_bot: bool = Field(default=False, description="Is Bot")
+    is_premium: bool = False
+    link: Optional[str] = Field(default=None, description="Link")
 
 
-class RawTelegramGroup(TelegramChatGroup):
-    pass
+class TelegramChatGroup(BaseModel):
+    """TelegramChatGroup"""
+    # telegram raw data
+    id: int
+    title: str
+    type: str
+    in_group: bool
+    bot_type: BotType
+
+    @field_serializer("bot_type")
+    def serialize_enum(self, value: BotType, _info):
+        """
+        serialize enum
+        :param value:
+        :param _info:
+        :return:
+        """
+        return value.value
 
 
 class GroupMemberBase(BaseModel):
@@ -32,50 +59,50 @@ class InitGroupMember(GroupMemberBase):
     is_customer_service: bool = Field(default=False, description="Is Customer Service")
 
 
-class TelegramGroup(BaseModel):
-    """
-    Telegram Broadcast
-    """
-    id: int = Field(description="Group ID")
-    title: str = Field(description="Group Title")
-    description: Optional[str] = Field(default=None, description="Group Description")
-    in_group: bool = Field(description="Is In Group")
-    bot_type: BotType = Field(description="Group Bot Type")
-    customer_service: Optional[TelegramAccount] = Field(default=None, description="Group Customer Service")
-
-
-class GroupsResponse(BaseModel):
-    """
-    Groups Response
-    """
-    total: int = Field(default=0, description="Total Groups")
-    groups: List[TelegramGroup] = Field(default=[], description="Group List")
-
-
 class VendorResponse(BaseModel):
     """
     Vendor Response
     """
-    vendors: List[TelegramGroup] = Field(default=[], description="Vendor List")
+    vendors: List[TelegramChatGroup] = Field(default=[], description="Vendor List")
 
 
-class CustomerResponse(BaseModel):
+class GroupInfo(BaseModel):
     """
-    Customer Response
+    Group Info
     """
-    customers: List[TelegramGroup] = Field(default=[], description="Customer List")
+    id: int
+    title: str
+    in_group: bool
+    bot_type: BotType
+    description: str
+    customer_service_ids: List[int]
+    currency_symbol: str
+    handling_fee_name: str
 
 
-class GroupMembersResponse(BaseModel):
+class GroupList(BaseModel):
     """
-    Group Members Response
+    Group List
     """
-    members: List[Optional[TelegramAccount]] = Field(default=[], description="Group Member List")
+    total: int = Field(default=0)
+    groups: List[GroupInfo] = Field(default=[])
 
 
-class UpdateTelegramGroup(BaseModel):
+class GroupMember(BaseModel):
     """
-    Update Telegram Group
+    Group Member
     """
-    customer_service_id: int = Field(description="Group Customer Service ID")
-    description: Optional[str] = Field(default=None, description="Group Description")
+    id: int
+    username: Optional[str] = Field(default=None, description="Username")
+    first_name: Optional[str] = Field(default=None, description="First Name")
+    last_name: Optional[str] = Field(default=None, description="Last Name")
+    full_name: Optional[str] = Field(default=None, description="Full Name")
+    name: Optional[str] = Field(default=None, description="Name")
+
+
+class GroupMembers(BaseModel):
+    """
+    Group Members
+    """
+    total: int = Field(default=0, description="Total Members")
+    members: List[GroupMember] = Field(default=[], description="Group Members")
