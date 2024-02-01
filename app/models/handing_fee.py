@@ -14,7 +14,7 @@ class SysHandingFeeConfig(ModelBase, AuditMixin, DeletedMixin, DescriptionMixin)
     __tablename__ = "handing_fee_config"
     __table_args__ = {"schema": "public"}
 
-    name = Column(sa.String(255), comment="Name")
+    name = Column(sa.String(32), comment="Name")
     is_global = Column(sa.Boolean, server_default=sa.text("false"), comment="Is Global")
 
 
@@ -39,5 +39,7 @@ class SysHandingFeeConfigItem(ModelBase, AuditMixin, DeletedMixin):
         sa.ForeignKey("public.currency.id", name="currency_id_fkey", ondelete="CASCADE"),
         comment="Currency ID"
     )
-    calculation_type = Column(sa.String(32), comment="Calculation Type")
-    value = Column(sa.Float, comment="Value")
+    buy_calculation_type = Column(sa.String(32), comment="Buy Calculation Type, Option: [addition|subtraction|multiplication|division]")
+    buy_value = Column(sa.Float, comment="Buy Value")
+    sell_calculation_type = Column(sa.String(32), comment="Sell Calculation Type, Option: [addition|subtraction|multiplication|division]")
+    sell_value = Column(sa.Float, comment="Sell Value")

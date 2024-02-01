@@ -56,3 +56,17 @@ class GinaAction(StrEnum):
     RECEIPT = "receipt"
     CANCEL_ORDER = "cancel order"
     HURRY = "hurry"
+
+
+class OperationType(StrEnum):
+    """OperationType"""
+    BUY = "buy"
+    SELL = "sell"
+
+
+class CalculationType(StrEnum):
+    """CalculationType"""
+    ADDITION = "addition"
+    SUBTRACTION = "subtraction"
+    MULTIPLICATION = "multiplication"
+    DIVISION = "division"

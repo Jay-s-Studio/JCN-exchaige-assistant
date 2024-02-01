@@ -4,6 +4,7 @@ Exception for APIs
 from typing import Any, Optional, Dict
 
 from fastapi import HTTPException
+from starlette import status
 
 
 class APIException(HTTPException):
@@ -57,7 +58,23 @@ class NotFoundException(ApiBaseException):
         headers: Optional[Dict[str, Any]] = None,
         **kwargs
     ):
-        super().__init__(status_code=404, detail=detail, headers=headers)
+        super().__init__(status_code=status.HTTP_404_NOT_FOUND, detail=detail, headers=headers)
+        self.debug_detail = kwargs.pop('debug_detail', None)
+
+
+class ResourceExistsException(ApiBaseException):
+    """
+    Resource Exists Exception
+    status_code: 409
+    """
+
+    def __init__(
+        self,
+        detail: str,
+        headers: Optional[Dict[str, Any]] = None,
+        **kwargs
+    ):
+        super().__init__(status_code=status.HTTP_409_CONFLICT, detail=detail, headers=headers)
         self.debug_detail = kwargs.pop('debug_detail', None)
 
 
@@ -73,7 +90,7 @@ class NotImplementedException(ApiBaseException):
         headers: Optional[Dict[str, Any]] = None,
         **kwargs
     ):
-        super().__init__(status_code=501, detail=detail, headers=headers)
+        super().__init__(status_code=status.HTTP_501_NOT_IMPLEMENTED, detail=detail, headers=headers)
         self.debug_detail = kwargs.pop('debug_detail', None)
 
 
