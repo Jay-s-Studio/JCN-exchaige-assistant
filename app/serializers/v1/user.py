@@ -2,19 +2,30 @@
 Serializer for User API
 """
 from datetime import datetime
+from typing import Optional
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.schemas.mixins import UUIDBaseModel
 
 
-class UserRegister(BaseModel):
+class UserBase(UUIDBaseModel):
+    """
+    User
+    """
+    pass
+
+
+class UserRegister(UUIDBaseModel):
     """
     New User
     """
-    username: str
-    password: str
+    email: str = Field(description="Email")
+    username: str = Field(description="Username")
+    display_name: Optional[str] = Field(default=None, description="Display Name")
+    password: str = Field(description="Password")
+    confirm_password: str = Field(description="Confirm Password")
 
 
 class UserLogin(BaseModel):
@@ -48,10 +59,3 @@ class LoginResponse(TokenResponse):
     Login Response
     """
     pass
-
-
-class RefreshToken(BaseModel):
-    """
-    Refresh Token
-    """
-    user_id: UUID

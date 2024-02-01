@@ -1,5 +1,5 @@
 """
-Serializer for handing fee API
+Serializer for handling fee API
 """
 from typing import Optional, List
 from uuid import UUID
@@ -10,18 +10,18 @@ from app.libs.consts.enums import CalculationType, OperationType
 from app.schemas.mixins import UUIDBaseModel
 
 
-class HandingFeeConfigBase(UUIDBaseModel):
+class HandlingFeeConfigBase(UUIDBaseModel):
     """
-    HandingFeeConfigBase
+    HandlingFeeConfigBase
     """
     name: str = Field(title="Name", description="Name of the fee", max_length=32)
     is_global: bool = Field(default=False, title="Is Global", description="Is the fee global")
     description: Optional[str] = Field(default=None, title="Description", description="Description of the fee")
 
 
-class HandingFeeConfigItem(BaseModel):
+class HandlingFeeConfigItem(BaseModel):
     """
-    HandingFeeConfigItem
+    HandlingFeeConfigItem
     """
     currency_id: UUID = Field(title="Currency ID", description="Currency ID")
     buy_calculation_type: CalculationType = Field(title="Buy Calculation Type", description="Buy Calculation Type")
@@ -30,16 +30,16 @@ class HandingFeeConfigItem(BaseModel):
     sell_value: float = Field(title="Sell Value", description="Sell Value")
 
 
-class HandingFeeConfig(HandingFeeConfigBase):
+class HandlingFeeConfig(HandlingFeeConfigBase):
     """
-    HandingFeeConfig
+    HandlingFeeConfig
     """
-    items: List[HandingFeeConfigItem] = Field(title="Items", description="Items of the fee")
+    items: List[HandlingFeeConfigItem] = Field(title="Items", description="Items of the fee")
 
 
-class HandingFeeConfigPage(BaseModel):
+class HandlingFeeConfigPage(BaseModel):
     """
-    HandingFeeConfigPage
+    HandlingFeeConfigPage
     """
     total: int = Field(title="Total", description="Total count")
-    configs: List[HandingFeeConfigBase] = Field(title="Items", description="Items of the page")
+    configs: List[HandlingFeeConfigBase] = Field(title="Items", description="Items of the page")

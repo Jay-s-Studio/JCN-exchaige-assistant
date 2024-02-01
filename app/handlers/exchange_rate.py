@@ -1,9 +1,6 @@
 """
 ExchangeRateHandler
 """
-from starlette import status
-
-from app.exceptions.api_base import APIException
 from app.libs.decorators.sentry_tracer import distributed_trace
 from app.libs.logger import logger
 from app.providers import ExchangeRateProvider

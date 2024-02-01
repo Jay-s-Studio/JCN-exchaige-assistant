@@ -1,5 +1,5 @@
 """
-Model for Handing Fee
+Model for Handling Fee
 """
 import sqlalchemy as sa
 from sqlalchemy import Column
@@ -9,30 +9,30 @@ from app.libs.database.orm import ModelBase
 from .mixins import AuditMixin, DeletedMixin, DescriptionMixin
 
 
-class SysHandingFeeConfig(ModelBase, AuditMixin, DeletedMixin, DescriptionMixin):
-    """SysHandingFeeConfig"""
-    __tablename__ = "handing_fee_config"
+class SysHandlingFeeConfig(ModelBase, AuditMixin, DeletedMixin, DescriptionMixin):
+    """SysHandlingFeeConfig"""
+    __tablename__ = "handling_fee_config"
     __table_args__ = {"schema": "public"}
 
     name = Column(sa.String(32), comment="Name")
     is_global = Column(sa.Boolean, server_default=sa.text("false"), comment="Is Global")
 
 
-class SysHandingFeeConfigItem(ModelBase, AuditMixin, DeletedMixin):
-    """SysHandingFeeConfigItem"""
-    __tablename__ = "handing_fee_config_item"
+class SysHandlingFeeConfigItem(ModelBase, AuditMixin, DeletedMixin):
+    """SysHandlingFeeConfigItem"""
+    __tablename__ = "handling_fee_config_item"
     __table_args__ = (
-        sa.UniqueConstraint("handing_fee_config_id", "currency_id", name="unique_handing_fee_config_item_uc"),
+        sa.UniqueConstraint("handling_fee_config_id", "currency_id", name="unique_handling_fee_config_item_key"),
         {"schema": "public"}
     )
-    handing_fee_config_id = Column(
+    handling_fee_config_id = Column(
         UUID,
         sa.ForeignKey(
-            column=SysHandingFeeConfig.id,
-            name="handing_fee_config_relation_id_fkey",
+            column=SysHandlingFeeConfig.id,
+            name="handling_fee_config_relation_id_fkey",
             ondelete="CASCADE",
         ),
-        comment="Handing Fee Config ID"
+        comment="Handling Fee Config ID"
     )
     currency_id = Column(
         UUID,

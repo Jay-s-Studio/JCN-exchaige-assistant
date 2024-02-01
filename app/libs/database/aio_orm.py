@@ -3,7 +3,7 @@ import inspect
 import re
 import uuid
 from datetime import datetime, date
-from enum import Enum
+from enum import Enum, StrEnum
 from typing import List, Callable, overload, Tuple, Union, TypeVar, Type, Any, Optional
 
 import asyncpg
@@ -33,13 +33,20 @@ T = TypeVar('T')
 TableTypes = Union['Table', Type[sa.Table], Type[Base], Type[ModelBase]]
 
 
+class FetchMethod(StrEnum):
+    """Fetch Method"""
+    FETCH = 'fetch'
+    FETCH_VAL = 'fetch_val'
+    FETCH_ROW = 'fetch_row'
+
+
 def _format_value(value):
     return Converter.format_value(value)
 
 
 def _format_dict(item, as_model: Type[BaseModel] = None):
     if item is None:
-        return {}
+        return item
     if as_model:
         return as_model.model_validate(dict(item))
     else:
@@ -463,7 +470,7 @@ def convert_literal_value(value):
     if isinstance(value, Enum):
         value = value.value
     if isinstance(value, datetime):
-        return f"""'{value.strftime("%Y-%m-%d %H:%M:%S")}'"""
+        return f"""'{value.isoformat()}'"""
     elif isinstance(value, date):
         return f"""'{value.strftime("%Y-%m-%d")}'"""
     elif isinstance(value, int) or isinstance(value, float):
@@ -770,7 +777,7 @@ class Session(ISession):
         :param as_model:
         :return:
         """
-        return await self._fetch('fetch', statement, params, timeout=timeout, as_model=as_model)
+        return await self._fetch(FetchMethod.FETCH, statement, params, timeout=timeout, as_model=as_model)
 
     async def fetchgroup(
         self,
@@ -796,7 +803,7 @@ class Session(ISession):
         return itertools.groupby(items, key=lambda item: item[groupby])
 
     async def fetchrow(self, statement, *params, timeout: float = None, as_model: Type[BaseModel] = None):
-        return await self._fetch('fetchrow', statement, params, timeout=timeout, as_model=as_model)
+        return await self._fetch(FetchMethod.FETCH_ROW, statement, params, timeout=timeout, as_model=as_model)
 
     async def fetchval(self, statement: Union[str, Any], *params, timeout: float = None):
         """
@@ -805,7 +812,7 @@ class Session(ISession):
         :param timeout:
         :return:
         """
-        return await self._fetch('fetchval', statement, params, timeout=timeout)
+        return await self._fetch(FetchMethod.FETCH_VAL, statement, params, timeout=timeout)
 
     async def fetchvals(self, statement, *params, timeout: float = None):
         sql, params = self._format_statement(statement, None, *params)
@@ -844,7 +851,7 @@ class Session(ISession):
 
     async def _fetch(
         self,
-        method: str,
+        method: FetchMethod,
         statement,
         params,
         append_statement: str = None,
@@ -855,17 +862,18 @@ class Session(ISession):
             await self._locker.acquire()
             sql, params = self._format_statement(statement, append_statement, *params)
             await self._ensure_connection(False)
-            if method == 'fetchval':
-                value = await self._conn.fetchval(sql, *params, timeout=timeout)
-                return _format_value(value)
-            elif method == 'fetchrow':
-                value = await self._conn.fetchrow(sql, *params, timeout=timeout)
-                return _format_dict(item=value, as_model=as_model)
-            elif method == 'fetch':
-                rows = await self._conn.fetch(sql, *params, timeout=timeout) or []
-                return [_format_dict(item=item, as_model=as_model) for item in rows]
-            else:
-                raise NotImplementedError()
+            match method:
+                case FetchMethod.FETCH_VAL:
+                    value = await self._conn.fetchval(sql, *params, timeout=timeout)
+                    return _format_value(value)
+                case FetchMethod.FETCH_ROW:
+                    value = await self._conn.fetchrow(sql, *params, timeout=timeout)
+                    return _format_dict(item=value, as_model=as_model)
+                case FetchMethod.FETCH:
+                    rows = await self._conn.fetch(sql, *params, timeout=timeout) or []
+                    return [_format_dict(item=item, as_model=as_model) for item in rows]
+                case _:
+                    raise NotImplementedError()
         except Exception:
             await self.rollback(False)
             raise

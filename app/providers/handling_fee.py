@@ -1,5 +1,5 @@
 """
-HandingFeeProvider
+HandlingFeeProvider
 """
 from typing import List, Tuple
 from uuid import UUID
@@ -9,12 +9,12 @@ from redis.asyncio import Redis
 
 from app.libs.database import RedisPool, Session
 from app.libs.decorators.sentry_tracer import distributed_trace
-from app.models.handing_fee import SysHandingFeeConfig, SysHandingFeeConfigItem
-from app.serializers.v1.handing_fee import HandingFeeConfig, HandingFeeConfigItem, HandingFeeConfigBase
+from app.models.handling_fee import SysHandlingFeeConfig, SysHandlingFeeConfigItem
+from app.serializers.v1.handling_fee import HandlingFeeConfig, HandlingFeeConfigItem, HandlingFeeConfigBase
 
 
-class HandingFeeProvider:
-    """HandingFeeProvider"""
+class HandlingFeeProvider:
+    """HandlingFeeProvider"""
 
     def __init__(
         self,
@@ -25,87 +25,87 @@ class HandingFeeProvider:
         self._redis: Redis = redis.create()
 
     @distributed_trace()
-    async def get_handing_fee_config_page(self, page_index: int, page_size: int) -> Tuple[List[HandingFeeConfigBase], int]:
+    async def get_handling_fee_config_page(self, page_index: int, page_size: int) -> Tuple[List[HandlingFeeConfigBase], int]:
         """
-        get handing fee config page
+        get handling fee config page
         :param page_index:
         :param page_size:
         :return:
         """
         configs, total = await (
             self._session.select(
-                SysHandingFeeConfig.id,
-                SysHandingFeeConfig.name,
-                SysHandingFeeConfig.is_global,
-                SysHandingFeeConfig.description
+                SysHandlingFeeConfig.id,
+                SysHandlingFeeConfig.name,
+                SysHandlingFeeConfig.is_global,
+                SysHandlingFeeConfig.description
             )
-            .order_by(SysHandingFeeConfig.is_global.desc())
+            .order_by(SysHandlingFeeConfig.is_global.desc())
             .limit(page_size)
             .offset(page_index * page_size)
-            .fetchpages(as_model=HandingFeeConfigBase)
+            .fetchpages(as_model=HandlingFeeConfigBase)
         )
         return configs, total
 
     @distributed_trace()
-    async def get_handing_fee_config(self, config_id: UUID) -> HandingFeeConfig:
+    async def get_handling_fee_config(self, config_id: UUID) -> HandlingFeeConfig:
         """
-        get handing fee config
+        get handling fee config
         :param config_id:
         :return:
         """
-        base_config: HandingFeeConfigBase = await (
+        base_config: HandlingFeeConfigBase = await (
             self._session.select(
-                SysHandingFeeConfig.id,
-                SysHandingFeeConfig.name,
-                SysHandingFeeConfig.is_global,
-                SysHandingFeeConfig.description
+                SysHandlingFeeConfig.id,
+                SysHandlingFeeConfig.name,
+                SysHandlingFeeConfig.is_global,
+                SysHandlingFeeConfig.description
             )
-            .where(SysHandingFeeConfig.id == config_id)
-            .fetchrow(as_model=HandingFeeConfigBase)
+            .where(SysHandlingFeeConfig.id == config_id)
+            .fetchrow(as_model=HandlingFeeConfigBase)
         )
         items = await (
             self._session.select(
-                SysHandingFeeConfigItem.currency_id,
-                SysHandingFeeConfigItem.buy_calculation_type,
-                SysHandingFeeConfigItem.buy_value,
-                SysHandingFeeConfigItem.sell_calculation_type,
-                SysHandingFeeConfigItem.sell_value
+                SysHandlingFeeConfigItem.currency_id,
+                SysHandlingFeeConfigItem.buy_calculation_type,
+                SysHandlingFeeConfigItem.buy_value,
+                SysHandlingFeeConfigItem.sell_calculation_type,
+                SysHandlingFeeConfigItem.sell_value
             )
-            .where(SysHandingFeeConfigItem.handing_fee_config_id == config_id)
-            .fetch(as_model=HandingFeeConfigItem)
+            .where(SysHandlingFeeConfigItem.handling_fee_config_id == config_id)
+            .fetch(as_model=HandlingFeeConfigItem)
         )
-        config = HandingFeeConfig(
+        config = HandlingFeeConfig(
             **base_config.model_dump(),
             items=items
         )
         return config
 
     @distributed_trace()
-    async def get_global_handing_fee_config(self) -> int:
+    async def get_global_handling_fee_config(self) -> int:
         """
-        get global handing fee config
+        get global handling fee config
         :return:
         """
         count = await (
             self._session.select(
-                sa.func.count(SysHandingFeeConfig.id)
+                sa.func.count(SysHandlingFeeConfig.id)
             )
-            .where(SysHandingFeeConfig.is_global.is_(True))
+            .where(SysHandlingFeeConfig.is_global.is_(True))
             .fetchval()
         )
         return count
 
     @distributed_trace()
-    async def create_handing_fee_config(self, config: HandingFeeConfig):
+    async def create_handling_fee_config(self, config: HandlingFeeConfig):
         """
-        create handing fee config
+        create handling fee config
         :param config:
         :return:
         """
         data = config.model_dump(exclude={"items"})
         try:
             await (
-                self._session.insert(SysHandingFeeConfig)
+                self._session.insert(SysHandlingFeeConfig)
                 .values(data)
                 .on_conflict_do_nothing(index_elements=["id"])
                 .execute()
@@ -119,18 +119,18 @@ class HandingFeeProvider:
             await self._session.close()
 
     @distributed_trace()
-    async def create_handing_fee_config_item(self, config_id: UUID, item: HandingFeeConfigItem):
+    async def create_handling_fee_config_item(self, config_id: UUID, item: HandlingFeeConfigItem):
         """
-        create handing fee config item
+        create handling fee config item
         :param config_id:
         :param item:
         :return:
         """
         data = item.model_dump()
-        data["handing_fee_config_id"] = config_id
+        data["handling_fee_config_id"] = config_id
         try:
             await (
-                self._session.insert(SysHandingFeeConfigItem)
+                self._session.insert(SysHandlingFeeConfigItem)
                 .values(data)
                 .execute()
             )
@@ -143,9 +143,9 @@ class HandingFeeProvider:
             await self._session.close()
 
     @distributed_trace()
-    async def update_handing_fee_config(self, config_id: UUID, config: HandingFeeConfig):
+    async def update_handling_fee_config(self, config_id: UUID, config: HandlingFeeConfig):
         """
-        update handing fee config
+        update handling fee config
         :param config_id:
         :param config:
         :return:
@@ -153,8 +153,8 @@ class HandingFeeProvider:
         data = config.model_dump(exclude={"id", "items"})
         try:
             await (
-                self._session.update(SysHandingFeeConfig)
-                .where(SysHandingFeeConfig.id == config_id)
+                self._session.update(SysHandlingFeeConfig)
+                .where(SysHandlingFeeConfig.id == config_id)
                 .values(data)
                 .execute()
             )
@@ -167,21 +167,21 @@ class HandingFeeProvider:
             await self._session.close()
 
     @distributed_trace()
-    async def update_handing_fee_config_item(self, config_id: UUID, item: HandingFeeConfigItem):
+    async def update_handling_fee_config_item(self, config_id: UUID, item: HandlingFeeConfigItem):
         """
-        update handing fee config item
+        update handling fee config item
         :param config_id:
         :param item:
         :return:
         """
         data = item.model_dump()
-        data["handing_fee_config_id"] = config_id
+        data["handling_fee_config_id"] = config_id
         try:
             await (
-                self._session.insert(SysHandingFeeConfigItem)
+                self._session.insert(SysHandlingFeeConfigItem)
                 .values(data)
                 .on_conflict_do_update(
-                    constraint="unique_handing_fee_config_item_uc",
+                    constraint="unique_handling_fee_config_item_key",
                     set_=data
                 )
                 .execute()

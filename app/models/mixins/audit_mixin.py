@@ -69,7 +69,7 @@ class AuditUpdatedMixin(object):
         return Column(
             DateTime(timezone=True),
             server_default=sa.func.now(tz=pytz.UTC),
-            onupdate=datetime.utcnow,
+            onupdate=lambda: datetime.now(tz=pytz.UTC),
             comment="Update Date",
             nullable=False
         )

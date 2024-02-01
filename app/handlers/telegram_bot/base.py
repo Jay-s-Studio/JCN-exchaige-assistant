@@ -80,7 +80,7 @@ class TelegramBotBaseHandler:
         """
         tasks = [
             self._telegram_account_provider.set_account(account=account),
-            self._telegram_account_provider.update_chat_group(chat_group=chat_group),
+            self._telegram_account_provider.set_group(chat_group=chat_group),
         ]
         await asyncio.gather(*tasks)
         group_member = {

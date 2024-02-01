@@ -13,6 +13,7 @@ class User(UUIDBaseModel):
     """
     User
     """
+    email: str
     username: str
     display_name: str
     hash_password: str

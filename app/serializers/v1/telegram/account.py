@@ -74,10 +74,10 @@ class GroupInfo(BaseModel):
     title: str
     in_group: bool
     bot_type: BotType
-    description: str
-    customer_service_ids: List[int]
-    currency_symbol: str
-    handling_fee_name: str
+    description: Optional[str] = Field(default=None)
+    customer_service_ids: List[int] = Field(default=[])
+    currency_symbol: Optional[str] = Field(default=None)
+    handling_fee_name: Optional[str] = Field(default=None)
 
 
 class GroupList(BaseModel):
@@ -86,6 +86,16 @@ class GroupList(BaseModel):
     """
     total: int = Field(default=0)
     groups: List[GroupInfo] = Field(default=[])
+
+
+class UpdateGroupInfo(BaseModel):
+    """
+    Update Group Info
+    """
+    description: Optional[str] = Field(default=None, description="Description")
+    customer_service_ids: Optional[List[int]] = Field(default=None, description="Customer Service IDs")
+    currency_id: Optional[UUID] = Field(default=None, description="Currency ID")
+    handling_fee_config_id: Optional[UUID] = Field(default=None, description="Handling Fee Config ID")
 
 
 class GroupMember(BaseModel):
@@ -98,6 +108,7 @@ class GroupMember(BaseModel):
     last_name: Optional[str] = Field(default=None, description="Last Name")
     full_name: Optional[str] = Field(default=None, description="Full Name")
     name: Optional[str] = Field(default=None, description="Name")
+    is_customer_service: bool = Field(default=False, description="Is Customer Service")
 
 
 class GroupMembers(BaseModel):

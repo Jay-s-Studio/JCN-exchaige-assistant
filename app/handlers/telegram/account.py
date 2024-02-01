@@ -1,8 +1,6 @@
 """
 TelegramAccountHandler
 """
-from typing import List, Optional
-
 from starlette import status
 from telegram import Bot
 
@@ -14,7 +12,11 @@ from app.serializers.v1.telegram import (
     TelegramChatGroup,
     TelegramAccount,
     InitGroupMember,
-    VendorResponse, GroupMembers, GroupList,
+    VendorResponse,
+    GroupMembers,
+    GroupList,
+    GroupInfo,
+    UpdateGroupInfo,
 )
 
 
@@ -41,7 +43,7 @@ class TelegramAccountHandler:
         :param telegram_group:
         :return:
         """
-        await self._telegram_account_provider.update_chat_group(chat_group=telegram_group)
+        await self._telegram_account_provider.set_group(chat_group=telegram_group)
 
     @distributed_trace()
     async def init_chat_group_member(self, model: InitGroupMember):
@@ -91,6 +93,41 @@ class TelegramAccountHandler:
             total=total,
             groups=groups
         )
+
+    @distributed_trace()
+    async def get_chat_group(self, group_id: int) -> GroupInfo:
+        """
+        get chat group
+        :param group_id:
+        :return:
+        """
+        group = await self._telegram_account_provider.get_chat_group(chat_group_id=group_id)
+        if not group:
+            raise APIException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                message="Group Not Found"
+            )
+        return group
+
+    @distributed_trace()
+    async def update_group(self, group_id: int, group_info: UpdateGroupInfo) -> None:
+        """
+        update chat group
+        :param group_id:
+        :param group_info:
+        :return:
+        """
+        await self._telegram_account_provider.update_group(
+            group_id=group_id,
+            group_info=group_info
+        )
+        if group_info.customer_service_ids:
+            for customer_service_id in group_info.customer_service_ids:
+                await self._telegram_account_provider.update_customer_service(
+                    chat_group_id=group_id,
+                    account_id=customer_service_id,
+                    is_customer_service=True
+                )
 
     @distributed_trace()
     async def get_chat_group_members(self, group_id: int) -> GroupMembers:

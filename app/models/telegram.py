@@ -6,7 +6,7 @@ from sqlalchemy import Column
 from sqlalchemy.dialects.postgresql import UUID
 
 from app.libs.database.orm import Base, ModelBase
-from .handing_fee import SysHandingFeeConfig
+from .handling_fee import SysHandlingFeeConfig
 from .mixins import AuditMixin, DeletedMixin, DescriptionMixin
 
 
@@ -43,15 +43,15 @@ class SysTelegramChatGroup(Base, AuditMixin, DeletedMixin, DescriptionMixin):
         nullable=True,
         comment="Currency ID"
     )
-    handing_fee_config_id = Column(
+    handling_fee_config_id = Column(
         UUID,
         sa.ForeignKey(
-            column=SysHandingFeeConfig.id,
-            name="handing_fee_config_relation_id_fkey",
+            column=SysHandlingFeeConfig.id,
+            name="handling_fee_config_relation_id_fkey",
             ondelete="SET NULL",
         ),
         nullable=True,
-        comment="Handing Fee Config ID"
+        comment="Handling Fee Config ID"
     )
 
 
@@ -59,7 +59,7 @@ class SysTelegramChatGroupMember(ModelBase, AuditMixin, DeletedMixin):
     """SysTelegramChatGroupMember"""
     __tablename__ = "telegram_chat_group_member"
     __table_args__ = (
-        sa.UniqueConstraint("account_id", "chat_group_id", name="unique_telegram_chat_group_member_uc"),
+        sa.UniqueConstraint("account_id", "chat_group_id", name="unique_telegram_chat_group_member_key"),
         {"schema": "public"}
     )
     chat_group_id = Column(

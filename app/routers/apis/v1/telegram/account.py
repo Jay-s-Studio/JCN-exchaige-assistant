@@ -14,7 +14,11 @@ from app.serializers.v1.telegram import (
     TelegramChatGroup,
     VendorResponse,
     GroupMemberBase,
-    InitGroupMember, GroupList,
+    InitGroupMember,
+    GroupInfo,
+    GroupList,
+    GroupMembers,
+    UpdateGroupInfo,
 )
 
 router = APIRouter(
@@ -149,6 +153,7 @@ async def get_accounts(
 
 @router.get(
     path="/group/{group_id}",
+    response_model=GroupInfo,
     status_code=status.HTTP_200_OK
 )
 @inject
@@ -162,6 +167,7 @@ async def get_group(
     :param telegram_account_handler:
     :return:
     """
+    return await telegram_account_handler.get_chat_group(group_id=group_id)
 
 
 @router.put(
@@ -171,7 +177,7 @@ async def get_group(
 @inject
 async def update_group(
     group_id: int,
-    # model: UpdateTelegramGroup,
+    model: UpdateGroupInfo,
     telegram_account_handler: TelegramAccountHandler = Depends(Provide[Container.telegram_account_handler])
 ):
     """
@@ -181,14 +187,16 @@ async def update_group(
     :param telegram_account_handler:
     :return:
     """
+    return await telegram_account_handler.update_group(group_id=group_id, group_info=model)
 
 
 @router.get(
     path="/group/{group_id}/members",
-    status_code=status.HTTP_200_OK
+    response_model=GroupMembers,
+    status_code=status.HTTP_200_OK,
 )
 @inject
-async def get_all_chat_group_members(
+async def get_chat_group_members(
     group_id: int,
     telegram_account_handler: TelegramAccountHandler = Depends(Provide[Container.telegram_account_handler])
 ):
@@ -198,3 +206,4 @@ async def get_all_chat_group_members(
     :param telegram_account_handler:
     :return:
     """
+    return await telegram_account_handler.get_chat_group_members(group_id=group_id)

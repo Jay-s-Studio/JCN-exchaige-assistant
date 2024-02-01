@@ -5,7 +5,7 @@ from .account import TelegramAccountProvider
 from .currency import CurrencyProvider
 from .exchange_rate import ExchangeRateProvider
 from .gina import GinaProvider
-from .handing_fee import HandingFeeProvider
+from .handling_fee import HandlingFeeProvider
 from .user import UserProvider
 
 __all__ = [
@@ -17,8 +17,8 @@ __all__ = [
     "ExchangeRateProvider",
     # gina
     "GinaProvider",
-    # handing_fee
-    "HandingFeeProvider",
+    # handling_fee
+    "HandlingFeeProvider",
     # user
     "UserProvider",
 ]

@@ -18,10 +18,12 @@ async def test_create_user(user_handler: UserHandler):
     :return:
     """
     model = UserRegister(
-        username="admin",
+        email="admin@dummy.com",
+        username="admin1",
         password="!QAZ2wsx3edc4rfv",
+        confirm_password="!QAZ2wsx3edc4rfv",
     )
-    await user_handler.create_user(model=model)
+    await user_handler.register(model=model)
 
 
 @pytest.mark.asyncio
@@ -32,11 +34,13 @@ async def test_create_user_with_week_password(user_handler: UserHandler):
     :return:
     """
     model = UserRegister(
+        email="account1@dummy.com",
         username="account1",
         password="abcdefg",
+        confirm_password="abcdefg",
     )
     with pytest.raises(HTTPException) as exc:
-        await user_handler.create_user(model=model)
+        await user_handler.register(model=model)
 
     assert exc.type == HTTPException
 

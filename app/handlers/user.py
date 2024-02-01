@@ -7,6 +7,7 @@ from typing import Optional
 
 import bcrypt
 import pytz
+from asyncpg import UniqueViolationError
 from redis.asyncio import Redis
 from starlette import status
 
@@ -18,7 +19,7 @@ from app.libs.database import RedisPool
 from app.libs.decorators.sentry_tracer import distributed_trace
 from app.schemas.user import User
 from app.providers import UserProvider
-from app.serializers.v1.user import UserLogin, UserRegister, LoginResponse, TokenResponse, UserInfoResponse
+from app.serializers.v1.user import UserLogin, UserRegister, LoginResponse, TokenResponse, UserInfoResponse, UserBase
 
 
 class UserHandler:
@@ -67,11 +68,16 @@ class UserHandler:
         return user.username == username
 
     @distributed_trace()
-    async def create_user(self, model: UserRegister):
+    async def register(self, model: UserRegister) -> UserBase:
         """
-        Create user
+        Register
         :return:
         """
+        if model.password != model.confirm_password:
+            raise APIException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                message="Password not match"
+            )
         if await self.check_user_exist(username=model.username):
             raise APIException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -85,14 +91,23 @@ class UserHandler:
         salt = bcrypt.gensalt()
         hash_password = self.hash_password(salt, model.password)
         user = User(
-            id=uuid.uuid4(),
+            id=model.id or uuid.uuid4(),
+            email=model.email,
             username=model.username,
-            display_name=model.username,
+            display_name=model.display_name or model.username,
             hash_password=hash_password.decode(),
             password_salt=salt.decode(),
             is_active=True,
         )
-        await self.user_provider.create_user(user=user)
+        try:
+            await self.user_provider.create_user(user=user)
+        except UniqueViolationError:
+            raise APIException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                message="User already exist"
+            )
+        else:
+            return UserBase(id=user.id)
 
     @distributed_trace()
     async def get_user_info(self, user_id: uuid.UUID) -> UserInfoResponse:

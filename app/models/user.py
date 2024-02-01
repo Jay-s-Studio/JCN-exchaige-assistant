@@ -11,8 +11,12 @@ from .mixins import AuditMixin, DeletedMixin
 class SysUser(ModelBase, AuditMixin, DeletedMixin):
     """SysUser"""
     __tablename__ = "user"
-    __table_args__ = {"schema": "public"}
+    __table_args__ = (
+        sa.UniqueConstraint("email", name="user_email_key"),
+        {"schema": "public"}
+    )
 
+    email = Column(sa.String(255), comment="Email")
     username = Column(sa.String(255), comment="Username")
     display_name = Column(sa.String(255), nullable=True, comment="Display Name")
     hash_password = Column(sa.String(255), comment="Hash Password")

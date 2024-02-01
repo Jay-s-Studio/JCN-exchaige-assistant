@@ -4,7 +4,7 @@ Top level handlers package
 from .auth import AuthHandler
 from .currency import CurrencyHandler
 from .exchange_rate import ExchangeRateHandler
-from .handing_fee import HandingFeeHandler
+from .handling_fee import HandlingFeeHandler
 from .telegram import TelegramAccountHandler, TelegramMessageHandler
 from .telegram_bot import TelegramBotMessagesHandler
 from .user import UserHandler
@@ -16,8 +16,8 @@ __all__ = [
     "CurrencyHandler",
     # exchange_rate
     "ExchangeRateHandler",
-    # handing_fee
-    "HandingFeeHandler",
+    # handling_fee
+    "HandlingFeeHandler",
     # telegram
     "TelegramAccountHandler",
     "TelegramMessageHandler",
