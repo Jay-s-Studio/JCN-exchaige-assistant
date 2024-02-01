@@ -101,7 +101,7 @@ class TelegramAccountHandler:
         :param group_id:
         :return:
         """
-        group = await self._telegram_account_provider.get_chat_group(chat_group_id=group_id)
+        group = await self._telegram_account_provider.get_chat_group(group_id=group_id)
         if not group:
             raise APIException(
                 status_code=status.HTTP_404_NOT_FOUND,

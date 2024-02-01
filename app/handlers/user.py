@@ -151,7 +151,7 @@ class UserHandler:
         await self.user_provider.update_last_login(user_id=user.id, last_login=last_login)
         access_token = self.auth_handler.generate_token(user=user)
         await self.redis.set(
-            name=get_user_access_token_key(user_id=user.id.hex),
+            name=get_user_access_token_key(user_id=user.id),
             value=access_token,
             ex=ExpireTime.ONE_DAY.value * 3
         )

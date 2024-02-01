@@ -57,7 +57,18 @@ class UserProvider:
         :return:
         """
         return await (
-            self._session.select(SysUser)
+            self._session.select(
+                SysUser.id,
+                SysUser.email,
+                SysUser.username,
+                SysUser.display_name,
+                SysUser.hash_password,
+                SysUser.password_salt,
+                SysUser.is_superuser,
+                SysUser.is_active,
+                SysUser.gac,
+                SysUser.last_login_at
+            )
             .where(SysUser.username == username)
             .fetchrow(as_model=User)
         )
@@ -71,7 +82,18 @@ class UserProvider:
         :return:
         """
         return await (
-            self._session.select(SysUser)
+            self._session.select(
+                SysUser.id,
+                SysUser.email,
+                SysUser.username,
+                SysUser.display_name,
+                SysUser.hash_password,
+                SysUser.password_salt,
+                SysUser.is_superuser,
+                SysUser.is_active,
+                SysUser.gac,
+                SysUser.last_login_at
+            )
             .where(SysUser.id == user_id)
             .fetchrow(as_model=User)
         )

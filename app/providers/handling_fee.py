@@ -1,10 +1,9 @@
 """
 HandlingFeeProvider
 """
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 from uuid import UUID
 
-import sqlalchemy as sa
 from redis.asyncio import Redis
 
 from app.libs.database import RedisPool, Session
@@ -81,19 +80,22 @@ class HandlingFeeProvider:
         return config
 
     @distributed_trace()
-    async def get_global_handling_fee_config(self) -> int:
+    async def get_global_handling_fee_config(self) -> Optional[HandlingFeeConfigBase]:
         """
         get global handling fee config
         :return:
         """
-        count = await (
+        config = await (
             self._session.select(
-                sa.func.count(SysHandlingFeeConfig.id)
+                SysHandlingFeeConfig.id,
+                SysHandlingFeeConfig.name,
+                SysHandlingFeeConfig.is_global,
+                SysHandlingFeeConfig.description
             )
             .where(SysHandlingFeeConfig.is_global.is_(True))
-            .fetchval()
+            .fetchrow(as_model=HandlingFeeConfigBase)
         )
-        return count
+        return config
 
     @distributed_trace()
     async def create_handling_fee_config(self, config: HandlingFeeConfig):

@@ -74,6 +74,10 @@ class HandlingFeeHandler:
         :param config:
         :return:
         """
+        if config.is_global:
+            global_config = await self._handling_fee_provider.get_global_handling_fee_config()
+            if global_config and global_config.id != config_id:
+                raise ResourceExistsException("Global config already exists")
         await self._handling_fee_provider.update_handling_fee_config(config_id=config_id, config=config)
         for item in config.items:
             await self._handling_fee_provider.update_handling_fee_config_item(config_id=config_id, item=item)

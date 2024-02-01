@@ -1,13 +1,13 @@
 """
 Serializers for Telegram Account API
 """
-from datetime import datetime
 from typing import Optional, List
 from uuid import UUID
 
-from pydantic import BaseModel, Field, field_serializer
+from pydantic import BaseModel, Field, field_serializer, field_validator
 
 from app.libs.consts.enums import BotType
+from app.libs.shared import validator
 
 
 class TelegramAccount(BaseModel):
@@ -96,6 +96,17 @@ class UpdateGroupInfo(BaseModel):
     customer_service_ids: Optional[List[int]] = Field(default=None, description="Customer Service IDs")
     currency_id: Optional[UUID] = Field(default=None, description="Currency ID")
     handling_fee_config_id: Optional[UUID] = Field(default=None, description="Handling Fee Config ID")
+
+    @field_validator("currency_id", "handling_fee_config_id", mode="before")
+    def validate_name(cls, value: str):
+        """
+        Validate name
+        :param value:
+        :return:
+        """
+        if validator.is_empty(value):
+            return None
+        return value.upper()
 
 
 class GroupMember(BaseModel):
