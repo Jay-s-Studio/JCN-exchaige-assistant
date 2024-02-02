@@ -5,16 +5,16 @@ import asyncio
 from dataclasses import dataclass
 from typing import List, Optional, Callable
 
-from telegram import Update, User
+from telegram import Update
 from telegram.constants import ParseMode
 
-from app.libs.consts.enums import GinaIntention
-from app.libs.consts.message import ExchangeRateMessage, Message
+from app.libs.consts import messages
+from app.libs.consts.enums import GinaAction, CurrencySymbol
+from app.libs.consts.messages import Message
 from app.libs.decorators.sentry_tracer import distributed_trace
-from app.libs.logger import logger
+from app.providers import ExchangeRateProvider, TelegramAccountProvider
 from app.schemas.exchange_rate import CurrentExchangeRate
 from app.schemas.gina import GinaResponse
-from app.providers import GinaProvider, ExchangeRateProvider, TelegramAccountProvider
 from app.serializers.v1.exchange_rate import GroupExchangeRate
 
 
@@ -29,13 +29,74 @@ class MessagesController:
 
     def __init__(
         self,
-        gina_provider: GinaProvider,
         telegram_account_provider: TelegramAccountProvider,
         exchange_rate_provider: ExchangeRateProvider,
     ):
-        self._gina_provider = gina_provider
         self._telegram_account_provider = telegram_account_provider
         self._exchange_rate_provider = exchange_rate_provider
+
+    @distributed_trace()
+    async def on_exchange_rate(self, update: Update, gina_resp: GinaResponse) -> Message:
+        """
+        on exchange rate
+        :param update:
+        :param gina_resp:
+        :return:
+        """
+        match gina_resp.action:
+            case GinaAction.EXCHANGE_RATE:
+                message = await self.exchange_rate(update=update, gina_resp=gina_resp)
+            case GinaAction.EXCHANGE_RATE_MAIN_TOKEN:
+                message = await self.exchange_rate(update=update, gina_resp=gina_resp, get_default=True)
+            case _:
+                message = Message(text=gina_resp.reply)
+        return message
+
+    @distributed_trace()
+    async def on_swap(self, update: Update, gina_resp: GinaResponse) -> Message:
+        """
+        on swap
+        :param update:
+        :param gina_resp:
+        :return:
+        """
+        match gina_resp.action:
+            case GinaAction.SWAP:
+                message = Message(text=gina_resp.reply)
+            case GinaAction.SWAP_CRYPTO:
+                message = Message(text=gina_resp.reply)
+            case GinaAction.SWAP_LEGAL:
+                message = Message(text=gina_resp.reply)
+            case _:
+                message = Message(text=gina_resp.reply)
+        return message
+
+    @distributed_trace()
+    async def on_human_customer_service(self, update: Update, gina_resp: GinaResponse) -> Message:
+        """
+        on human customer service
+        :param update:
+        :param gina_resp:
+        :return:
+        """
+        return Message(
+            text=await self.format_message(
+                message=gina_resp.reply,
+                group_id=update.effective_chat.id,
+                options=FormatOptions()
+            ),
+            parse_mode=ParseMode.HTML
+        )
+
+    @distributed_trace()
+    async def on_fallback(self, update: Update, gina_resp: GinaResponse) -> Message:
+        """
+        on fallback
+        :param update:
+        :param gina_resp:
+        :return:
+        """
+        return Message(text=gina_resp.reply)
 
     async def format_message(
         self,
@@ -80,66 +141,42 @@ class MessagesController:
         return message
 
     @distributed_trace()
-    async def receive_message(self, update: Update) -> None:
-        """
-        receive message
-        :param update:
-        :return:
-        """
-        await update.effective_chat.send_chat_action("typing")
-        result = await self._gina_provider.telegram_messages(update=update)
-        if not result:
-            await update.effective_message.reply_text(text="Sorry, There is something wrong. Please try again later. 🙇🏼‍")
-            return
-        match result.intention:
-            case GinaIntention.EXCHANGE_RATE:
-                message = await self.exchange_rate(update=update, gina_resp=result)
-            case GinaIntention.SWAP:
-                message = Message(text=result.reply)
-            case GinaIntention.HUMAN_CUSTOMER_SERVICE:
-                message = Message(
-                    text=await self.format_message(
-                        message=result.reply,
-                        group_id=update.effective_chat.id,
-                        options=FormatOptions()
-                    ),
-                    parse_mode=ParseMode.HTML
-                )
-            case _:
-                message = Message(text=result.reply)
-        logger.info(f"Gina response: {result}")
-        await update.effective_message.reply_text(
-            text=message.text,
-            parse_mode=message.parse_mode
-        )
-
-    @distributed_trace()
-    async def exchange_rate(self, update: Update, gina_resp: GinaResponse) -> Message:
+    async def exchange_rate(self, update: Update, gina_resp: GinaResponse, get_default: bool = False) -> Message:
         """
         exchange rate
         :param update:
         :param gina_resp:
+        :param get_default:
         :return:
         """
         await update.effective_message.reply_text(text=gina_resp.reply)
         exchange_rate_list = await self._exchange_rate_provider.get_all_exchange_rate()
-        if gina_resp.payment_currency.upper() != "USDT":
+        if get_default:
+            group = await self._telegram_account_provider.get_chat_group(group_id=update.effective_chat.id)
+            if not group.currency_symbol:
+                return messages.DefaultCurrencyNotFoundMessage.format(language=gina_resp.language)
+            payment_currency = group.currency_symbol
+            exchange_currency = CurrencySymbol.USDT.value
+        else:
+            payment_currency = gina_resp.payment_currency.upper()
+            exchange_currency = gina_resp.exchange_currency.upper()
+        if payment_currency != "USDT":
             exchange_rate = self.get_lowest_buying_exchange_rate(
-                currency=gina_resp.payment_currency,
+                currency=payment_currency,
                 exchange_rate_list=exchange_rate_list
             )
             price = exchange_rate.buy
         else:
             exchange_rate = self.get_highest_selling_exchange_rate(
-                currency=gina_resp.exchange_currency,
+                currency=exchange_currency,
                 exchange_rate_list=exchange_rate_list
             )
             price = exchange_rate.sell
         await asyncio.sleep(1.5)
-        return ExchangeRateMessage.format(
+        return messages.ExchangeRateMessage.format(
             language=gina_resp.language,
-            payment_currency=gina_resp.payment_currency,
-            exchange_currency=gina_resp.exchange_currency,
+            payment_currency=payment_currency,
+            exchange_currency=exchange_currency,
             price=price
         )
 

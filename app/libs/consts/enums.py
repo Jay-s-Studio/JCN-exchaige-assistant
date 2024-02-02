@@ -26,6 +26,26 @@ class Language(StrEnum):
     ZH_CN = "zh-cn"
 
 
+class CurrencySymbol(StrEnum):
+    """CurrencySymbol"""
+    USDT = "USDT"
+    PHP = "PHP"
+    JPY = "JPY"
+    INR = "INR"
+    KRW = "KRW"
+    THB = "THB"
+    MYR = "MYR"
+    USD = "USD"
+    CAD = "CAD"
+    HKD = "HKD"
+    SGD = "SGD"
+    VND = "VND"
+    AUD = "AUD"
+    AED = "AED"
+    MMK = "MMK"
+    BDT = "BDT"
+
+
 class CurrencyType(StrEnum):
     """CurrencyType"""
     GENERAL = "general"
@@ -51,6 +71,7 @@ class GinaAction(StrEnum):
     SWAP_LEGAL = "swap_legal"
     PAYMENT_CHECK = "payment check"
     EXCHANGE_RATE = "exchange rate"
+    EXCHANGE_RATE_MAIN_TOKEN = "exchange_rate_main_token"
     HUMAN_CUSTOMER_SERVICE = "human customer service"
     GET_ACCOUNT = "get account"
     RECEIPT = "receipt"

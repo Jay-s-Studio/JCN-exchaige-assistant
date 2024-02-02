@@ -44,8 +44,27 @@ class MessagesBase:
 
 
 class ExchangeRateMessage(MessagesBase):
+    """ExchangeRateMessage"""
     message = {
         Language.ZH_TW: "當前 `{payment_currency}-{exchange_currency}` 匯率為 `{price}`",
         Language.EN_US: "The current `{payment_currency}-{exchange_currency}` exchange rate is `{price}`",
+    }
+    parse_mode = ParseMode.MARKDOWN_V2
+
+
+class ExchangeRateErrorMessage(MessagesBase):
+    """ExchangeRateErrorMessage"""
+    message = {
+        Language.ZH_TW: "抱歉，我們無法為您提供 `{payment_currency}-{exchange_currency}` 的匯率",
+        Language.EN_US: "Sorry, we are unable to provide you with the `{payment_currency}-{exchange_currency}` exchange rate",
+    }
+    parse_mode = ParseMode.MARKDOWN_V2
+
+
+class DefaultCurrencyNotFoundMessage(MessagesBase):
+    """DefaultCurrencyNotFoundMessage"""
+    message = {
+        Language.ZH_TW: "請先設置默認貨幣",
+        Language.EN_US: "Please set the default currency first",
     }
     parse_mode = ParseMode.MARKDOWN_V2

@@ -77,7 +77,6 @@ class Container(containers.DeclarativeContainer):
     # [controllers]
     messages_controller = providers.Factory(
         MessagesController,
-        gina_provider=gina_provider,
         telegram_account_provider=telegram_account_provider,
         exchange_rate_provider=exchange_rate_provider,
     )
@@ -110,6 +109,7 @@ class Container(containers.DeclarativeContainer):
         TelegramBotMessagesHandler,
         redis=redis_pool,
         telegram_account_provider=telegram_account_provider,
+        gina_provider=gina_provider,
         messages_controller=messages_controller
     )
     user_handler = providers.Factory(
