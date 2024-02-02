@@ -7,15 +7,16 @@ from starlette import status
 
 from app.containers import Container
 from app.handlers.exchange_rate import ExchangeRateHandler
-from app.libs.depends import check_all_authenticators, DEFAULT_RATE_LIMITERS
+from app.libs.depends import (
+    check_api_key_authenticator,
+    check_jwt_authenticator,
+    DEFAULT_RATE_LIMITERS,
+)
 from app.route_classes import LogRoute
 from app.serializers.v1.exchange_rate import UpdateExchangeRate, ExchangeRateResponse
 
 router = APIRouter(
-    dependencies=[
-        Depends(check_all_authenticators),
-        *DEFAULT_RATE_LIMITERS
-    ],
+    dependencies=DEFAULT_RATE_LIMITERS,
     route_class=LogRoute
 )
 
@@ -23,6 +24,8 @@ router = APIRouter(
 @router.get(
     path="/{group_id}",
     response_model=ExchangeRateResponse,
+    status_code=status.HTTP_200_OK,
+    dependencies=[Depends(check_jwt_authenticator)]
 )
 @inject
 async def get_exchange_rate(
@@ -38,7 +41,8 @@ async def get_exchange_rate(
 
 @router.post(
     path="/currency_rate",
-    status_code=status.HTTP_204_NO_CONTENT
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(check_api_key_authenticator)]
 )
 @inject
 async def update_currency_rate(

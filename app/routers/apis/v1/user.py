@@ -7,7 +7,10 @@ from fastapi import APIRouter, Depends
 from app.containers import Container
 from app.handlers import UserHandler
 from app.libs.contexts.api_context import APIContext, get_api_context
-from app.libs.depends import check_all_authenticators, DEFAULT_RATE_LIMITERS
+from app.libs.depends import (
+    check_jwt_authenticator,
+    DEFAULT_RATE_LIMITERS,
+)
 from app.route_classes import LogRoute
 from app.serializers.v1.user import UserLogin, LoginResponse, UserInfoResponse, UserRegister, UserBase
 
@@ -39,7 +42,7 @@ async def register(
     path="/info",
     response_model=UserInfoResponse,
     dependencies=[
-        Depends(check_all_authenticators)
+        Depends(check_jwt_authenticator)
     ]
 )
 @inject

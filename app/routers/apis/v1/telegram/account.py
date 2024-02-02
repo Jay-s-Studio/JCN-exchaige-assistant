@@ -7,7 +7,12 @@ from starlette import status
 
 from app.containers import Container
 from app.handlers.telegram import TelegramAccountHandler
-from app.libs.depends import check_all_authenticators, DEFAULT_RATE_LIMITERS
+from app.libs.depends import (
+    check_all_authenticators,
+    check_api_key_authenticator,
+    check_jwt_authenticator,
+    DEFAULT_RATE_LIMITERS
+)
 from app.route_classes import LogRoute
 from app.serializers.v1.telegram import (
     TelegramAccount,
@@ -22,10 +27,7 @@ from app.serializers.v1.telegram import (
 )
 
 router = APIRouter(
-    dependencies=[
-        Depends(check_all_authenticators),
-        *DEFAULT_RATE_LIMITERS
-    ],
+    dependencies=DEFAULT_RATE_LIMITERS,
     route_class=LogRoute
 )
 
@@ -33,7 +35,8 @@ router = APIRouter(
 @router.post(
     path="/raw/account",
     status_code=status.HTTP_204_NO_CONTENT,
-    tags=["Vendors Bot API"]
+    tags=["Vendors Bot API"],
+    dependencies=[Depends(check_api_key_authenticator)]
 )
 @inject
 async def set_account(
@@ -52,7 +55,8 @@ async def set_account(
 @router.post(
     path="/raw/group",
     status_code=status.HTTP_204_NO_CONTENT,
-    tags=["Vendors Bot API"]
+    tags=["Vendors Bot API"],
+    dependencies=[Depends(check_api_key_authenticator)]
 )
 @inject
 async def set_group(
@@ -71,7 +75,8 @@ async def set_group(
 @router.post(
     path="/init_chat_group_member",
     status_code=status.HTTP_204_NO_CONTENT,
-    tags=["Vendors Bot API"]
+    tags=["Vendors Bot API"],
+    dependencies=[Depends(check_api_key_authenticator)]
 )
 @inject
 async def init_chat_group_member(
@@ -90,7 +95,8 @@ async def init_chat_group_member(
 @router.delete(
     path="/delete_chat_group_member",
     status_code=status.HTTP_204_NO_CONTENT,
-    tags=["Vendors Bot API"]
+    tags=["Vendors Bot API"],
+    dependencies=[Depends(check_api_key_authenticator)]
 )
 @inject
 async def delete_chat_group_member(
@@ -113,7 +119,8 @@ async def delete_chat_group_member(
     path="/vendors",
     response_model=VendorResponse,
     status_code=status.HTTP_200_OK,
-    tags=["Vendors Bot API"]
+    tags=["Vendors Bot API"],
+    dependencies=[Depends(check_all_authenticators)]
 )
 @inject
 async def get_vendors(
@@ -130,7 +137,8 @@ async def get_vendors(
 @router.get(
     path="/groups",
     response_model=GroupList,
-    status_code=status.HTTP_200_OK
+    status_code=status.HTTP_200_OK,
+    dependencies=[Depends(check_jwt_authenticator)]
 )
 @inject
 async def get_accounts(
@@ -154,7 +162,8 @@ async def get_accounts(
 @router.get(
     path="/group/{group_id}",
     response_model=GroupInfo,
-    status_code=status.HTTP_200_OK
+    status_code=status.HTTP_200_OK,
+    dependencies=[Depends(check_jwt_authenticator)]
 )
 @inject
 async def get_group(
@@ -172,7 +181,8 @@ async def get_group(
 
 @router.put(
     path="/group/{group_id}",
-    status_code=status.HTTP_204_NO_CONTENT
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(check_jwt_authenticator)]
 )
 @inject
 async def update_group(
@@ -194,6 +204,7 @@ async def update_group(
     path="/group/{group_id}/members",
     response_model=GroupMembers,
     status_code=status.HTTP_200_OK,
+    dependencies=[Depends(check_jwt_authenticator)]
 )
 @inject
 async def get_chat_group_members(

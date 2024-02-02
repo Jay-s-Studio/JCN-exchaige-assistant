@@ -6,7 +6,6 @@ from datetime import datetime
 from typing import Optional
 
 import bcrypt
-import pytz
 from asyncpg import UniqueViolationError
 from redis.asyncio import Redis
 from starlette import status
@@ -17,9 +16,9 @@ from app.libs.consts.enums import ExpireTime
 from app.libs.consts.redis_keys import get_user_access_token_key
 from app.libs.database import RedisPool
 from app.libs.decorators.sentry_tracer import distributed_trace
-from app.schemas.user import User
 from app.providers import UserProvider
-from app.serializers.v1.user import UserLogin, UserRegister, LoginResponse, TokenResponse, UserInfoResponse, UserBase
+from app.schemas.user import User
+from app.serializers.v1.user import UserLogin, UserRegister, LoginResponse, UserInfoResponse, UserBase
 
 
 class UserHandler:

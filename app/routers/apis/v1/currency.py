@@ -9,13 +9,18 @@ from starlette import status
 
 from app.containers import Container
 from app.handlers.currency import CurrencyHandler
-from app.libs.depends import check_all_authenticators, DEFAULT_RATE_LIMITERS
+from app.libs.depends import (
+    check_all_authenticators,
+    check_api_key_authenticator,
+    check_jwt_authenticator,
+    DEFAULT_RATE_LIMITERS
+)
 from app.route_classes import LogRoute
 from app.serializers.v1.currency import CurrencyInfo, CurrencyTree, Currencies
 
 router = APIRouter(
     dependencies=[
-        Depends(check_all_authenticators),
+        Depends(check_jwt_authenticator),
         *DEFAULT_RATE_LIMITERS
     ],
     route_class=LogRoute
@@ -39,7 +44,9 @@ async def get_currency_tree(
 
 @router.get(
     path="/all",
-    response_model=Currencies
+    response_model=Currencies,
+    status_code=status.HTTP_200_OK,
+    dependencies=[Depends(check_all_authenticators)]
 )
 @inject
 async def get_currencies(
