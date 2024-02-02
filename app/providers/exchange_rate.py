@@ -1,12 +1,15 @@
 """
 ExchangeRateProvider
 """
+from datetime import datetime
 from typing import List
 
+import pytz
 from redis.asyncio import Redis
 
 from app.libs.database import RedisPool, Session
 from app.libs.decorators.sentry_tracer import distributed_trace
+from app.libs.logger import logger
 from app.serializers.v1.exchange_rate import GroupExchangeRate, CurrencyIdExRate, CurrencyExRate
 from app.models import SysExchangeRate, SysCurrency
 
@@ -68,29 +71,54 @@ class ExchangeRateProvider:
         return result
 
     @distributed_trace()
-    async def update_exchange_rate(self, group_id: int, exchange_rate: dict):
+    async def batch_update_exchange_rate(self, group_id: int, exchange_rates: List[CurrencyIdExRate]):
         """
+
         Update exchange rate
         :return:
         """
-        data = {
-            "telegram_chat_group_id": group_id,
-            **exchange_rate
-        }
+        await self._session.execute("CREATE TEMP TABLE tmp_exchange_rate  (LIKE public.exchange_rate INCLUDING ALL);")
         try:
-            await (
-                self._session.insert(SysExchangeRate)
-                .values(data)
-                .on_conflict_do_update(
-                    constraint="exchange_rate_telegram_chat_group_id_currency_id_key",
-                    set_=data
-                )
-                .execute()
+            exchange_rate_records = []
+            now = datetime.now(tz=pytz.UTC)
+            for exchange_rate in exchange_rates:
+                exchange_rate_records.append((
+                    group_id,
+                    exchange_rate.currency_id,
+                    exchange_rate.buy_rate,
+                    exchange_rate.sell_rate,
+                    now,
+                    "system",
+                    now,
+                    "system",
+                ))
+            await self._session.copy_records_to_table(
+                'tmp_exchange_rate',
+                records=exchange_rate_records,
+                columns=[
+                    "telegram_chat_group_id",
+                    "currency_id",
+                    "buy_rate",
+                    "sell_rate",
+                    "created_at",
+                    "created_by",
+                    "updated_at",
+                    "updated_by",
+                ],
             )
+            insert_record = await self._session.execute(
+                """
+                INSERT INTO public.exchange_rate
+                SELECT * FROM tmp_exchange_rate
+                ON CONFLICT (telegram_chat_group_id, currency_id) DO UPDATE
+                SET buy_rate = EXCLUDED.buy_rate, sell_rate = EXCLUDED.sell_rate, updated_at = now(), updated_by = 'system';
+                """
+            )
+            logger.info(f"Inserted or updated {insert_record} records.")
         except Exception as e:
             await self._session.rollback()
             raise e
-        else:
-            await self._session.commit()
         finally:
+            await self._session.execute("DROP TABLE IF EXISTS tmp_exchange_rate;")
+            await self._session.commit()
             await self._session.close()
