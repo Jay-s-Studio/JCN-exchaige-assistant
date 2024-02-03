@@ -75,7 +75,7 @@ async def create_currency(
 
 
 @router.put(
-    path="/{currency_id}",
+    path="/update/{currency_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     dependencies=[Depends(check_jwt_authenticator)]
 )
