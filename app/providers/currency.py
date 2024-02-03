@@ -121,3 +121,26 @@ class CurrencyProvider:
             raise e
         finally:
             await self._session.close()
+
+    @distributed_trace()
+    async def change_sequence(self, currency_id: UUID, sequence: float):
+        """
+        change sequence
+        :param currency_id:
+        :param sequence:
+        :return:
+        """
+        try:
+            await (
+                self._session.update(SysCurrency)
+                .values(sequence=sequence)
+                .where(SysCurrency.id == currency_id)
+                .execute()
+            )
+        except Exception as e:
+            await self._session.rollback()
+            raise e
+        else:
+            await self._session.commit()
+        finally:
+            await self._session.close()

@@ -51,3 +51,13 @@ class Currencies(BaseModel):
     Currencies
     """
     currencies: List[CurrencyInfo]
+
+
+class ChangeSequence(BaseModel):
+    """
+    Change Sequence
+    """
+    old_id: UUID
+    old_sequence: float
+    new_id: UUID
+    new_sequence: float

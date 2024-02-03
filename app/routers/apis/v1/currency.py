@@ -15,7 +15,7 @@ from app.libs.depends import (
     DEFAULT_RATE_LIMITERS,
 )
 from app.route_classes import LogRoute
-from app.serializers.v1.currency import CurrencyInfo, CurrencyTree, Currencies
+from app.serializers.v1.currency import CurrencyInfo, CurrencyTree, Currencies, ChangeSequence
 
 router = APIRouter(
     dependencies=DEFAULT_RATE_LIMITERS,
@@ -90,3 +90,20 @@ async def update_currency(
     :return:
     """
     await currency_handler.update_currency(currency_id=currency_id, currency_info=currency_info)
+
+
+@router.put(
+    path="/change_sequence",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(check_jwt_authenticator)]
+)
+@inject
+async def change_sequence(
+    model: ChangeSequence,
+    currency_handler: CurrencyHandler = Depends(Provide[Container.currency_handler])
+):
+    """
+    Change sequence
+    :return:
+    """
+    await currency_handler.change_sequence(model=model)

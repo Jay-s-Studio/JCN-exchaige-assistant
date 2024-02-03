@@ -8,7 +8,7 @@ from app.libs.consts.enums import CurrencyType
 from app.libs.decorators.sentry_tracer import distributed_trace
 from app.providers import CurrencyProvider
 from app.schemas.currency import Currency
-from app.serializers.v1.currency import CurrencyInfo, CurrencyNode, CurrencyTree, Currencies
+from app.serializers.v1.currency import CurrencyInfo, CurrencyNode, CurrencyTree, Currencies, ChangeSequence
 
 
 class CurrencyHandler:
@@ -73,6 +73,16 @@ class CurrencyHandler:
             path=f"{str(currency_info.parent_id)}/{str(currency_info.id)}" if currency_info.parent_id else str(currency_info.id)
         )
         return await self.currency_provider.update_currency(currency_id=currency_id, currency=currency)
+
+    @distributed_trace()
+    async def change_sequence(self, model: ChangeSequence):
+        """
+        Change sequence
+        :param model:
+        :return:
+        """
+        await self.currency_provider.change_sequence(currency_id=model.old_id, sequence=model.old_sequence)
+        await self.currency_provider.change_sequence(currency_id=model.new_id, sequence=model.new_sequence)
 
     def _build_tree_nodes(
         self,
