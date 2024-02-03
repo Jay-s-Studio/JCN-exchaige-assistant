@@ -81,8 +81,8 @@ class CurrencyHandler:
         :param model:
         :return:
         """
-        await self.currency_provider.change_sequence(currency_id=model.old_id, sequence=model.old_sequence)
-        await self.currency_provider.change_sequence(currency_id=model.new_id, sequence=model.new_sequence)
+        await self.currency_provider.change_sequence(currency_id=model.original_id, sequence=model.relative_sequence)
+        await self.currency_provider.change_sequence(currency_id=model.relative_id, sequence=model.original_sequence)
 
     def _build_tree_nodes(
         self,

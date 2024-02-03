@@ -57,7 +57,7 @@ class ChangeSequence(BaseModel):
     """
     Change Sequence
     """
-    old_id: UUID
-    old_sequence: float
-    new_id: UUID
-    new_sequence: float
+    original_id: UUID
+    original_sequence: float
+    relative_id: UUID
+    relative_sequence: float
