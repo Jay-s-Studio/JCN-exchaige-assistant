@@ -31,19 +31,25 @@ class HandlingFeeProvider:
         :param page_size:
         :return:
         """
-        configs, total = await (
-            self._session.select(
-                SysHandlingFeeConfig.id,
-                SysHandlingFeeConfig.name,
-                SysHandlingFeeConfig.is_global,
-                SysHandlingFeeConfig.description
+        try:
+            configs, total = await (
+                self._session.select(
+                    SysHandlingFeeConfig.id,
+                    SysHandlingFeeConfig.name,
+                    SysHandlingFeeConfig.is_global,
+                    SysHandlingFeeConfig.description
+                )
+                .order_by(SysHandlingFeeConfig.is_global.desc())
+                .limit(page_size)
+                .offset(page_index * page_size)
+                .fetchpages(as_model=HandlingFeeConfigBase)
             )
-            .order_by(SysHandlingFeeConfig.is_global.desc())
-            .limit(page_size)
-            .offset(page_index * page_size)
-            .fetchpages(as_model=HandlingFeeConfigBase)
-        )
-        return configs, total
+        except Exception as e:
+            raise e
+        else:
+            return configs, total
+        finally:
+            await self._session.close()
 
     @distributed_trace()
     async def get_handling_fee_config(self, config_id: UUID) -> HandlingFeeConfig:
@@ -52,32 +58,38 @@ class HandlingFeeProvider:
         :param config_id:
         :return:
         """
-        base_config: HandlingFeeConfigBase = await (
-            self._session.select(
-                SysHandlingFeeConfig.id,
-                SysHandlingFeeConfig.name,
-                SysHandlingFeeConfig.is_global,
-                SysHandlingFeeConfig.description
+        try:
+            base_config: HandlingFeeConfigBase = await (
+                self._session.select(
+                    SysHandlingFeeConfig.id,
+                    SysHandlingFeeConfig.name,
+                    SysHandlingFeeConfig.is_global,
+                    SysHandlingFeeConfig.description
+                )
+                .where(SysHandlingFeeConfig.id == config_id)
+                .fetchrow(as_model=HandlingFeeConfigBase)
             )
-            .where(SysHandlingFeeConfig.id == config_id)
-            .fetchrow(as_model=HandlingFeeConfigBase)
-        )
-        items = await (
-            self._session.select(
-                SysHandlingFeeConfigItem.currency_id,
-                SysHandlingFeeConfigItem.buy_calculation_type,
-                SysHandlingFeeConfigItem.buy_value,
-                SysHandlingFeeConfigItem.sell_calculation_type,
-                SysHandlingFeeConfigItem.sell_value
+            items = await (
+                self._session.select(
+                    SysHandlingFeeConfigItem.currency_id,
+                    SysHandlingFeeConfigItem.buy_calculation_type,
+                    SysHandlingFeeConfigItem.buy_value,
+                    SysHandlingFeeConfigItem.sell_calculation_type,
+                    SysHandlingFeeConfigItem.sell_value
+                )
+                .where(SysHandlingFeeConfigItem.handling_fee_config_id == config_id)
+                .fetch(as_model=HandlingFeeConfigItem)
             )
-            .where(SysHandlingFeeConfigItem.handling_fee_config_id == config_id)
-            .fetch(as_model=HandlingFeeConfigItem)
-        )
-        config = HandlingFeeConfig(
-            **base_config.model_dump(),
-            items=items
-        )
-        return config
+        except Exception as e:
+            raise e
+        else:
+            config = HandlingFeeConfig(
+                **base_config.model_dump(),
+                items=items
+            )
+            return config
+        finally:
+            await self._session.close()
 
     @distributed_trace()
     async def get_global_handling_fee_config(self) -> Optional[HandlingFeeConfigBase]:
@@ -85,17 +97,23 @@ class HandlingFeeProvider:
         get global handling fee config
         :return:
         """
-        config = await (
-            self._session.select(
-                SysHandlingFeeConfig.id,
-                SysHandlingFeeConfig.name,
-                SysHandlingFeeConfig.is_global,
-                SysHandlingFeeConfig.description
+        try:
+            config = await (
+                self._session.select(
+                    SysHandlingFeeConfig.id,
+                    SysHandlingFeeConfig.name,
+                    SysHandlingFeeConfig.is_global,
+                    SysHandlingFeeConfig.description
+                )
+                .where(SysHandlingFeeConfig.is_global.is_(True))
+                .fetchrow(as_model=HandlingFeeConfigBase)
             )
-            .where(SysHandlingFeeConfig.is_global.is_(True))
-            .fetchrow(as_model=HandlingFeeConfigBase)
-        )
-        return config
+        except Exception as e:
+            raise e
+        else:
+            return config
+        finally:
+            await self._session.close()
 
     @distributed_trace()
     async def create_handling_fee_config(self, config: HandlingFeeConfig):

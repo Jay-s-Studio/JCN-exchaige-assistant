@@ -131,18 +131,24 @@ class TelegramAccountProvider:
         :param bot_type:
         :return:
         """
-        result = await (
-            self._session.select(
-                SysTelegramChatGroup.id,
-                SysTelegramChatGroup.title,
-                SysTelegramChatGroup.type,
-                SysTelegramChatGroup.in_group,
-                SysTelegramChatGroup.bot_type
+        try:
+            result = await (
+                self._session.select(
+                    SysTelegramChatGroup.id,
+                    SysTelegramChatGroup.title,
+                    SysTelegramChatGroup.type,
+                    SysTelegramChatGroup.in_group,
+                    SysTelegramChatGroup.bot_type
+                )
+                .where(SysTelegramChatGroup.bot_type == bot_type)
+                .fetch(as_model=TelegramChatGroup)
             )
-            .where(SysTelegramChatGroup.bot_type == bot_type)
-            .fetch(as_model=TelegramChatGroup)
-        )
-        return result
+        except Exception as e:
+            raise e
+        else:
+            return result
+        finally:
+            await self._session.close()
 
     @distributed_trace()
     async def get_chat_groups(
@@ -154,32 +160,62 @@ class TelegramAccountProvider:
         get the chat groups
         :return:
         """
-        result, count = await (
-            self._session.select(
-                SysTelegramChatGroup.id,
-                SysTelegramChatGroup.title,
-                SysTelegramChatGroup.in_group,
-                SysTelegramChatGroup.bot_type,
-                SysTelegramChatGroup.description,
-                sa.func.array_agg(SysTelegramChatGroupMember.account_id).label("customer_service_ids"),
-                SysCurrency.symbol.label("currency_symbol"),
-                SysHandlingFeeConfig.name.label("handling_fee_name")
+        try:
+            customer_service = (
+                self._session.select(
+                    SysTelegramChatGroupMember.chat_group_id,
+                    SysTelegramAccount.id,
+                    SysTelegramAccount.username,
+                    SysTelegramAccount.first_name,
+                    SysTelegramAccount.last_name,
+                    SysTelegramAccount.full_name,
+                    SysTelegramAccount.name,
+                    SysTelegramChatGroupMember.is_customer_service
+                )
+                .outerjoin(SysTelegramChatGroupMember, SysTelegramChatGroupMember.account_id == SysTelegramAccount.id)
+                .where(SysTelegramChatGroupMember.is_customer_service.is_(True))
+                .subquery()
             )
-            .outerjoin(SysTelegramChatGroupMember, SysTelegramChatGroupMember.chat_group_id == SysTelegramChatGroup.id)
-            .outerjoin(SysCurrency, SysCurrency.id == SysTelegramChatGroup.currency_id)
-            .outerjoin(SysHandlingFeeConfig, SysHandlingFeeConfig.id == SysTelegramChatGroup.handling_fee_config_id)
-            .where(SysTelegramChatGroup.is_deleted.is_(False))
-            .where(SysTelegramChatGroupMember.is_customer_service.is_(True))
-            .group_by(
-                SysTelegramChatGroup.id,
-                SysCurrency.symbol,
-                SysHandlingFeeConfig.name
+            result, count = await (
+                self._session.select(
+                    SysTelegramChatGroup.id,
+                    SysTelegramChatGroup.title,
+                    SysTelegramChatGroup.in_group,
+                    SysTelegramChatGroup.bot_type,
+                    SysTelegramChatGroup.description,
+                    sa.func.array_agg(
+                        sa.func.json_build_object(
+                            sa.cast("id", sa.VARCHAR(32)), customer_service.c.id,
+                            sa.cast("username", sa.VARCHAR(32)), customer_service.c.username,
+                            sa.cast("first_name", sa.VARCHAR(32)), customer_service.c.first_name,
+                            sa.cast("last_name", sa.VARCHAR(32)), customer_service.c.last_name,
+                            sa.cast("full_name", sa.VARCHAR(32)), customer_service.c.full_name,
+                            sa.cast("name", sa.VARCHAR(32)), customer_service.c.name,
+                            sa.cast("is_customer_service", sa.VARCHAR(32)), customer_service.c.is_customer_service
+                        )
+                    ).label("customer_services"),
+                    SysCurrency.symbol.label("currency_symbol"),
+                    SysHandlingFeeConfig.name.label("handling_fee_name")
+                )
+                .outerjoin(customer_service, customer_service.c.chat_group_id == SysTelegramChatGroup.id)
+                .outerjoin(SysCurrency, SysCurrency.id == SysTelegramChatGroup.currency_id)
+                .outerjoin(SysHandlingFeeConfig, SysHandlingFeeConfig.id == SysTelegramChatGroup.handling_fee_config_id)
+                .where(SysTelegramChatGroup.is_deleted.is_(False))
+                .group_by(
+                    SysTelegramChatGroup.id,
+                    SysCurrency.symbol,
+                    SysHandlingFeeConfig.name
+                )
+                .limit(page_size)
+                .offset(page_index * page_size)
+                .fetchpages(as_model=GroupInfo)
             )
-            .limit(page_size)
-            .offset(page_index * page_size)
-            .fetchpages(as_model=GroupInfo)
-        )
-        return result, count
+        except Exception as e:
+            raise e
+        else:
+            return result, count
+        finally:
+            await self._session.close()
 
     @distributed_trace()
     async def get_chat_group(self, group_id: int) -> Optional[GroupInfo]:
@@ -188,31 +224,61 @@ class TelegramAccountProvider:
         :param group_id:
         :return:
         """
-        result: Optional[GroupInfo] = await (
-            self._session.select(
-                SysTelegramChatGroup.id,
-                SysTelegramChatGroup.title,
-                SysTelegramChatGroup.in_group,
-                SysTelegramChatGroup.bot_type,
-                SysTelegramChatGroup.description,
-                sa.func.array_agg(SysTelegramChatGroupMember.account_id).label("customer_service_ids"),
-                SysCurrency.symbol.label("currency_symbol"),
-                SysHandlingFeeConfig.name.label("handling_fee_name")
+        try:
+            customer_service = (
+                self._session.select(
+                    SysTelegramChatGroupMember.chat_group_id,
+                    SysTelegramAccount.id,
+                    SysTelegramAccount.username,
+                    SysTelegramAccount.first_name,
+                    SysTelegramAccount.last_name,
+                    SysTelegramAccount.full_name,
+                    SysTelegramAccount.name,
+                    SysTelegramChatGroupMember.is_customer_service
+                )
+                .outerjoin(SysTelegramChatGroupMember, SysTelegramChatGroupMember.account_id == SysTelegramAccount.id)
+                .where(SysTelegramChatGroupMember.is_customer_service.is_(True))
+                .subquery()
             )
-            .outerjoin(SysTelegramChatGroupMember, SysTelegramChatGroupMember.chat_group_id == SysTelegramChatGroup.id)
-            .outerjoin(SysCurrency, SysCurrency.id == SysTelegramChatGroup.currency_id)
-            .outerjoin(SysHandlingFeeConfig, SysHandlingFeeConfig.id == SysTelegramChatGroup.handling_fee_config_id)
-            .where(SysTelegramChatGroup.is_deleted.is_(False))
-            .where(SysTelegramChatGroupMember.is_customer_service.is_(True))
-            .where(SysTelegramChatGroup.id == group_id)
-            .group_by(
-                SysTelegramChatGroup.id,
-                SysCurrency.symbol,
-                SysHandlingFeeConfig.name
+            result: Optional[GroupInfo] = await (
+                self._session.select(
+                    SysTelegramChatGroup.id,
+                    SysTelegramChatGroup.title,
+                    SysTelegramChatGroup.in_group,
+                    SysTelegramChatGroup.bot_type,
+                    SysTelegramChatGroup.description,
+                    sa.func.array_agg(
+                        sa.func.json_build_object(
+                            sa.cast("id", sa.VARCHAR(32)), customer_service.c.id,
+                            sa.cast("username", sa.VARCHAR(32)), customer_service.c.username,
+                            sa.cast("first_name", sa.VARCHAR(32)), customer_service.c.first_name,
+                            sa.cast("last_name", sa.VARCHAR(32)), customer_service.c.last_name,
+                            sa.cast("full_name", sa.VARCHAR(32)), customer_service.c.full_name,
+                            sa.cast("name", sa.VARCHAR(32)), customer_service.c.name,
+                            sa.cast("is_customer_service", sa.VARCHAR(32)), customer_service.c.is_customer_service
+                        )
+                    ).label("customer_services"),
+                    SysCurrency.symbol.label("currency_symbol"),
+                    SysHandlingFeeConfig.name.label("handling_fee_name")
+                )
+                .outerjoin(customer_service, customer_service.c.chat_group_id == SysTelegramChatGroup.id)
+                .outerjoin(SysCurrency, SysCurrency.id == SysTelegramChatGroup.currency_id)
+                .outerjoin(SysHandlingFeeConfig, SysHandlingFeeConfig.id == SysTelegramChatGroup.handling_fee_config_id)
+                .where(SysTelegramChatGroup.is_deleted.is_(False))
+                .where(SysTelegramChatGroup.id == group_id)
+                .group_by(
+                    SysTelegramChatGroup.id,
+                    SysCurrency.symbol,
+                    SysHandlingFeeConfig.name
+                )
+                .fetchrow(as_model=GroupInfo)
             )
-            .fetchrow(as_model=GroupInfo)
-        )
-        return result
+        except Exception as e:
+            raise e
+        else:
+            return result
+        finally:
+            await self._session.close()
 
     @distributed_trace()
     async def update_group(self, group_id: int, group_info: UpdateGroupInfo):
@@ -278,22 +344,28 @@ class TelegramAccountProvider:
         :param chat_group_id:
         :return:
         """
-        members = await (
-            self._session.select(
-                SysTelegramAccount.id,
-                SysTelegramAccount.username,
-                SysTelegramAccount.first_name,
-                SysTelegramAccount.last_name,
-                SysTelegramAccount.full_name,
-                SysTelegramAccount.name,
-                SysTelegramChatGroupMember.is_customer_service
+        try:
+            members = await (
+                self._session.select(
+                    SysTelegramAccount.id,
+                    SysTelegramAccount.username,
+                    SysTelegramAccount.first_name,
+                    SysTelegramAccount.last_name,
+                    SysTelegramAccount.full_name,
+                    SysTelegramAccount.name,
+                    SysTelegramChatGroupMember.is_customer_service
+                )
+                .outerjoin(
+                    SysTelegramChatGroupMember,
+                    SysTelegramChatGroupMember.account_id == SysTelegramAccount.id
+                )
+                .where(SysTelegramChatGroupMember.chat_group_id == chat_group_id)
+                .where(SysTelegramChatGroupMember.is_deleted.is_(False))
+                .fetch(as_model=GroupMember)
             )
-            .outerjoin(
-                SysTelegramChatGroupMember,
-                SysTelegramChatGroupMember.account_id == SysTelegramAccount.id
-            )
-            .where(SysTelegramChatGroupMember.chat_group_id == chat_group_id)
-            .where(SysTelegramChatGroupMember.is_deleted.is_(False))
-            .fetch(as_model=GroupMember)
-        )
-        return members
+        except Exception as e:
+            raise e
+        else:
+            return members
+        finally:
+            await self._session.close()

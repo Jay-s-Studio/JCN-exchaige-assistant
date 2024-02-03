@@ -31,27 +31,33 @@ class ExchangeRateProvider:
         Get all exchange rate
         :return:
         """
-        records = await (
-            self._session.select(
-                SysExchangeRate.telegram_chat_group_id,
-                SysExchangeRate.currency_id,
-                SysCurrency.symbol.label("currency"),
-                SysExchangeRate.buy_rate,
-                SysExchangeRate.sell_rate,
+        try:
+            records = await (
+                self._session.select(
+                    SysExchangeRate.telegram_chat_group_id,
+                    SysExchangeRate.currency_id,
+                    SysCurrency.symbol.label("currency"),
+                    SysExchangeRate.buy_rate,
+                    SysExchangeRate.sell_rate,
+                )
+                .outerjoin(SysCurrency, SysCurrency.id == SysExchangeRate.currency_id)
+                .fetch()
             )
-            .outerjoin(SysCurrency, SysCurrency.id == SysExchangeRate.currency_id)
-            .fetch()
-        )
-        group_exchange_rate = {}
-        for record in records:
-            group_id = record.get("telegram_chat_group_id")
-            if group_id not in group_exchange_rate:
-                group_exchange_rate[group_id] = []
-            group_exchange_rate[group_id].append(CurrencyExRate(**record))
-        result = []
-        for group_id, exchange_rates in group_exchange_rate.items():
-            result.append(GroupExchangeRate(group_id=group_id, exchange_rates=exchange_rates))
-        return result
+        except Exception as e:
+            raise e
+        else:
+            group_exchange_rate = {}
+            for record in records:
+                group_id = record.get("telegram_chat_group_id")
+                if group_id not in group_exchange_rate:
+                    group_exchange_rate[group_id] = []
+                group_exchange_rate[group_id].append(CurrencyExRate(**record))
+            result = []
+            for group_id, exchange_rates in group_exchange_rate.items():
+                result.append(GroupExchangeRate(group_id=group_id, exchange_rates=exchange_rates))
+            return result
+        finally:
+            await self._session.close()
 
     @distributed_trace()
     async def get_exchange_rate(self, group_id: int) -> List[CurrencyIdExRate]:
@@ -59,16 +65,22 @@ class ExchangeRateProvider:
         Get exchange rate
         :return:
         """
-        result = await (
-            self._session.select(
-                SysExchangeRate.currency_id,
-                SysExchangeRate.buy_rate,
-                SysExchangeRate.sell_rate,
+        try:
+            result = await (
+                self._session.select(
+                    SysExchangeRate.currency_id,
+                    SysExchangeRate.buy_rate,
+                    SysExchangeRate.sell_rate,
+                )
+                .where(SysExchangeRate.telegram_chat_group_id == group_id)
+                .fetch(as_model=CurrencyIdExRate)
             )
-            .where(SysExchangeRate.telegram_chat_group_id == group_id)
-            .fetch(as_model=CurrencyIdExRate)
-        )
-        return result
+        except Exception as e:
+            raise e
+        else:
+            return result
+        finally:
+            await self._session.close()
 
     @distributed_trace()
     async def batch_update_exchange_rate(self, group_id: int, exchange_rates: List[CurrencyIdExRate]):

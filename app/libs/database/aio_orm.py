@@ -14,8 +14,8 @@ from sqlalchemy import String, Numeric, Integer, Float, Boolean, DateTime, Date
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.dialects.postgresql.dml import Insert as PgInsert
-from sqlalchemy.orm import Query, aliased
-from sqlalchemy.sql import FromClause
+from sqlalchemy.orm import Query
+from sqlalchemy.sql import FromClause, Subquery
 from sqlalchemy.sql.dml import Update, Delete, Insert
 
 from app.config import settings
@@ -363,7 +363,7 @@ class _Select:
         self._select = self._select.limit(limit)
         return self
 
-    def subquery(self, name: str = None, with_labels=False, reduce_columns=False):
+    def subquery(self, name: str = None, with_labels=False, reduce_columns=False) -> Subquery:
         """
         :rtype:subquery
         """

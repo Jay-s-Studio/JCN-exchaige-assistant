@@ -56,22 +56,29 @@ class UserProvider:
         :param username:
         :return:
         """
-        return await (
-            self._session.select(
-                SysUser.id,
-                SysUser.email,
-                SysUser.username,
-                SysUser.display_name,
-                SysUser.hash_password,
-                SysUser.password_salt,
-                SysUser.is_superuser,
-                SysUser.is_active,
-                SysUser.gac,
-                SysUser.last_login_at
+        try:
+            user = await (
+                self._session.select(
+                    SysUser.id,
+                    SysUser.email,
+                    SysUser.username,
+                    SysUser.display_name,
+                    SysUser.hash_password,
+                    SysUser.password_salt,
+                    SysUser.is_superuser,
+                    SysUser.is_active,
+                    SysUser.gac,
+                    SysUser.last_login_at
+                )
+                .where(SysUser.username == username)
+                .fetchrow(as_model=User)
             )
-            .where(SysUser.username == username)
-            .fetchrow(as_model=User)
-        )
+        except Exception as e:
+            raise e
+        else:
+            return user
+        finally:
+            await self._session.close()
 
     @distributed_trace()
     async def get_user_by_id(self, user_id: UUID) -> Optional[User]:
@@ -81,22 +88,29 @@ class UserProvider:
         :param user_id:
         :return:
         """
-        return await (
-            self._session.select(
-                SysUser.id,
-                SysUser.email,
-                SysUser.username,
-                SysUser.display_name,
-                SysUser.hash_password,
-                SysUser.password_salt,
-                SysUser.is_superuser,
-                SysUser.is_active,
-                SysUser.gac,
-                SysUser.last_login_at
+        try:
+            user = await (
+                self._session.select(
+                    SysUser.id,
+                    SysUser.email,
+                    SysUser.username,
+                    SysUser.display_name,
+                    SysUser.hash_password,
+                    SysUser.password_salt,
+                    SysUser.is_superuser,
+                    SysUser.is_active,
+                    SysUser.gac,
+                    SysUser.last_login_at
+                )
+                .where(SysUser.id == user_id)
+                .fetchrow(as_model=User)
             )
-            .where(SysUser.id == user_id)
-            .fetchrow(as_model=User)
-        )
+        except Exception as e:
+            raise e
+        else:
+            return user
+        finally:
+            await self._session.close()
 
     @distributed_trace()
     async def update_last_login(self, user_id: UUID, last_login: datetime):
