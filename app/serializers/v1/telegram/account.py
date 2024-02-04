@@ -2,12 +2,13 @@
 Serializers for Telegram Account API
 """
 import json
-from typing import Optional, List
+from enum import Enum
+from typing import Optional, List, Type
 from uuid import UUID
 
 from pydantic import BaseModel, Field, field_serializer, field_validator
 
-from app.libs.consts.enums import BotType
+from app.libs.consts.enums import BotType, PaymentAccountStatus
 from app.libs.shared import validator
 
 
@@ -33,9 +34,10 @@ class TelegramChatGroup(BaseModel):
     type: str
     in_group: bool
     bot_type: BotType
+    payment_account_status: Optional[PaymentAccountStatus] = Field(default=None, description="Payment Account Status")
 
-    @field_serializer("bot_type")
-    def serialize_enum(self, value: BotType, _info):
+    @field_serializer("bot_type", "payment_account_status")
+    def serialize_enum(self, value: Type[Enum], _info):
         """
         serialize enum
         :param value:
@@ -97,6 +99,7 @@ class GroupInfo(BaseModel):
     in_group: bool
     bot_type: BotType
     description: Optional[str] = Field(default=None)
+    payment_account_status: Optional[PaymentAccountStatus] = Field(default=None)
     customer_services: List[GroupMember] = Field(default=[])
     currency_symbol: Optional[str] = Field(default=None)
     handling_fee_name: Optional[str] = Field(default=None)

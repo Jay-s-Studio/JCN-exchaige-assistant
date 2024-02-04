@@ -183,6 +183,7 @@ class TelegramAccountProvider:
                     SysTelegramChatGroup.in_group,
                     SysTelegramChatGroup.bot_type,
                     SysTelegramChatGroup.description,
+                    SysTelegramChatGroup.payment_account_status,
                     sa.func.array_agg(
                         sa.func.json_build_object(
                             sa.cast("id", sa.VARCHAR(32)), customer_service.c.id,
@@ -247,6 +248,7 @@ class TelegramAccountProvider:
                     SysTelegramChatGroup.in_group,
                     SysTelegramChatGroup.bot_type,
                     SysTelegramChatGroup.description,
+                    SysTelegramChatGroup.payment_account_status,
                     sa.func.array_agg(
                         sa.func.json_build_object(
                             sa.cast("id", sa.VARCHAR(32)), customer_service.c.id,

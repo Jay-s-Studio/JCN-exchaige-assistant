@@ -19,6 +19,12 @@ class BotType(StrEnum):
     VENDORS = "vendors"
 
 
+class PaymentAccountStatus(StrEnum):
+    """PaymentAccountStatus"""
+    PREPARING = "preparing"
+    OUT_OF_STOCK = "out_of_stock"
+
+
 class Language(StrEnum):
     """Language"""
     EN_US = "en-us"

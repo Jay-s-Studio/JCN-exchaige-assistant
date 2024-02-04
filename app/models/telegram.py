@@ -8,6 +8,7 @@ from sqlalchemy.dialects.postgresql import UUID
 from app.libs.database.orm import Base, ModelBase
 from .handling_fee import SysHandlingFeeConfig
 from .mixins import AuditMixin, DeletedMixin, DescriptionMixin
+from ..libs.consts.enums import PaymentAccountStatus
 
 
 class SysTelegramAccount(Base, AuditMixin, DeletedMixin, DescriptionMixin):
@@ -37,6 +38,11 @@ class SysTelegramChatGroup(Base, AuditMixin, DeletedMixin, DescriptionMixin):
     type = Column(sa.String(255), nullable=True, comment="Type")
     in_group = Column(sa.Boolean, nullable=True, comment="In Group")
     bot_type = Column(sa.String(255), nullable=True, comment="Bot Type")
+    payment_account_status = Column(
+        sa.String(32),
+        nullable=True,
+        comment="Payment Account Status. Options: ['preparing', 'out_of_stock']"
+    )
     currency_id = Column(
         UUID,
         sa.ForeignKey("public.currency.id", name="currency_id_fkey", ondelete="SET NULL"),
