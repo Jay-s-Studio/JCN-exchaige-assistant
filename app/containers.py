@@ -23,7 +23,9 @@ from app.providers import (
     ExchangeRateProvider,
     GinaProvider,
     HandlingFeeProvider,
+    OrderProvider,
     UserProvider,
+    VendorsBotProvider
 )
 
 
@@ -68,17 +70,26 @@ class Container(containers.DeclarativeContainer):
         session=aio_session,
         redis=redis_pool
     )
+    order_provider = providers.Factory(
+        OrderProvider,
+        session=aio_session,
+        redis=redis_pool
+    )
     user_provider = providers.Factory(
         UserProvider,
         session=aio_session,
         redis=redis_pool
     )
+    vendors_bot_provider = providers.Factory(VendorsBotProvider)
 
     # [controllers]
     messages_controller = providers.Factory(
         MessagesController,
         telegram_account_provider=telegram_account_provider,
         exchange_rate_provider=exchange_rate_provider,
+        handling_fee_provider=handling_fee_provider,
+        order_provider=order_provider,
+        vendors_bot_provider=vendors_bot_provider
     )
 
     # [handlers]
@@ -102,8 +113,9 @@ class Container(containers.DeclarativeContainer):
     )
     telegram_message_handler = providers.Factory(
         TelegramMessageHandler,
-        redis=redis_pool,
-        telegram_account_provider=telegram_account_provider
+        bot=bot,
+        telegram_account_provider=telegram_account_provider,
+        order_provider=order_provider
     )
     telegram_bot_messages_handler = providers.Factory(
         TelegramBotMessagesHandler,

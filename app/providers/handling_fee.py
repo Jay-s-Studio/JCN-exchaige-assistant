@@ -8,7 +8,7 @@ from redis.asyncio import Redis
 
 from app.libs.database import RedisPool, Session
 from app.libs.decorators.sentry_tracer import distributed_trace
-from app.models.handling_fee import SysHandlingFeeConfig, SysHandlingFeeConfigItem
+from app.models import SysHandlingFeeConfig, SysHandlingFeeConfigItem, SysTelegramChatGroup
 from app.serializers.v1.handling_fee import HandlingFeeConfig, HandlingFeeConfigItem, HandlingFeeConfigBase
 
 
@@ -107,6 +107,67 @@ class HandlingFeeProvider:
                 )
                 .where(SysHandlingFeeConfig.is_global.is_(True))
                 .fetchrow(as_model=HandlingFeeConfigBase)
+            )
+        except Exception as e:
+            raise e
+        else:
+            return config
+        finally:
+            await self._session.close()
+
+    @distributed_trace()
+    async def get_handling_fee_item_by_group_and_currency(
+        self,
+        group_id: int,
+        currency_id: UUID
+    ) -> Optional[HandlingFeeConfigItem]:
+        """
+        get handling fee item by group and currency
+        :param group_id:
+        :param currency_id:
+        :return:
+        """
+        try:
+            config = await (
+                self._session.select(
+                    SysHandlingFeeConfigItem.currency_id,
+                    SysHandlingFeeConfigItem.buy_calculation_type,
+                    SysHandlingFeeConfigItem.buy_value,
+                    SysHandlingFeeConfigItem.sell_calculation_type,
+                    SysHandlingFeeConfigItem.sell_value
+                )
+                .outerjoin(SysTelegramChatGroup, SysTelegramChatGroup.handling_fee_config_id == SysHandlingFeeConfigItem.handling_fee_config_id)
+                .where(SysTelegramChatGroup.id == group_id)
+                .where(SysHandlingFeeConfigItem.currency_id == currency_id)
+                .fetchrow(as_model=HandlingFeeConfigItem)
+            )
+        except Exception as e:
+            raise e
+        else:
+            return config
+        finally:
+            await self._session.close()
+
+    @distributed_trace()
+    async def get_handing_fee_global_item_by_currency(self, currency_id: UUID) -> Optional[HandlingFeeConfigItem]:
+        """
+        get handing fee global item by currency
+        :param currency_id:
+        :return:
+        """
+        try:
+            config = await (
+                self._session.select(
+                    SysHandlingFeeConfigItem.currency_id,
+                    SysHandlingFeeConfigItem.buy_calculation_type,
+                    SysHandlingFeeConfigItem.buy_value,
+                    SysHandlingFeeConfigItem.sell_calculation_type,
+                    SysHandlingFeeConfigItem.sell_value
+                )
+                .outerjoin(SysHandlingFeeConfig, SysHandlingFeeConfig.id == SysHandlingFeeConfigItem.handling_fee_config_id)
+                .where(SysHandlingFeeConfigItem.currency_id == currency_id)
+                .where(SysHandlingFeeConfig.is_global.is_(True))
+                .fetchrow(as_model=HandlingFeeConfigItem)
             )
         except Exception as e:
             raise e

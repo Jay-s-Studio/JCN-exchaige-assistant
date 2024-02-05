@@ -2,15 +2,17 @@
 Model for Exchange Rate
 """
 from typing import Optional
+from uuid import UUID
 
 from pydantic import BaseModel
 
 
-class CurrentExchangeRate(BaseModel):
+class OptimalExchangeRate(BaseModel):
     """
-    Model for Exchange Rate
+    OptimalExchangeRate
     """
     group_id: int
+    currency_id: UUID
     currency: str
-    buy: Optional[float]
-    sell: Optional[float]
+    buy_rate: Optional[float]
+    sell_rate: Optional[float]

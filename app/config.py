@@ -65,6 +65,9 @@ class Configuration(BaseSettings):
     HOST: str = os.getenv(key="HOST", default="127.0.0.1")
     PORT: int = os.getenv(key="PORT", default=8000)
 
+    # [JCN]
+    JCN_VENDORS_BOT_URL: str = os.getenv(key="JCN_VENDORS_BOT_URL")
+
     # [CORS]
     CORS_ALLOWED_ORIGINS: List[str] = os.getenv(key="CORS_ALLOWED_ORIGINS", default="*").split(",")
     CORS_ALLOW_ORIGINS_REGEX: Optional[str] = os.getenv(key="CORS_ALLOW_ORIGINS_REGEX")

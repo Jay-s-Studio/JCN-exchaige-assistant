@@ -3,7 +3,8 @@ Model for Gina
 """
 from typing import Optional, List
 
-from pydantic import BaseModel, Field, field_validator
+from httpx._types import FileTypes
+from pydantic import BaseModel, Field, field_validator, ConfigDict
 
 from app.libs.consts.enums import GinaIntention, GinaAction, Language
 
@@ -33,15 +34,16 @@ class GinaMessage(BaseModel):
     """
     GinaMessage
     """
-    text: str
-    image: Optional[str] = None
+    text: Optional[str] = None
 
 
 class GinaPayload(BaseModel):
     """
     GinaPayload
     """
-    messages: List[GinaMessage]
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+    messages: Optional[List[GinaMessage]] = None
+    image: Optional[FileTypes] = None
 
 
 class GinaResponse(BaseModel):
@@ -55,6 +57,15 @@ class GinaResponse(BaseModel):
     exchange_currency: Optional[str] = Field(default=None, description="Exchange Currency")
     amount_to_exchange: Optional[float] = Field(default=None, description="Amount to Exchange")
     language: Optional[Language] = Field(default=Language.ZH_TW, description="Language")
+
+    @field_validator("payment_currency", "exchange_currency", mode="before")
+    def upper_currency(cls, value: str):
+        """
+        upper currency
+        :param value:
+        :return:
+        """
+        return value.upper() if value else None
 
     @field_validator("intention", mode="before")
     def check_intention(cls, value: str):

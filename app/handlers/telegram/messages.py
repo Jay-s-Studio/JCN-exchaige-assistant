@@ -7,16 +7,22 @@ from telegram import Bot
 
 from app.exceptions.api_base import APIException
 from app.libs.decorators.sentry_tracer import distributed_trace
-from app.providers import TelegramAccountProvider
-from app.serializers.v1.telegram import TelegramBroadcast
+from app.providers import TelegramAccountProvider, OrderProvider
+from app.serializers.v1.telegram import TelegramBroadcast, PaymentAccount
 
 
 class TelegramMessageHandler:
     """TelegramMessageHandler"""
 
-    def __init__(self, bot: Bot, telegram_account_provider: TelegramAccountProvider):
+    def __init__(
+        self,
+        bot: Bot,
+        telegram_account_provider: TelegramAccountProvider,
+        order_provider: OrderProvider
+    ):
         self._bot = bot
         self._telegram_account_provider = telegram_account_provider
+        self._order_provider = order_provider
 
     @distributed_trace()
     async def broadcast_message(self, model: TelegramBroadcast):
@@ -25,11 +31,30 @@ class TelegramMessageHandler:
         :param model:
         :return:
         """
-        # group = await self._telegram_account_provider.get_chat_group(chat_id=model.chat_id)
-        # if not group:
-        #     raise APIException(status_code=status.HTTP_404_NOT_FOUND, message="chat group not found")
         try:
             message = await self._bot.send_message(chat_id=model.chat_id, text=model.message)
+        except telegram.error.BadRequest as e:
+            raise APIException(status_code=status.HTTP_400_BAD_REQUEST, message=str(e))
+        except Exception as e:
+            raise APIException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, message=str(e))
+        return message.to_dict()
+
+    @distributed_trace()
+    async def receive_payment_account(self, model: PaymentAccount):
+        """
+        receive payment account
+        :param model:
+        :return:
+        """
+        order_info = await self._order_provider.get_order(group_id=model.customer_id, order_id=model.session_id)
+        if not order_info:
+            raise APIException(status_code=status.HTTP_404_NOT_FOUND, message="order not found")
+        try:
+            message = await self._bot.send_message(
+                chat_id=order_info.group_id,
+                text=model.message,
+                reply_to_message_id=order_info.message_id
+            )
         except telegram.error.BadRequest as e:
             raise APIException(status_code=status.HTTP_400_BAD_REQUEST, message=str(e))
         except Exception as e:

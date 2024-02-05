@@ -6,7 +6,9 @@ from .currency import CurrencyProvider
 from .exchange_rate import ExchangeRateProvider
 from .gina import GinaProvider
 from .handling_fee import HandlingFeeProvider
+from .order import OrderProvider
 from .user import UserProvider
+from .vendors_bot import VendorsBotProvider
 
 __all__ = [
     # account package
@@ -19,6 +21,10 @@ __all__ = [
     "GinaProvider",
     # handling_fee
     "HandlingFeeProvider",
+    # order
+    "OrderProvider",
     # user
     "UserProvider",
+    # vendors_bot
+    "VendorsBotProvider",
 ]

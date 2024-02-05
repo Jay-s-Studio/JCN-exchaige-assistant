@@ -44,6 +44,33 @@ async def test_get_global_handling_fee_config(
 
 
 @pytest.mark.asyncio
+async def test_get_handling_fee_item_by_group_and_currency(
+    handling_fee_provider: HandlingFeeProvider
+):
+    """
+    Test get handling fee item by group and currency
+    """
+    item = await handling_fee_provider.get_handling_fee_item_by_group_and_currency(
+        group_id=-1002050270240,
+        currency_id=UUID("4442ca9a-172c-4e0e-ae9a-db38a1126f2d")
+    )
+    assert item
+
+
+@pytest.mark.asyncio
+async def test_get_handing_fee_global_item_by_currency(
+    handling_fee_provider: HandlingFeeProvider
+):
+    """
+    Test get handing fee global item by currency
+    """
+    item = await handling_fee_provider.get_handing_fee_global_item_by_currency(
+        currency_id=UUID("4442ca9a-172c-4e0e-ae9a-db38a1126f2d")
+    )
+    assert item
+
+
+@pytest.mark.asyncio
 async def test_create_handling_fee_config(
     handling_fee_provider: HandlingFeeProvider
 ):

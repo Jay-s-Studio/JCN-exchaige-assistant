@@ -24,6 +24,7 @@ asyncpg = "^0.29.0"
 sqlalchemy = "<2.0"
 psycopg2-binary = "^2.9.9"
 ujson = "^5.9.0"
+python-multipart = "^0.0.7"
 
 
 [tool.poetry.group.dev.dependencies]

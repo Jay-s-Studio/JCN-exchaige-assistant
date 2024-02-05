@@ -371,3 +371,43 @@ class TelegramAccountProvider:
             return members
         finally:
             await self._session.close()
+
+    @distributed_trace()
+    async def get_group_customer_services(
+        self,
+        group_id: int
+    ) -> List[TelegramAccount]:
+        """
+        get group customer services
+        :param group_id:
+        :return:
+        """
+        try:
+            members = await (
+                self._session.select(
+                    SysTelegramAccount.id,
+                    SysTelegramAccount.username,
+                    SysTelegramAccount.first_name,
+                    SysTelegramAccount.last_name,
+                    SysTelegramAccount.full_name,
+                    SysTelegramAccount.name,
+                    SysTelegramAccount.language_code,
+                    SysTelegramAccount.is_bot,
+                    SysTelegramAccount.is_premium,
+                    SysTelegramAccount.link,
+                )
+                .outerjoin(
+                    SysTelegramChatGroupMember,
+                    SysTelegramChatGroupMember.account_id == SysTelegramAccount.id
+                )
+                .where(SysTelegramChatGroupMember.chat_group_id == group_id)
+                .where(SysTelegramChatGroupMember.is_customer_service.is_(True))
+                .where(SysTelegramChatGroupMember.is_deleted.is_(False))
+                .fetch(as_model=TelegramAccount)
+            )
+        except Exception as e:
+            raise e
+        else:
+            return members
+        finally:
+            await self._session.close()

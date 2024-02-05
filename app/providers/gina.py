@@ -38,12 +38,26 @@ class GinaProvider:
                 chat_platform="telegram",
                 chat_mode="group"
             )
-            message = GinaMessage(
-                text=update.message.text
-            )
-            payload = GinaPayload(
-                messages=[message]
-            )
+            if update.message.text:
+                message = GinaMessage(
+                    text=update.message.text
+                )
+                payload = GinaPayload(
+                    messages=[message]
+                )
+            else:
+                if update.message.document:
+                    file = await update.message.document.get_file()
+                    file_name = update.message.document.file_name
+                    content_type = update.message.document.mime_type
+                else:
+                    file = await update.message.photo[-1].get_file()
+                    file_name = file.file_path.split("/")[-1]
+                    content_type = "image/jpg"
+                data = await file.download_as_bytearray()
+                payload = GinaPayload(
+                    image=(file_name, data, content_type)
+                )
             data = await self._client.messages(headers=headers, payload=payload)
             if not data:
                 return None

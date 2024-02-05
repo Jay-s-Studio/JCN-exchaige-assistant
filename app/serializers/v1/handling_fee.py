@@ -4,7 +4,7 @@ Serializer for handling fee API
 from typing import Optional, List
 from uuid import UUID
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, ConfigDict
 
 from app.libs.consts.enums import CalculationType
 from app.libs.shared import validator
@@ -35,6 +35,7 @@ class HandlingFeeConfigItem(BaseModel):
     """
     HandlingFeeConfigItem
     """
+    model_config = ConfigDict(use_enum_values=True)
     currency_id: UUID = Field(title="Currency ID", description="Currency ID")
     buy_calculation_type: CalculationType = Field(title="Buy Calculation Type", description="Buy Calculation Type")
     buy_value: float = Field(title="Buy Value", description="Buy Value")

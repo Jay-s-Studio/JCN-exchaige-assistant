@@ -1,5 +1,5 @@
 """Demo Router"""
-from fastapi import APIRouter
+from fastapi import APIRouter, UploadFile
 from starlette.requests import Request
 
 from app.libs.depends import DEFAULT_RATE_LIMITERS
@@ -24,4 +24,21 @@ async def get_demo(
     """
     return {
         "message": "Hello World!"
+    }
+
+
+@router.post(
+    path="/upload_file"
+)
+async def post_demo(
+    file: UploadFile
+):
+    """
+
+    :param file:
+    :return:
+    """
+    return {
+        "name": file.filename,
+        "content_type": file.content_type
     }

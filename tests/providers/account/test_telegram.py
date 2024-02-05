@@ -73,3 +73,14 @@ async def test_get_chat_group_members(telegram_account_provider: TelegramAccount
     """
     members = await telegram_account_provider.get_chat_group_members(chat_group_id=-1002050270240)
     assert members is not None
+
+
+@pytest.mark.asyncio
+async def test_get_group_customer_services(telegram_account_provider: TelegramAccountProvider):
+    """
+    Test get_group_customer_services
+    :param telegram_account_provider:
+    :return:
+    """
+    customer_services = await telegram_account_provider.get_group_customer_services(group_id=-1002050270240)
+    assert customer_services is not None

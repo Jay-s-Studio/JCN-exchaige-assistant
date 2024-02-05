@@ -2,20 +2,22 @@
 MessagesController
 """
 import asyncio
+import uuid
 from dataclasses import dataclass
-from typing import List, Optional, Callable
 
-from telegram import Update
+from telegram import Update, User
 from telegram.constants import ParseMode
 
 from app.libs.consts import messages
-from app.libs.consts.enums import GinaAction, CurrencySymbol
+from app.libs.consts.enums import GinaAction, CurrencySymbol, OperationType, CalculationType
 from app.libs.consts.messages import Message
 from app.libs.decorators.sentry_tracer import distributed_trace
-from app.providers import ExchangeRateProvider, TelegramAccountProvider
-from app.schemas.exchange_rate import CurrentExchangeRate
+from app.providers import ExchangeRateProvider, TelegramAccountProvider, HandlingFeeProvider, OrderProvider, VendorsBotProvider
+from app.schemas.exchange_rate import OptimalExchangeRate
 from app.schemas.gina import GinaResponse
-from app.serializers.v1.exchange_rate import GroupExchangeRate
+from app.schemas.order import OrderCache
+from app.schemas.vendors_bot import PaymentAccount
+from app.serializers.v1.handling_fee import HandlingFeeConfigItem
 
 
 @dataclass
@@ -31,9 +33,15 @@ class MessagesController:
         self,
         telegram_account_provider: TelegramAccountProvider,
         exchange_rate_provider: ExchangeRateProvider,
+        handling_fee_provider: HandlingFeeProvider,
+        order_provider: OrderProvider,
+        vendors_bot_provider: VendorsBotProvider
     ):
         self._telegram_account_provider = telegram_account_provider
         self._exchange_rate_provider = exchange_rate_provider
+        self._handling_fee_provider = handling_fee_provider
+        self._order_provider = order_provider
+        self._vendors_bot_provider = vendors_bot_provider
 
     @distributed_trace()
     async def on_exchange_rate(self, update: Update, gina_resp: GinaResponse) -> Message:
@@ -45,12 +53,54 @@ class MessagesController:
         """
         match gina_resp.action:
             case GinaAction.EXCHANGE_RATE:
-                message = await self.exchange_rate(update=update, gina_resp=gina_resp)
+                message = await self._exchange_rate(update=update, gina_resp=gina_resp)
             case GinaAction.EXCHANGE_RATE_MAIN_TOKEN:
-                message = await self.exchange_rate(update=update, gina_resp=gina_resp, get_default=True)
+                message = await self._exchange_rate(update=update, gina_resp=gina_resp, get_default=True)
             case _:
                 message = Message(text=gina_resp.reply)
         return message
+
+    @distributed_trace()
+    async def _exchange_rate(self, update: Update, gina_resp: GinaResponse, get_default: bool = False) -> Message:
+        """
+        exchange rate
+        :param update:
+        :param gina_resp:
+        :param get_default:
+        :return:
+        """
+        await update.effective_message.reply_text(text=gina_resp.reply)
+        if get_default:
+            group = await self._telegram_account_provider.get_chat_group(group_id=update.effective_chat.id)
+            if not group.currency_symbol:
+                return messages.DefaultCurrencyNotFoundMessage.format(language=gina_resp.language)
+            payment_currency = group.currency_symbol
+            exchange_currency = CurrencySymbol.USDT.value
+        else:
+            payment_currency = gina_resp.payment_currency.upper()
+            exchange_currency = gina_resp.exchange_currency.upper()
+            if exchange_currency == "G":
+                exchange_currency = "GCASH"
+            if exchange_currency == "M":
+                exchange_currency = "PAYMAYA"
+
+        exchange_rate, handling_fee = await self._get_rate_and_fee(
+            group_id=update.effective_chat.id,
+            currency=payment_currency if payment_currency != "USDT" else exchange_currency,
+            operation_type=OperationType.BUY if payment_currency != "USDT" else OperationType.SELL
+        )
+        price = await self._get_price(
+            exchange_rate=exchange_rate,
+            handling_fee=handling_fee,
+            operation_type=OperationType.BUY if payment_currency != "USDT" else OperationType.SELL
+        )
+        await asyncio.sleep(1.5)
+        return messages.ExchangeRateMessage.format(
+            language=gina_resp.language,
+            payment_currency=payment_currency,
+            exchange_currency=exchange_currency,
+            price=price
+        )
 
     @distributed_trace()
     async def on_swap(self, update: Update, gina_resp: GinaResponse) -> Message:
@@ -62,13 +112,69 @@ class MessagesController:
         """
         match gina_resp.action:
             case GinaAction.SWAP:
-                message = Message(text=gina_resp.reply)
+                message = await self._swap(update=update, gina_resp=gina_resp)
             case GinaAction.SWAP_CRYPTO:
                 message = Message(text=gina_resp.reply)
             case GinaAction.SWAP_LEGAL:
                 message = Message(text=gina_resp.reply)
             case _:
                 message = Message(text=gina_resp.reply)
+        return message
+
+    @distributed_trace()
+    async def _swap(self, update: Update, gina_resp: GinaResponse) -> Message:
+        """
+        swap
+        :param update:
+        :param gina_resp:
+        :return:
+        """
+        message = Message(text=gina_resp.reply)
+        session_id = uuid.uuid4()
+        group_id = update.effective_chat.id
+        payment_currency = gina_resp.payment_currency
+        exchange_currency = gina_resp.exchange_currency
+        if exchange_currency == "G":
+            exchange_currency = "GCASH"
+        if exchange_currency == "M":
+            exchange_currency = "PAYMAYA"
+
+        exchange_rate, handling_fee = await self._get_rate_and_fee(
+            group_id=group_id,
+            currency=exchange_currency,
+            operation_type=OperationType.BUY if payment_currency != "USDT" else OperationType.SELL
+        )
+        price = await self._get_price(
+            exchange_rate=exchange_rate,
+            handling_fee=handling_fee,
+            operation_type=OperationType.BUY if payment_currency != "USDT" else OperationType.SELL
+        )
+        order_cache = OrderCache(
+            session_id=session_id,
+            message_id=update.effective_message.message_id,
+            group_id=group_id,
+            amount_to_exchange=gina_resp.amount_to_exchange,
+            payment_currency=payment_currency,
+            exchange_currency=exchange_currency,
+            vendor_id=exchange_rate.group_id,
+            original_exchange_rate=exchange_rate.buy_rate,
+            with_fee_exchange_rate=price,
+            total_amount=price * gina_resp.amount_to_exchange
+        )
+        await self._order_provider.set_order(
+            group_id=group_id,
+            order_id=session_id,
+            order_info=order_cache
+        )
+        payload = PaymentAccount(
+            session_id=session_id,
+            customer_id=group_id,
+            group_id=exchange_rate.group_id,
+            payment_currency=payment_currency,
+            exchange_currency=exchange_currency,
+            total_amount=price * gina_resp.amount_to_exchange
+        )
+        await self._vendors_bot_provider.payment_account(payload)
         return message
 
     @distributed_trace()
@@ -124,125 +230,78 @@ class MessagesController:
         :param group_id:
         :return:
         """
-        # group = await self._telegram_account_provider.get_chat_group(chat_id=group_id)
-        # if not group.custom_info.customer_service:
-        #     return message
-        # user = User(
-        #     id=group.custom_info.customer_service.id,
-        #     first_name=group.custom_info.customer_service.first_name,
-        #     is_bot=group.custom_info.customer_service.is_bot,
-        #     last_name=group.custom_info.customer_service.last_name,
-        #     username=group.custom_info.customer_service.username,
-        #     language_code=group.custom_info.customer_service.language_code,
-        #     is_premium=group.custom_info.customer_service.is_premium
-        # )
-        # customer_service = user.mention_html(name=f"@{user.username}")
-        # message = message.replace("#CUSTOMER_SERVICE#", customer_service)
+        customer_services = await self._telegram_account_provider.get_group_customer_services(group_id=group_id)
+        mention_customer_services = []
+        for customer_service in customer_services:
+            user = User(
+                id=customer_service.id,
+                first_name=customer_service.first_name,
+                is_bot=customer_service.is_bot,
+                last_name=customer_service.last_name,
+                username=customer_service.username,
+                language_code=customer_service.language_code,
+                is_premium=customer_service.is_premium
+            )
+            mention_customer_services.append(user.mention_html(name=f"@{user.username}"))
+        message = message.replace("#CUSTOMER_SERVICE#", " ".join(mention_customer_services))
         return message
 
     @distributed_trace()
-    async def exchange_rate(self, update: Update, gina_resp: GinaResponse, get_default: bool = False) -> Message:
-        """
-        exchange rate
-        :param update:
-        :param gina_resp:
-        :param get_default:
-        :return:
-        """
-        await update.effective_message.reply_text(text=gina_resp.reply)
-        exchange_rate_list = await self._exchange_rate_provider.get_all_exchange_rate()
-        if get_default:
-            group = await self._telegram_account_provider.get_chat_group(group_id=update.effective_chat.id)
-            if not group.currency_symbol:
-                return messages.DefaultCurrencyNotFoundMessage.format(language=gina_resp.language)
-            payment_currency = group.currency_symbol
-            exchange_currency = CurrencySymbol.USDT.value
-        else:
-            payment_currency = gina_resp.payment_currency.upper()
-            exchange_currency = gina_resp.exchange_currency.upper()
-        if payment_currency != "USDT":
-            exchange_rate = self.get_lowest_buying_exchange_rate(
-                currency=payment_currency,
-                exchange_rate_list=exchange_rate_list
-            )
-            price = exchange_rate.buy
-        else:
-            exchange_rate = self.get_highest_selling_exchange_rate(
-                currency=exchange_currency,
-                exchange_rate_list=exchange_rate_list
-            )
-            price = exchange_rate.sell
-        await asyncio.sleep(1.5)
-        return messages.ExchangeRateMessage.format(
-            language=gina_resp.language,
-            payment_currency=payment_currency,
-            exchange_currency=exchange_currency,
-            price=price
+    async def _get_rate_and_fee(
+        self,
+        group_id: int,
+        currency: str,
+        operation_type: OperationType
+    ) -> tuple[OptimalExchangeRate, HandlingFeeConfigItem]:
+        exchange_rate = await self._exchange_rate_provider.get_optimal_exchange_rate(
+            currency=currency,
+            operation_type=operation_type
         )
+        handling_fee = await self._handling_fee_provider.get_handling_fee_item_by_group_and_currency(
+            group_id=group_id,
+            currency_id=exchange_rate.currency_id
+        )
+        if not handling_fee:
+            handling_fee = await self._handling_fee_provider.get_handing_fee_global_item_by_currency(
+                currency_id=exchange_rate.currency_id
+            )
+        return exchange_rate, handling_fee
+
+    @distributed_trace()
+    async def _get_price(
+        self,
+        exchange_rate: OptimalExchangeRate,
+        handling_fee: HandlingFeeConfigItem,
+        operation_type: OperationType
+    ) -> float:
+        calculation_type = handling_fee.buy_calculation_type if operation_type == OperationType.BUY else handling_fee.sell_calculation_type
+        price = self._calculate_fee(
+            calculation_type=calculation_type,
+            rate=exchange_rate.buy_rate if operation_type == OperationType.BUY else exchange_rate.sell_rate,
+            fee=handling_fee.buy_value if operation_type == OperationType.BUY else handling_fee.sell_value
+        )
+        return price
 
     @staticmethod
-    def _get_optimal_exchange_rate(
-        currency: str,
-        exchange_rate_list: List[GroupExchangeRate],
-        compare_func: Callable
-    ) -> Optional[CurrentExchangeRate]:
+    def _calculate_fee(
+        calculation_type: CalculationType,
+        rate: float,
+        fee: float
+    ) -> float:
         """
-        Internal function to get the optimal exchange rate based on a comparison function.
-        :param currency: The currency to find the exchange rate for.
-        :param exchange_rate_list: A list of GroupExchangeRate objects.
-        :param compare_func: A function to compare two exchange rates.
-        :return: The optimal CurrentExchangeRate object or None.
+        calculate fee
+        :param rate:
+        :param fee:
+        :return:
         """
-        optimal_rate = None
-        for group_rate in exchange_rate_list:
-            for exchange_rate in group_rate.exchange_rates:
-                if exchange_rate.currency != currency:
-                    continue
-                if optimal_rate is None:
-                    optimal_rate = CurrentExchangeRate(
-                        group_id=group_rate.group_id,
-                        currency=currency,
-                        buy=exchange_rate.buy_rate,
-                        sell=exchange_rate.sell_rate
-                    )
-                    continue
-                if compare_func(exchange_rate, optimal_rate):
-                    optimal_rate = CurrentExchangeRate(
-                        group_id=group_rate.group_id,
-                        currency=currency,
-                        buy=exchange_rate.buy_rate,
-                        sell=exchange_rate.sell_rate
-                    )
-        return optimal_rate
-
-    def get_lowest_buying_exchange_rate(
-        self,
-        currency: str,
-        exchange_rate_list: List[GroupExchangeRate]
-    ) -> Optional[CurrentExchangeRate]:
-        """
-        Get the exchange rate with the lowest buying rate for a given currency.
-        :param currency: The currency to find the exchange rate for.
-        :param exchange_rate_list: A list of GroupExchangeRate objects.
-        :return: The CurrentExchangeRate object with the lowest buying rate or None.
-        """
-        return self._get_optimal_exchange_rate(
-            currency, exchange_rate_list,
-            lambda rate, current: rate.buy_rate < current.buy
-        )
-
-    def get_highest_selling_exchange_rate(
-        self,
-        currency: str,
-        exchange_rate_list: List[GroupExchangeRate]
-    ) -> Optional[CurrentExchangeRate]:
-        """
-        Get the exchange rate with the highest selling rate for a given currency.
-        :param currency: The currency to find the exchange rate for.
-        :param exchange_rate_list: A list of GroupExchangeRate objects.
-        :return: The CurrentExchangeRate object with the highest selling rate or None.
-        """
-        return self._get_optimal_exchange_rate(
-            currency, exchange_rate_list,
-            lambda rate, current: rate.sell_rate > current.sell
-        )
+        match calculation_type:
+            case CalculationType.ADDITION:
+                return rate + fee
+            case CalculationType.SUBTRACTION:
+                return rate - fee
+            case CalculationType.MULTIPLICATION:
+                return rate * fee
+            case CalculationType.DIVISION:
+                return rate / fee
+            case _:
+                return rate

@@ -17,6 +17,7 @@ from sqlalchemy.dialects.postgresql.dml import Insert as PgInsert
 from sqlalchemy.orm import Query
 from sqlalchemy.sql import FromClause, Subquery
 from sqlalchemy.sql.dml import Update, Delete, Insert
+from sqlalchemy.sql.selectable import ScalarSelect
 
 from app.config import settings
 from app.libs.database.aio_pg import create_connection, create_pool
@@ -368,6 +369,12 @@ class _Select:
         :rtype:subquery
         """
         return self._select.subquery(name, with_labels=with_labels, reduce_columns=reduce_columns)
+
+    def scalar_subquery(self) -> ScalarSelect:
+        """
+        :rtype:ScalarSelect
+        """
+        return self._select.scalar_subquery()
 
     def cte(self, name: str = None, recursive=False):
         """

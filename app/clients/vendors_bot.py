@@ -1,5 +1,5 @@
 """
-GinaClient
+VendorsBotClient
 """
 from collections import defaultdict
 from typing import Optional
@@ -12,51 +12,51 @@ from app.config import settings
 from app.libs.decorators.sentry_tracer import distributed_trace
 from app.libs.http_client import http_client
 from app.libs.logger import logger
-from app.schemas.gina import GinaHeaders, GinaPayload
+from app.schemas.vendors_bot import PaymentAccount
 
 
-class GinaClient:
-    """GinaClient"""
+class VendorsBotClient:
+    """VendorsBotClient"""
 
     def __init__(self):
-        self._url = settings.GINA_URL
-        self._api_key = settings.GINA_API_KEY
+        self._url = settings.JCN_VENDORS_BOT_URL
+        self._version = "v1"
 
-    @distributed_trace(inject_span=True)
-    async def messages(
-        self,
-        headers: GinaHeaders,
-        payload: GinaPayload,
-        *,
-        _span: Span
-    ) -> Optional[dict]:
+    def _get_resource_url(self, resource: str, path: str):
         """
 
-        :param headers:
+        :param path:
+        :return:
+        """
+        assert resource, "resource can't be None"
+        assert path.startswith("/"), "A path prefix must start with '/'"
+        return urljoin(base=self._url, url=f"/api/{self._version}/{resource}{path}")
+
+    @distributed_trace(inject_span=True)
+    async def payment_account(
+        self,
+        payload: PaymentAccount,
+        *,
+        _span: Span
+    ):
+        """
+
         :param payload:
         :param _span:
         :return:
         """
         span_data = defaultdict()
-        url = urljoin(base=self._url, url="/chatai_api/v1/messages")
-        span_data["headers"] = headers.model_dump(by_alias=True)
-        pre_build_request = (
-            http_client.create(url=url)
-            .add_headers(headers.model_dump(by_alias=True))
-            .add_header(name="x-api-key", value=self._api_key)
-        )
-        if payload.image:
-            span_data["image"] = payload.image[0]
-            pre_build_request.add_file(name="file", file=payload.image)
-        else:
-            span_data["payload"] = payload.model_dump(exclude_none=True)
-            pre_build_request.add_json(payload.model_dump(exclude_none=True))
+        url = self._get_resource_url(resource="telegram/messages", path="/payment_account")
+        span_data["payload"] = payload.model_dump(exclude_none=True)
         try:
-            resp = await pre_build_request.apost()
+            resp = await (
+                http_client.create(url=url)
+                .add_json(payload.model_dump(exclude_none=True))
+                .apost()
+            )
             resp.raise_for_status()
             span_data["status_code"] = resp.status_code
             span_data["response"] = resp.json()
-            return resp.json()
         except HTTPStatusError as e:
             span_data["status_code"] = e.response.status_code
             span_data["response"] = e.response.text

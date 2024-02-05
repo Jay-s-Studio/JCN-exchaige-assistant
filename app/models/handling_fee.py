@@ -14,7 +14,7 @@ class SysHandlingFeeConfig(ModelBase, AuditMixin, DeletedMixin, DescriptionMixin
     __tablename__ = "handling_fee_config"
     __table_args__ = {"schema": "public"}
 
-    name = Column(sa.String(32), comment="Name")
+    name = Column(sa.String(32), nullable=False, comment="Name")
     is_global = Column(sa.Boolean, server_default=sa.text("false"), comment="Is Global")
 
 

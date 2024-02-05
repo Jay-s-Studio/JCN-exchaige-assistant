@@ -19,24 +19,41 @@ application = (
 )
 
 # register handlers
-application.add_handler(CommandHandler(
-    command="start",
-    callback=telegram_bot.start
-))
+application.add_handler(
+    CommandHandler(
+        command="start",
+        callback=telegram_bot.start
+    )
+)
 # Keep track of which chats the bot is in
 application.add_handler(ChatMemberHandler(callback=telegram_bot.track_chats))
 
 # Handle members joining/leaving chats.
-application.add_handler(MessageHandler(
-    filters=filters.StatusUpdate.NEW_CHAT_MEMBERS,
-    callback=telegram_bot.new_member_handler
-))
-application.add_handler(MessageHandler(
-    filters=filters.StatusUpdate.LEFT_CHAT_MEMBER,
-    callback=telegram_bot.left_member_handler
-))
+application.add_handler(
+    MessageHandler(
+        filters=filters.StatusUpdate.NEW_CHAT_MEMBERS,
+        callback=telegram_bot.new_member_handler
+    )
+)
+application.add_handler(
+    MessageHandler(
+        filters=filters.StatusUpdate.LEFT_CHAT_MEMBER,
+        callback=telegram_bot.left_member_handler
+    )
+)
 
-application.add_handler(MessageHandler(
-    filters=filters.TEXT & filters.UpdateType.MESSAGES & ~filters.COMMAND,
-    callback=telegram_bot.receive_message
-))
+application.add_handler(
+    MessageHandler(
+        filters=(
+            (
+                filters.TEXT &
+                filters.UpdateType.MESSAGES &
+                ~filters.COMMAND
+            ) | (
+                filters.PHOTO |
+                filters.Document.IMAGE
+            )
+        ),
+        callback=telegram_bot.receive_message
+    )
+)
