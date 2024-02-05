@@ -4,9 +4,10 @@ Serializer for handling fee API
 from typing import Optional, List
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
-from app.libs.consts.enums import CalculationType, OperationType
+from app.libs.consts.enums import CalculationType
+from app.libs.shared import validator
 from app.schemas.mixins import UUIDBaseModel
 
 
@@ -14,9 +15,20 @@ class HandlingFeeConfigBase(UUIDBaseModel):
     """
     HandlingFeeConfigBase
     """
-    name: str = Field(title="Name", description="Name of the fee", max_length=32)
+    name: str = Field(title="Name", description="Name of the fee")
     is_global: bool = Field(default=False, title="Is Global", description="Is the fee global")
     description: Optional[str] = Field(default=None, title="Description", description="Description of the fee")
+
+    @field_validator("name")
+    def check_empty(cls, value):
+        """
+
+        :param value:
+        :return:
+        """
+        if validator.is_empty(value):
+            raise ValueError("Required.")
+        return value
 
 
 class HandlingFeeConfigItem(BaseModel):
