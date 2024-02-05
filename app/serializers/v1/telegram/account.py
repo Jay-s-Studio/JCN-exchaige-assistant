@@ -37,13 +37,15 @@ class TelegramChatGroup(BaseModel):
     payment_account_status: Optional[PaymentAccountStatus] = Field(default=None, description="Payment Account Status")
 
     @field_serializer("bot_type", "payment_account_status")
-    def serialize_enum(self, value: Type[Enum], _info):
+    def serialize_enum(self, value: Optional[Type[Enum]], _info):
         """
         serialize enum
         :param value:
         :param _info:
         :return:
         """
+        if not value:
+            return None
         return value.value
 
 
