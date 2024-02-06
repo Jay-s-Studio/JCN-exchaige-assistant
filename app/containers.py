@@ -10,6 +10,7 @@ from app.handlers import (
     AuthHandler,
     CurrencyHandler,
     ExchangeRateHandler,
+    FileHandler,
     HandlingFeeHandler,
     TelegramAccountHandler,
     TelegramMessageHandler,
@@ -21,6 +22,7 @@ from app.providers import (
     TelegramAccountProvider,
     CurrencyProvider,
     ExchangeRateProvider,
+    FileProvider,
     GinaProvider,
     HandlingFeeProvider,
     OrderProvider,
@@ -64,7 +66,15 @@ class Container(containers.DeclarativeContainer):
         session=aio_session,
         redis=redis_pool
     )
-    gina_provider = providers.Factory(GinaProvider)
+    file_provider = providers.Factory(
+        FileProvider,
+        bot=bot,
+        redis=redis_pool
+    )
+    gina_provider = providers.Factory(
+        GinaProvider,
+        file_provider=file_provider
+    )
     handling_fee_provider = providers.Factory(
         HandlingFeeProvider,
         session=aio_session,
@@ -101,6 +111,10 @@ class Container(containers.DeclarativeContainer):
     exchange_rate_handler = providers.Factory(
         ExchangeRateHandler,
         exchange_rate_provider=exchange_rate_provider
+    )
+    file_handler = providers.Factory(
+        FileHandler,
+        file_provider=file_provider
     )
     handling_fee_handler = providers.Factory(
         HandlingFeeHandler,

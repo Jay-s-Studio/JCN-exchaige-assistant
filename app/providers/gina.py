@@ -2,21 +2,29 @@
 GinaProvider
 """
 from typing import Optional
+from urllib.parse import urljoin
 
 from sentry_sdk.tracing import Span
 from telegram import Update
 
 from app.clients.gina import GinaClient
+from app.config import settings
 from app.libs.decorators.sentry_tracer import distributed_trace
 from app.libs.logger import logger
 from app.schemas.gina import GinaHeaders, GinaPayload, GinaMessage, GinaResponse
+from . import FileProvider
+from ..schemas.files import TelegramFile
 
 
 class GinaProvider:
     """GinaProvider"""
 
-    def __init__(self):
+    def __init__(
+        self,
+        file_provider: FileProvider
+    ):
         self._client = GinaClient()
+        self._file_provider = file_provider
 
     @distributed_trace(inject_span=True)
     async def telegram_messages(
@@ -39,25 +47,34 @@ class GinaProvider:
                 chat_mode="group"
             )
             if update.message.text:
-                message = GinaMessage(
-                    text=update.message.text
-                )
-                payload = GinaPayload(
-                    messages=[message]
-                )
+                message = GinaMessage(text=update.message.text)
             else:
                 if update.message.document:
                     file = await update.message.document.get_file()
                     file_name = update.message.document.file_name
                     content_type = update.message.document.mime_type
+                    telegram_file = TelegramFile(
+                        file_unique_id=file.file_unique_id,
+                        file=file,
+                        file_name=file_name,
+                        content_type=content_type
+                    )
                 else:
                     file = await update.message.photo[-1].get_file()
                     file_name = file.file_path.split("/")[-1]
                     content_type = "image/jpg"
-                data = await file.download_as_bytearray()
-                payload = GinaPayload(
-                    image=(file_name, data, content_type)
-                )
+                    telegram_file = TelegramFile(
+                        file_unique_id=file.file_unique_id,
+                        file=file,
+                        file_name=file_name,
+                        content_type=content_type
+                    )
+                await self._file_provider.set_file(file=telegram_file)
+                image_url = urljoin(base=settings.BASE_URL, url=f"/api/v1/files/{file.file_unique_id}")
+                message = GinaMessage(image=image_url)
+            payload = GinaPayload(
+                messages=[message]
+            )
             data = await self._client.messages(headers=headers, payload=payload)
             if not data:
                 return None

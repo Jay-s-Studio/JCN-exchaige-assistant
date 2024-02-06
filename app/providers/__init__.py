@@ -4,6 +4,7 @@ Top level package for providers.
 from .account import TelegramAccountProvider
 from .currency import CurrencyProvider
 from .exchange_rate import ExchangeRateProvider
+from .files import FileProvider
 from .gina import GinaProvider
 from .handling_fee import HandlingFeeProvider
 from .order import OrderProvider
@@ -17,6 +18,8 @@ __all__ = [
     "CurrencyProvider",
     # exchange_rate
     "ExchangeRateProvider",
+    # files
+    "FileProvider",
     # gina
     "GinaProvider",
     # handling_fee

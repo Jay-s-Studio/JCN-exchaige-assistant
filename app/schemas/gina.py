@@ -35,15 +35,14 @@ class GinaMessage(BaseModel):
     GinaMessage
     """
     text: Optional[str] = None
+    image: Optional[str] = None
 
 
 class GinaPayload(BaseModel):
     """
     GinaPayload
     """
-    model_config = ConfigDict(arbitrary_types_allowed=True)
     messages: Optional[List[GinaMessage]] = None
-    image: Optional[FileTypes] = None
 
 
 class GinaResponse(BaseModel):
