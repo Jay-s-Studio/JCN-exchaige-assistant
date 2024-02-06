@@ -5,6 +5,7 @@ from uuid import UUID
 
 import pytest
 
+from app.libs.consts.enums import PaymentAccountStatus
 from app.providers import TelegramAccountProvider
 from app.serializers.v1.telegram import UpdateGroupInfo
 
@@ -84,3 +85,16 @@ async def test_get_group_customer_services(telegram_account_provider: TelegramAc
     """
     customer_services = await telegram_account_provider.get_group_customer_services(group_id=-1002050270240)
     assert customer_services is not None
+
+
+@pytest.mark.asyncio
+async def test_update_group_payment_account_status(telegram_account_provider: TelegramAccountProvider):
+    """
+    Test update_group_payment_account_status
+    :param telegram_account_provider:
+    :return:
+    """
+    await telegram_account_provider.update_group_payment_account_status(
+        group_id=-1002003483337,
+        status=PaymentAccountStatus.PREPARING
+    )

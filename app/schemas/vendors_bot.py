@@ -26,3 +26,24 @@ class PaymentAccount(BaseModel):
         :return:
         """
         return str(value)
+
+
+class CheckReceipt(BaseModel):
+    """
+    Check Receipt
+    """
+    session_id: UUID
+    customer_id: int
+    group_id: int
+    file_id: str
+    file_name: str
+
+    @field_serializer("session_id")
+    def serialize_uuid(self, value: UUID, _info) -> str:
+        """
+
+        :param value:
+        :param _info:
+        :return:
+        """
+        return str(value)

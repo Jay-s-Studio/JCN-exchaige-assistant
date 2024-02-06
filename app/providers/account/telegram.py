@@ -6,7 +6,7 @@ from typing import List, Tuple, Optional
 import sqlalchemy as sa
 from redis.asyncio import Redis
 
-from app.libs.consts.enums import BotType
+from app.libs.consts.enums import BotType, PaymentAccountStatus
 from app.libs.database import RedisPool, Session
 from app.libs.decorators.sentry_tracer import distributed_trace
 from app.models import SysTelegramAccount, SysTelegramChatGroup, SysTelegramChatGroupMember, SysCurrency
@@ -409,5 +409,32 @@ class TelegramAccountProvider:
             raise e
         else:
             return members
+        finally:
+            await self._session.close()
+
+    @distributed_trace()
+    async def update_group_payment_account_status(
+        self,
+        group_id: int,
+        status: PaymentAccountStatus
+    ):
+        """
+        update group payment account status
+        :param group_id:
+        :param status:
+        :return:
+        """
+        try:
+            await (
+                self._session.update(SysTelegramChatGroup)
+                .where(SysTelegramChatGroup.id == group_id)
+                .values(payment_account_status=status)
+                .execute()
+            )
+        except Exception as e:
+            await self._session.rollback()
+            raise e
+        else:
+            await self._session.commit()
         finally:
             await self._session.close()

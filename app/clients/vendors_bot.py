@@ -12,7 +12,7 @@ from app.config import settings
 from app.libs.decorators.sentry_tracer import distributed_trace
 from app.libs.http_client import http_client
 from app.libs.logger import logger
-from app.schemas.vendors_bot import PaymentAccount
+from app.schemas.vendors_bot import PaymentAccount, CheckReceipt
 
 
 class VendorsBotClient:
@@ -47,11 +47,82 @@ class VendorsBotClient:
         """
         span_data = defaultdict()
         url = self._get_resource_url(resource="telegram/messages", path="/payment_account")
-        span_data["payload"] = payload.model_dump(exclude_none=True)
+        payload_dict = payload.model_dump(exclude_none=True)
+        span_data["payload"] = payload_dict
         try:
             resp = await (
                 http_client.create(url=url)
-                .add_json(payload.model_dump(exclude_none=True))
+                .add_json(payload_dict)
+                .apost()
+            )
+            resp.raise_for_status()
+            span_data["status_code"] = resp.status_code
+            span_data["response"] = resp.json()
+        except HTTPStatusError as e:
+            span_data["status_code"] = e.response.status_code
+            span_data["response"] = e.response.text
+            logger.exception(e)
+            return None
+        finally:
+            for key, value in span_data.items():
+                _span.set_data(key, value)
+
+    @distributed_trace(inject_span=True)
+    async def hurry_payment_account(
+        self,
+        payload: PaymentAccount,
+        *,
+        _span: Span
+    ):
+        """
+
+        :param payload:
+        :param _span:
+        :return:
+        """
+        span_data = defaultdict()
+        url = self._get_resource_url(resource="telegram/messages", path="/hurry_payment_account")
+        payload_dict = payload.model_dump(exclude_none=True)
+        span_data["payload"] = payload_dict
+        try:
+            resp = await (
+                http_client.create(url=url)
+                .add_json(payload_dict)
+                .apost()
+            )
+            resp.raise_for_status()
+            span_data["status_code"] = resp.status_code
+            span_data["response"] = resp.json()
+        except HTTPStatusError as e:
+            span_data["status_code"] = e.response.status_code
+            span_data["response"] = e.response.text
+            logger.exception(e)
+            return None
+        finally:
+            for key, value in span_data.items():
+                _span.set_data(key, value)
+
+    @distributed_trace(inject_span=True)
+    async def check_receipt(
+        self,
+        payload: CheckReceipt,
+        *,
+        _span: Span
+    ):
+        """
+
+        :param payload:
+        :param _span:
+        :return:
+        """
+        span_data = defaultdict()
+        url = self._get_resource_url(resource="telegram/messages", path="/check_receipt")
+        payload_dict = payload.model_dump(exclude_none=True)
+        span_data["payload"] = payload_dict
+        try:
+            resp = await (
+                http_client.create(url=url)
+                .add_json(payload_dict)
                 .apost()
             )
             resp.raise_for_status()

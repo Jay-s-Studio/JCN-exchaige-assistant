@@ -71,10 +71,7 @@ class Container(containers.DeclarativeContainer):
         bot=bot,
         redis=redis_pool
     )
-    gina_provider = providers.Factory(
-        GinaProvider,
-        file_provider=file_provider
-    )
+    gina_provider = providers.Factory(GinaProvider)
     handling_fee_provider = providers.Factory(
         HandlingFeeProvider,
         session=aio_session,
@@ -135,6 +132,7 @@ class Container(containers.DeclarativeContainer):
         TelegramBotMessagesHandler,
         redis=redis_pool,
         telegram_account_provider=telegram_account_provider,
+        file_provider=file_provider,
         gina_provider=gina_provider,
         messages_controller=messages_controller
     )

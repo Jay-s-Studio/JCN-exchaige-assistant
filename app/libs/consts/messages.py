@@ -68,3 +68,30 @@ class DefaultCurrencyNotFoundMessage(MessagesBase):
         Language.EN_US: "Please set the default currency first",
     }
     parse_mode = ParseMode.MARKDOWN_V2
+
+
+class OrderInProgressMessage(MessagesBase):
+    """OrderInProgressMessage"""
+    message = {
+        Language.ZH_TW: "您有一個訂單正在進行中",
+        Language.EN_US: "You have an order in progress",
+    }
+    parse_mode = ParseMode.MARKDOWN_V2
+
+
+class OrderInfoNotFoundMessage(MessagesBase):
+    """OrderInfoNotFoundMessage"""
+    message = {
+        Language.ZH_TW: "抱歉，找不到訂單信息",
+        Language.EN_US: "Sorry, order information not found",
+    }
+    parse_mode = ParseMode.MARKDOWN_V2
+
+
+class ConfirmPayMessage(MessagesBase):
+    """ConfirmPayMessage"""
+    message = {
+        Language.ZH_TW: "您的訂單已支付成功",
+        Language.EN_US: "Your order has been successfully paid",
+    }
+    parse_mode = ParseMode.MARKDOWN_V2

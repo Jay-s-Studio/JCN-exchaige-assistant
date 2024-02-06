@@ -11,16 +11,18 @@ router = APIRouter()
 
 
 @router.get(
-    path="/{file_id}"
+    path="/{file_id}/{file_name}",
 )
 @inject
 async def get_file(
     file_id: str,
+    file_name: str,
     file_handler: FileHandler = Depends(Provide[Container.file_handler])
 ):
     """
 
     :param file_id:
+    :param file_name:
     :param file_handler:
     :return:
     """

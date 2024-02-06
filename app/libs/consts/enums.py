@@ -61,11 +61,11 @@ class CurrencyType(StrEnum):
 class GinaIntention(StrEnum):
     """GinaIntention"""
     SWAP = "swap"
-    PAYMENT_CHECK = "payment check"
     EXCHANGE_RATE = "exchange rate"
     HUMAN_CUSTOMER_SERVICE = "human customer service"
     GET_ACCOUNT = "get account"
     RECEIPT = "receipt"
+    PAYMENT_CHECK = "payment check"
     CANCEL_ORDER = "cancel order"
     HURRY = "hurry"
 
@@ -97,3 +97,13 @@ class CalculationType(StrEnum):
     SUBTRACTION = "subtraction"
     MULTIPLICATION = "multiplication"
     DIVISION = "division"
+
+
+class OrderStatus(StrEnum):
+    """OrderStatus"""
+    WAIT_FOR_PAYMENT_ACCOUNT = "wait_for_payment_account"
+    WAIT_FOR_PAYMENT = "wait_for_payment"
+    EXPIRE = "expire"
+    WAIT_FOR_CONFIRMATION = "wait_for_confirmation"
+    PAID = "paid"
+    CANCELLED = "cancelled"
