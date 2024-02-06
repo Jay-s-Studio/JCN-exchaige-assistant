@@ -94,7 +94,7 @@ async def test_update_group_payment_account_status(telegram_account_provider: Te
     :param telegram_account_provider:
     :return:
     """
-    await telegram_account_provider.update_group_payment_account_status(
+    await telegram_account_provider.update_payment_account_status(
         group_id=-1002003483337,
         status=PaymentAccountStatus.PREPARING
     )

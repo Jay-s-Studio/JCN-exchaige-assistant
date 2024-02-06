@@ -13,7 +13,13 @@ from app.libs.consts.enums import OrderStatus
 from app.libs.consts.messages import ConfirmPayMessage
 from app.libs.decorators.sentry_tracer import distributed_trace
 from app.providers import TelegramAccountProvider, OrderProvider
-from app.serializers.v1.telegram import TelegramBroadcast, PaymentAccount, GroupPaymentAccountStatus, ConfirmPay
+from app.serializers.v1.telegram import (
+    TelegramBroadcast,
+    PaymentAccount,
+    GroupPaymentAccountStatus,
+    ConfirmPay,
+    OrderPaymentAccountStatus,
+)
 
 
 class TelegramMessageHandler:
@@ -76,7 +82,7 @@ class TelegramMessageHandler:
         return message.to_dict()
 
     @distributed_trace()
-    async def update_group_payment_account_status(
+    async def update_payment_account_status(
         self,
         group_id: int,
         model: GroupPaymentAccountStatus
@@ -87,7 +93,24 @@ class TelegramMessageHandler:
         :param model:
         :return:
         """
-        await self._telegram_account_provider.update_group_payment_account_status(
+        await self._telegram_account_provider.update_payment_account_status(
+            group_id=group_id,
+            status=model.status
+        )
+
+    @distributed_trace()
+    async def order_payment_account_status(
+        self,
+        group_id: int,
+        model: OrderPaymentAccountStatus
+    ) -> None:
+        """
+        update group payment account status
+        :param group_id:
+        :param model:
+        :return:
+        """
+        await self._telegram_account_provider.update_payment_account_status(
             group_id=group_id,
             status=model.status
         )

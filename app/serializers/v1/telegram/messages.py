@@ -29,6 +29,13 @@ class GroupPaymentAccountStatus(BaseModel):
     """
     Group Payment Account Status
     """
+    status: PaymentAccountStatus
+
+
+class OrderPaymentAccountStatus(GroupPaymentAccountStatus):
+    """
+    Order Payment Account Status
+    """
     customer_id: int
     session_id: UUID
     status: PaymentAccountStatus

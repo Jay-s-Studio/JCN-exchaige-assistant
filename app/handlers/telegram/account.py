@@ -5,7 +5,7 @@ from starlette import status
 from telegram import Bot
 
 from app.exceptions.api_base import APIException
-from app.libs.consts.enums import BotType, PaymentAccountStatus
+from app.libs.consts.enums import BotType
 from app.libs.decorators.sentry_tracer import distributed_trace
 from app.providers import TelegramAccountProvider
 from app.serializers.v1.telegram import (
@@ -16,7 +16,7 @@ from app.serializers.v1.telegram import (
     GroupMembers,
     GroupList,
     GroupInfo,
-    UpdateGroupInfo, GroupPaymentAccountStatus,
+    UpdateGroupInfo,
 )
 
 

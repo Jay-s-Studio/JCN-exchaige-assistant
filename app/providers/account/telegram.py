@@ -413,7 +413,7 @@ class TelegramAccountProvider:
             await self._session.close()
 
     @distributed_trace()
-    async def update_group_payment_account_status(
+    async def update_payment_account_status(
         self,
         group_id: int,
         status: PaymentAccountStatus
