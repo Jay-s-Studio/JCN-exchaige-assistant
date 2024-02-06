@@ -71,28 +71,30 @@ class TelegramBotMessagesHandler(TelegramBotBaseHandler):
             return
 
         # [Flow] exchange rate process
-        match result.intention:
-            case GinaIntention.EXCHANGE_RATE:
-                message = await self._messages_controller.on_exchange_rate(update=update, gina_resp=result)
-            case GinaIntention.SWAP:
-                message = await self._messages_controller.on_swap(update=update, gina_resp=result)
-            case GinaIntention.HUMAN_CUSTOMER_SERVICE:
-                message = await self._messages_controller.on_human_customer_service(update=update, gina_resp=result)
-            case GinaIntention.GET_ACCOUNT:
-                message = await self._messages_controller.on_get_account(update=update, gina_resp=result)
-            case GinaIntention.RECEIPT:
-                message = await self._messages_controller.on_receipt(update=update, gina_resp=result, telegram_file=telegram_file)
-            case GinaIntention.PAYMENT_CHECK:
-                message = await self._messages_controller.on_payment_check(update=update, gina_resp=result)
-            case GinaIntention.CANCEL_ORDER:
-                message = await self._messages_controller.on_cancel_order(update=update, gina_resp=result)
-            case GinaIntention.HURRY:
-                message = await self._messages_controller.on_hurry(update=update, gina_resp=result)
-            case _:
-                message = await self._messages_controller.on_fallback(update=update, gina_resp=result)
+        try:
+            match result.intention:
+                case GinaIntention.EXCHANGE_RATE:
+                    message = await self._messages_controller.on_exchange_rate(update=update, gina_resp=result)
+                case GinaIntention.SWAP:
+                    message = await self._messages_controller.on_swap(update=update, gina_resp=result)
+                case GinaIntention.HUMAN_CUSTOMER_SERVICE:
+                    message = await self._messages_controller.on_human_customer_service(update=update, gina_resp=result)
+                case GinaIntention.GET_ACCOUNT:
+                    message = await self._messages_controller.on_get_account(update=update, gina_resp=result)
+                case GinaIntention.RECEIPT:
+                    message = await self._messages_controller.on_receipt(update=update, gina_resp=result, telegram_file=telegram_file)
+                case GinaIntention.PAYMENT_CHECK:
+                    message = await self._messages_controller.on_payment_check(update=update, gina_resp=result)
+                case GinaIntention.CANCEL_ORDER:
+                    message = await self._messages_controller.on_cancel_order(update=update, gina_resp=result)
+                case GinaIntention.HURRY:
+                    message = await self._messages_controller.on_hurry(update=update, gina_resp=result)
+                case _:
+                    message = await self._messages_controller.on_fallback(update=update, gina_resp=result)
+        except Exception as e:
+            logger.exception(e)
+            message = await self._messages_controller.on_fallback(update=update, gina_resp=result)
 
-        logger.info(f"Intentions: {result.intention}, Actions: {result.action}")
-        logger.info(f"Gina response: {result}")
         await update.effective_message.reply_text(
             text=message.text,
             parse_mode=message.parse_mode
