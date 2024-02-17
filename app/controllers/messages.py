@@ -4,6 +4,7 @@ MessagesController
 import asyncio
 import uuid
 from dataclasses import dataclass
+from typing import Optional
 
 from telegram import Update, User
 from telegram.constants import ParseMode
@@ -90,6 +91,12 @@ class MessagesController:
             currency=payment_currency if payment_currency != "USDT" else exchange_currency,
             operation_type=OperationType.BUY if payment_currency != "USDT" else OperationType.SELL
         )
+        if not exchange_rate:
+            return messages.ExchangeRateErrorMessage.format(
+                language=gina_resp.language,
+                payment_currency=payment_currency,
+                exchange_currency=exchange_currency,
+            )
         price = await self._get_price(
             exchange_rate=exchange_rate,
             handling_fee=handling_fee,
@@ -152,6 +159,12 @@ class MessagesController:
             currency=currency,
             operation_type=OperationType.BUY if payment_currency != "USDT" else OperationType.SELL
         )
+        if not exchange_rate:
+            return messages.ExchangeRateErrorMessage.format(
+                language=gina_resp.language,
+                payment_currency=payment_currency,
+                exchange_currency=exchange_currency,
+            )
         price = await self._get_price(
             exchange_rate=exchange_rate,
             handling_fee=handling_fee,
@@ -362,11 +375,13 @@ class MessagesController:
         group_id: int,
         currency: str,
         operation_type: OperationType
-    ) -> tuple[OptimalExchangeRate, HandlingFeeConfigItem]:
+    ) -> tuple[Optional[OptimalExchangeRate], Optional[HandlingFeeConfigItem]]:
         exchange_rate = await self._exchange_rate_provider.get_optimal_exchange_rate(
             currency=currency,
             operation_type=operation_type
         )
+        if not exchange_rate:
+            return None, None
         handling_fee = await self._handling_fee_provider.get_handling_fee_item_by_group_and_currency(
             group_id=group_id,
             currency_id=exchange_rate.currency_id
