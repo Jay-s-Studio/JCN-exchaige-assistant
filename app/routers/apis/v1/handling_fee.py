@@ -10,7 +10,7 @@ from starlette import status
 from app.containers import Container
 from app.handlers.handling_fee import HandlingFeeHandler
 from app.libs.depends import (
-    check_jwt_authenticator,
+    check_access_token,
     DEFAULT_RATE_LIMITERS,
 )
 from app.route_classes import LogRoute
@@ -18,7 +18,7 @@ from app.serializers.v1.handling_fee import HandlingFeeConfig, HandlingFeeConfig
 
 router = APIRouter(
     dependencies=[
-        Depends(check_jwt_authenticator),
+        Depends(check_access_token),
         *DEFAULT_RATE_LIMITERS
     ],
     route_class=LogRoute

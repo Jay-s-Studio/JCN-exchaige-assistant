@@ -50,6 +50,33 @@ class UserProvider:
             await self._session.close()
 
     @distributed_trace()
+    async def change_password(self, user_id: UUID, password: str, salt: str) -> None:
+        """
+        Change password
+        :param user_id:
+        :param password:
+        :param salt:
+        :return:
+        """
+        try:
+            await (
+                self._session.update(SysUser)
+                .values(
+                    hash_password=password,
+                    password_salt=salt
+                )
+                .where(SysUser.id == user_id)
+                .execute()
+            )
+        except Exception as e:
+            await self._session.rollback()
+            raise e
+        else:
+            await self._session.commit()
+        finally:
+            await self._session.close()
+
+    @distributed_trace()
     async def get_user_by_username(self, username: str) -> Optional[User]:
         """
         Get user by username
@@ -67,7 +94,8 @@ class UserProvider:
                     SysUser.password_salt,
                     SysUser.is_superuser,
                     SysUser.is_active,
-                    SysUser.gac,
+                    SysUser.otp_active,
+                    SysUser.otp_secret,
                     SysUser.last_login_at
                 )
                 .where(SysUser.username == username)
@@ -99,7 +127,8 @@ class UserProvider:
                     SysUser.password_salt,
                     SysUser.is_superuser,
                     SysUser.is_active,
-                    SysUser.gac,
+                    SysUser.otp_active,
+                    SysUser.otp_secret,
                     SysUser.last_login_at
                 )
                 .where(SysUser.id == user_id)
@@ -125,6 +154,57 @@ class UserProvider:
             await (
                 self._session.update(SysUser)
                 .values(last_login_at=last_login_at)
+                .where(SysUser.id == user_id)
+                .execute()
+            )
+        except Exception as e:
+            await self._session.rollback()
+            raise e
+        else:
+            await self._session.commit()
+        finally:
+            await self._session.close()
+
+    @distributed_trace()
+    async def reset_otp_secret(self, user_id: UUID):
+        """
+        Reset otp secret
+        :param user_id:
+        :return:
+        """
+        try:
+            await (
+                self._session.update(SysUser)
+                .values(
+                    otp_active=False,
+                    otp_secret=None
+                )
+                .where(SysUser.id == user_id)
+                .execute()
+            )
+        except Exception as e:
+            await self._session.rollback()
+            raise e
+        else:
+            await self._session.commit()
+        finally:
+            await self._session.close()
+
+    @distributed_trace()
+    async def update_otp_secret(self, user_id: UUID, otp_secret: str):
+        """
+        Update otp secret
+        :param user_id:
+        :param otp_secret:
+        :return:
+        """
+        try:
+            await (
+                self._session.update(SysUser)
+                .values(
+                    otp_active=True,
+                    otp_secret=otp_secret
+                )
                 .where(SysUser.id == user_id)
                 .execute()
             )

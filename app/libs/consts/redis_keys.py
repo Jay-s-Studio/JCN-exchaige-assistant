@@ -31,3 +31,12 @@ def get_user_access_token_key(user_id: UUID) -> str:
     :return:
     """
     return get_redis_key(f"user:access_token:{str(user_id)}")
+
+
+def get_user_otp_secret_key(user_id: UUID) -> str:
+    """
+    Get the user OTP secret key
+    :param user_id:
+    :return:
+    """
+    return get_redis_key(f"user:otp_secret:{str(user_id)}")

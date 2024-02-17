@@ -20,5 +20,6 @@ class User(UUIDBaseModel):
     password_salt: str
     is_superuser: bool = Field(default=False)
     is_active: bool = Field(default=False)
-    gac: Optional[str] = Field(default=None)
+    otp_active: bool = Field(default=False)
+    otp_secret: Optional[str] = Field(default=None)
     last_login_at: Optional[datetime] = None

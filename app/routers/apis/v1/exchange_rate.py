@@ -9,7 +9,7 @@ from app.containers import Container
 from app.handlers.exchange_rate import ExchangeRateHandler
 from app.libs.depends import (
     check_api_key_authenticator,
-    check_jwt_authenticator,
+    check_access_token,
     DEFAULT_RATE_LIMITERS,
 )
 from app.route_classes import LogRoute
@@ -25,7 +25,7 @@ router = APIRouter(
     path="/{group_id}",
     response_model=ExchangeRateResponse,
     status_code=status.HTTP_200_OK,
-    dependencies=[Depends(check_jwt_authenticator)]
+    dependencies=[Depends(check_access_token)]
 )
 @inject
 async def get_exchange_rate(

@@ -72,7 +72,7 @@ def upgrade() -> None:
     sa.Column('is_superuser', sa.Boolean(), server_default=sa.text('false'), nullable=False, comment='Is Superuser'),
     sa.Column('is_active', sa.Boolean(), server_default=sa.text('false'), nullable=False, comment='Is Active'),
     sa.Column('gac', sa.String(length=16), nullable=True, comment='Google verification code secret_key'),
-    sa.Column('last_login_at', sa.DateTime(timezone=True), nullable=True, comment='最登入时间'),
+    sa.Column('last_login_at', sa.DateTime(timezone=True), nullable=True, comment='Last Login At'),
     sa.Column('created_by_id', postgresql.UUID(), nullable=True, comment='Create User ID'),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False, comment='Create Date'),
     sa.Column('created_by', sa.String(length=64), nullable=False, comment='Create User Name'),

@@ -2,9 +2,11 @@
 Top level auth package
 """
 from .api_key import APIKeyAuth
-from .bearer_jwt import BearerJWTAuth
+from .access_token import AccessTokenAuth
+from .two_factor_token import TwoFactorTokenAuth
 
 __all__ = [
     "APIKeyAuth",
-    "BearerJWTAuth",
+    "AccessTokenAuth",
+    "TwoFactorTokenAuth"
 ]

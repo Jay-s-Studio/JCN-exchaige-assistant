@@ -11,7 +11,7 @@ from app.containers import Container
 from app.handlers.currency import CurrencyHandler
 from app.libs.depends import (
     check_all_authenticators,
-    check_jwt_authenticator,
+    check_access_token,
     DEFAULT_RATE_LIMITERS,
 )
 from app.route_classes import LogRoute
@@ -27,7 +27,7 @@ router = APIRouter(
     path="/tree",
     response_model=CurrencyTree,
     status_code=status.HTTP_200_OK,
-    dependencies=[Depends(check_jwt_authenticator)]
+    dependencies=[Depends(check_access_token)]
 )
 @inject
 async def get_currency_tree(
@@ -60,7 +60,7 @@ async def get_currencies(
 @router.post(
     path="/",
     status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[Depends(check_jwt_authenticator)]
+    dependencies=[Depends(check_access_token)]
 )
 @inject
 async def create_currency(
@@ -77,7 +77,7 @@ async def create_currency(
 @router.put(
     path="/update/{currency_id}",
     status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[Depends(check_jwt_authenticator)]
+    dependencies=[Depends(check_access_token)]
 )
 @inject
 async def update_currency(
@@ -95,7 +95,7 @@ async def update_currency(
 @router.put(
     path="/change_sequence",
     status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[Depends(check_jwt_authenticator)]
+    dependencies=[Depends(check_access_token)]
 )
 @inject
 async def change_sequence(

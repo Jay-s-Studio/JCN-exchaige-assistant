@@ -10,7 +10,7 @@ from app.handlers.telegram import TelegramAccountHandler
 from app.libs.depends import (
     check_all_authenticators,
     check_api_key_authenticator,
-    check_jwt_authenticator,
+    check_access_token,
     DEFAULT_RATE_LIMITERS
 )
 from app.route_classes import LogRoute
@@ -138,7 +138,7 @@ async def get_vendors(
     path="/groups",
     response_model=GroupList,
     status_code=status.HTTP_200_OK,
-    dependencies=[Depends(check_jwt_authenticator)]
+    dependencies=[Depends(check_access_token)]
 )
 @inject
 async def get_accounts(
@@ -163,7 +163,7 @@ async def get_accounts(
     path="/group/{group_id}",
     response_model=GroupInfo,
     status_code=status.HTTP_200_OK,
-    dependencies=[Depends(check_jwt_authenticator)]
+    dependencies=[Depends(check_access_token)]
 )
 @inject
 async def get_group(
@@ -182,7 +182,7 @@ async def get_group(
 @router.put(
     path="/group/{group_id}",
     status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[Depends(check_jwt_authenticator)]
+    dependencies=[Depends(check_access_token)]
 )
 @inject
 async def update_group(
@@ -204,7 +204,7 @@ async def update_group(
     path="/group/{group_id}/members",
     response_model=GroupMembers,
     status_code=status.HTTP_200_OK,
-    dependencies=[Depends(check_jwt_authenticator)]
+    dependencies=[Depends(check_access_token)]
 )
 @inject
 async def get_chat_group_members(

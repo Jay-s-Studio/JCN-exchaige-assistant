@@ -23,5 +23,6 @@ class SysUser(ModelBase, AuditMixin, DeletedMixin):
     password_salt = Column(sa.String(255), comment="Password Salt")
     is_superuser = Column(sa.Boolean, nullable=False, server_default=sa.text('false'), comment="Is Superuser")
     is_active = Column(sa.Boolean, nullable=False, server_default=sa.text('false'), comment="Is Active")
-    gac = Column(sa.String(16), comment='Google verification code secret_key')
-    last_login_at = Column(sa.DateTime(timezone=True), comment='最登入时间')
+    otp_active = Column(sa.Boolean, nullable=False, server_default=sa.text('false'), comment="OTP Active")
+    otp_secret = Column(sa.String(32), comment="OTP Secret")
+    last_login_at = Column(sa.DateTime(timezone=True), comment="Last Login At")

@@ -37,22 +37,28 @@ from .config import settings
 from .containers import Container
 from .libs.utils.lifespan import lifespan
 
-sentry_sdk.init(
-    dsn=settings.SENTRY_URL,
-    integrations=[
-        AsyncPGIntegration(),
-        FastApiIntegration(),
-        HttpxIntegration(),
-        RedisIntegration(),
-        SqlalchemyIntegration(),
-    ],
-    traces_sample_rate=1.0,
-    profiles_sample_rate=1.0,
-    environment=settings.ENV.upper(),
-    enable_tracing=True,
-)
-
 TELEGRAM_WEBHOOK_PATH = "/webhook/v1/telegram"
+
+
+def setup_tracing():
+    """
+    Setup tracing
+    :return:
+    """
+    sentry_sdk.init(
+        dsn=settings.SENTRY_URL,
+        integrations=[
+            AsyncPGIntegration(),
+            FastApiIntegration(),
+            HttpxIntegration(),
+            RedisIntegration(),
+            SqlalchemyIntegration(),
+        ],
+        traces_sample_rate=1.0,
+        profiles_sample_rate=1.0,
+        environment=settings.ENV.upper(),
+        enable_tracing=True,
+    )
 
 
 def setup_routers(fastapi_app: FastAPI):
@@ -86,6 +92,7 @@ def get_application() -> FastAPI:
     Get application
     :return:
     """
+    setup_tracing()
     fastapi_app = FastAPI(lifespan=lifespan)
     if not settings.IS_DEV:
         fastapi_app = FastAPI(

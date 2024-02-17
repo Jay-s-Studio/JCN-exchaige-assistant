@@ -4,6 +4,18 @@ Enums for the application
 from enum import StrEnum, IntEnum
 
 
+class StatusBase(StrEnum):
+    """StatusBase"""
+    ENABLED = "enabled"
+    DISABLED = "disabled"
+
+
+class TokenScope(StrEnum):
+    """JWTTokenScope"""
+    ACCESS = "access"
+    TWO_FACTOR_AUTH = "2fa"
+
+
 class ExpireTime(IntEnum):
     """ExpireTime"""
     ONE_HOUR = 60 * 60

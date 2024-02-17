@@ -1,6 +1,7 @@
 """
 Test user handler
 """
+from datetime import datetime, timedelta
 from uuid import UUID
 
 import pytest
@@ -74,3 +75,31 @@ async def test_login(user_handler: UserHandler):
     assert user is not None
     assert user.access_token is not None
     assert user.token_type == "Bearer"
+
+
+@pytest.mark.asyncio
+async def test_generate_otp_secret(user_handler: UserHandler):
+    """
+    Test generate_otp_secret
+    :param user_handler:
+    :return:
+    """
+    user_id = UUID("54737ccd-8fbf-4fea-a31b-e4e938a75237")
+    secret = await user_handler.generate_new_otp_info(user_id=user_id)
+    assert secret is not None
+
+
+@pytest.mark.asyncio
+async def test_verify_otp(user_handler: UserHandler):
+    """
+    Test verify_otp
+    :param user_handler:
+    :return:
+    """
+    import pyotp
+    user_id = UUID("54737ccd-8fbf-4fea-a31b-e4e938a75237")
+    secret = await user_handler.generate_new_otp_info(user_id=user_id)
+    totp = pyotp.TOTP(secret)
+    previous_otp = totp.at(datetime.now() - timedelta(seconds=30))
+    otp = totp.now()
+    result = await user_handler.verify_otp(user_id=user_id, previous_otp=previous_otp, otp=otp)

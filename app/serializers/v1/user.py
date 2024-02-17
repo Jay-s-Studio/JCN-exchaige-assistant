@@ -3,10 +3,10 @@ Serializer for User API
 """
 from datetime import datetime
 from typing import Optional
-from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from app.libs.consts.enums import StatusBase
 from app.schemas.mixins import UUIDBaseModel
 
 
@@ -36,6 +36,23 @@ class UserLogin(BaseModel):
     password: str
 
 
+class ChangePassword(BaseModel):
+    """
+    Change Password
+    """
+    old_password: str
+    new_password: str
+    confirm_password: str
+    otp: Optional[str] = Field(default=None, description="OTP")
+
+
+class TwoFactorVerify(BaseModel):
+    """
+    Two Factor Verify
+    """
+    otp: str
+
+
 class UserInfoResponse(UUIDBaseModel):
     """
     User Info Response
@@ -44,6 +61,7 @@ class UserInfoResponse(UUIDBaseModel):
     display_name: str
     is_active: bool
     last_login: datetime
+    two_factor_status: StatusBase = Field(default=StatusBase.DISABLED, description="2FA Status")
 
 
 class TokenResponse(BaseModel):
@@ -58,4 +76,20 @@ class LoginResponse(TokenResponse):
     """
     Login Response
     """
-    pass
+    two_factor_status: StatusBase = Field(default=StatusBase.DISABLED, description="2FA Status")
+
+
+class OTPInfo(BaseModel):
+    """
+    OTP Info
+    """
+    secret: str
+    uri: str
+
+
+class VerifyOTP(BaseModel):
+    """
+    Verify OTP
+    """
+    previous_otp: str
+    otp: str
