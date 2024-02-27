@@ -120,7 +120,8 @@ class MessagesController:
         """
         order_info = await self._order_provider.get_order_by_group_id(group_id=update.effective_chat.id)
         if order_info:
-            return OrderInProgressMessage.format(language=gina_resp.language)
+            if order_info.status not in [OrderStatus.EXPIRE, OrderStatus.PAID, OrderStatus.CANCELLED]:
+                return OrderInProgressMessage.format(language=gina_resp.language)
         match gina_resp.action:
             case GinaAction.SWAP:
                 message = await self._swap(update=update, gina_resp=gina_resp)
