@@ -18,6 +18,7 @@ async def telegram(request: Request) -> Response:
     :param request:
     :return:
     """
-    update = Update.de_json(data=await request.json(), bot=application.bot)
+    json_data = await request.json()
+    update = Update.de_json(data=json_data, bot=application.bot)
     await application.update_queue.put(update)
     return Response()

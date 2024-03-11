@@ -17,7 +17,7 @@ from app.providers import ExchangeRateProvider, TelegramAccountProvider, Handlin
 from app.schemas.exchange_rate import OptimalExchangeRate
 from app.schemas.files import TelegramFile
 from app.schemas.gina import GinaResponse
-from app.schemas.order import OrderCache
+from app.schemas.order import Order
 from app.schemas.vendors_bot import PaymentAccount, CheckReceipt
 from app.serializers.v1.handling_fee import HandlingFeeConfigItem
 
@@ -118,10 +118,10 @@ class MessagesController:
         :param gina_resp:
         :return:
         """
-        order_info = await self._order_provider.get_order_by_group_id(group_id=update.effective_chat.id)
-        if order_info:
-            if order_info.status not in [OrderStatus.EXPIRE, OrderStatus.PAID, OrderStatus.CANCELLED]:
-                return OrderInProgressMessage.format(language=gina_resp.language)
+        # order_info = await self._order_provider.get_order_by_group_id(group_id=update.effective_chat.id)
+        # if order_info:
+        #     if order_info.status not in [OrderStatus.EXPIRE, OrderStatus.PAID, OrderStatus.CANCELLED]:
+        #         return OrderInProgressMessage.format(language=gina_resp.language)
         match gina_resp.action:
             case GinaAction.SWAP:
                 message = await self._swap(update=update, gina_resp=gina_resp)
@@ -171,24 +171,24 @@ class MessagesController:
             handling_fee=handling_fee,
             operation_type=OperationType.BUY if payment_currency != "USDT" else OperationType.SELL
         )
-        order_cache = OrderCache(
-            session_id=session_id,
-            language=gina_resp.language,
-            message_id=update.effective_message.message_id,
-            group_id=group_id,
-            amount_to_exchange=gina_resp.amount_to_exchange,
-            payment_currency=payment_currency,
-            exchange_currency=exchange_currency,
-            vendor_id=exchange_rate.group_id,
-            original_exchange_rate=exchange_rate.buy_rate,
-            with_fee_exchange_rate=price,
-            total_amount=price * gina_resp.amount_to_exchange
-        )
-        await self._order_provider.create_order(
-            group_id=group_id,
-            order_id=session_id,
-            order_info=order_cache
-        )
+        # order_cache = OrderCache(
+        #     session_id=session_id,
+        #     language=gina_resp.language,
+        #     message_id=update.effective_message.message_id,
+        #     group_id=group_id,
+        #     amount_to_exchange=gina_resp.amount_to_exchange,
+        #     payment_currency=payment_currency,
+        #     exchange_currency=exchange_currency,
+        #     vendor_id=exchange_rate.group_id,
+        #     original_exchange_rate=exchange_rate.buy_rate,
+        #     with_fee_exchange_rate=price,
+        #     total_amount=price * gina_resp.amount_to_exchange
+        # )
+        # await self._order_provider.create_order(
+        #     group_id=group_id,
+        #     order_id=session_id,
+        #     order_info=order_cache
+        # )
         payload = PaymentAccount(
             session_id=session_id,
             customer_id=group_id,
@@ -225,18 +225,18 @@ class MessagesController:
         :param gina_resp:
         :return:
         """
-        order_info = await self._order_provider.get_order_by_group_id(group_id=update.effective_chat.id)
-        if not order_info:
-            return OrderInfoNotFoundMessage.format(language=gina_resp.language)
-        payload = PaymentAccount(
-            session_id=order_info.session_id,
-            customer_id=order_info.group_id,
-            group_id=order_info.vendor_id,
-            payment_currency=order_info.payment_currency,
-            exchange_currency=order_info.exchange_currency,
-            total_amount=order_info.total_amount
-        )
-        await self._vendors_bot_provider.payment_account(payload)
+        # order_info = await self._order_provider.get_order_by_group_id(group_id=update.effective_chat.id)
+        # if not order_info:
+        #     return OrderInfoNotFoundMessage.format(language=gina_resp.language)
+        # payload = PaymentAccount(
+        #     session_id=order_info.session_id,
+        #     customer_id=order_info.group_id,
+        #     group_id=order_info.vendor_id,
+        #     payment_currency=order_info.payment_currency,
+        #     exchange_currency=order_info.exchange_currency,
+        #     total_amount=order_info.total_amount
+        # )
+        # await self._vendors_bot_provider.payment_account(payload)
         return Message(text=gina_resp.reply)
 
     @distributed_trace()
@@ -248,23 +248,23 @@ class MessagesController:
         :param telegram_file:
         :return:
         """
-        order_info = await self._order_provider.get_order_by_group_id(group_id=update.effective_chat.id)
-        if not order_info:
-            return OrderInfoNotFoundMessage.format(language=gina_resp.language)
-        payload = CheckReceipt(
-            session_id=order_info.session_id,
-            customer_id=order_info.group_id,
-            group_id=order_info.vendor_id,
-            file_id=telegram_file.file_unique_id,
-            file_name=telegram_file.file_name
-        )
-        await self._vendors_bot_provider.check_receipt(payload=payload)
-        order_info.status = OrderStatus.WAIT_FOR_CONFIRMATION
-        await self._order_provider.update_order(
-            group_id=update.effective_chat.id,
-            order_id=order_info.session_id,
-            order_info=order_info
-        )
+        # order_info = await self._order_provider.get_order_by_group_id(group_id=update.effective_chat.id)
+        # if not order_info:
+        #     return OrderInfoNotFoundMessage.format(language=gina_resp.language)
+        # payload = CheckReceipt(
+        #     session_id=order_info.session_id,
+        #     customer_id=order_info.group_id,
+        #     group_id=order_info.vendor_id,
+        #     file_id=telegram_file.file_unique_id,
+        #     file_name=telegram_file.file_name
+        # )
+        # await self._vendors_bot_provider.check_receipt(payload=payload)
+        # order_info.status = OrderStatus.WAIT_FOR_CONFIRMATION
+        # await self._order_provider.update_order(
+        #     group_id=update.effective_chat.id,
+        #     order_id=order_info.session_id,
+        #     order_info=order_info
+        # )
         return Message(text=gina_resp.reply)
 
     @distributed_trace()
@@ -285,15 +285,15 @@ class MessagesController:
         :param gina_resp:
         :return:
         """
-        order_info = await self._order_provider.get_order_by_group_id(group_id=update.effective_chat.id)
-        if not order_info:
-            return OrderInfoNotFoundMessage.format(language=gina_resp.language)
-        order_info.status = OrderStatus.CANCELLED
-        await self._order_provider.update_order(
-            group_id=update.effective_chat.id,
-            order_id=order_info.session_id,
-            order_info=order_info
-        )
+        # order_info = await self._order_provider.get_order_by_group_id(group_id=update.effective_chat.id)
+        # if not order_info:
+        #     return OrderInfoNotFoundMessage.format(language=gina_resp.language)
+        # order_info.status = OrderStatus.CANCELLED
+        # await self._order_provider.update_order(
+        #     group_id=update.effective_chat.id,
+        #     order_id=order_info.session_id,
+        #     order_info=order_info
+        # )
         return Message(text=gina_resp.reply)
 
     @distributed_trace()
@@ -304,18 +304,18 @@ class MessagesController:
         :param gina_resp:
         :return:
         """
-        order_info = await self._order_provider.get_order_by_group_id(group_id=update.effective_chat.id)
-        if not order_info:
-            return OrderInfoNotFoundMessage.format(language=gina_resp.language)
-        payload = PaymentAccount(
-            session_id=order_info.session_id,
-            customer_id=order_info.group_id,
-            group_id=order_info.vendor_id,
-            payment_currency=order_info.payment_currency,
-            exchange_currency=order_info.exchange_currency,
-            total_amount=order_info.total_amount
-        )
-        await self._vendors_bot_provider.hurry_payment_account(payload=payload)
+        # order_info = await self._order_provider.get_order_by_group_id(group_id=update.effective_chat.id)
+        # if not order_info:
+        #     return OrderInfoNotFoundMessage.format(language=gina_resp.language)
+        # payload = PaymentAccount(
+        #     session_id=order_info.session_id,
+        #     customer_id=order_info.group_id,
+        #     group_id=order_info.vendor_id,
+        #     payment_currency=order_info.payment_currency,
+        #     exchange_currency=order_info.exchange_currency,
+        #     total_amount=order_info.total_amount
+        # )
+        # await self._vendors_bot_provider.hurry_payment_account(payload=payload)
         return Message(text=gina_resp.reply)
 
     @distributed_trace()

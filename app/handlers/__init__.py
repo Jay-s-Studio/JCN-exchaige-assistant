@@ -8,6 +8,7 @@ from .files import FileHandler
 from .handling_fee import HandlingFeeHandler
 from .telegram import TelegramAccountHandler, TelegramMessageHandler
 from .telegram_bot import TelegramBotMessagesHandler
+from .order import OrderHandler
 from .user import UserHandler
 
 __all__ = [
@@ -26,6 +27,8 @@ __all__ = [
     "TelegramMessageHandler",
     # telegram_bot
     "TelegramBotMessagesHandler",
+    # order
+    "OrderHandler",
     # user
     "UserHandler"
 ]

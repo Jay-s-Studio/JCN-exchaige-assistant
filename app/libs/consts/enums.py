@@ -111,11 +111,17 @@ class CalculationType(StrEnum):
     DIVISION = "division"
 
 
+class CartStatus(StrEnum):
+    """CartStatus"""
+    PENDING = "pending"
+    CONFIRMED = "confirmed"
+
+
 class OrderStatus(StrEnum):
     """OrderStatus"""
     WAIT_FOR_PAYMENT_ACCOUNT = "wait_for_payment_account"
     WAIT_FOR_PAYMENT = "wait_for_payment"
     EXPIRE = "expire"
     WAIT_FOR_CONFIRMATION = "wait_for_confirmation"
-    PAID = "paid"
+    DONE = "done"
     CANCELLED = "cancelled"

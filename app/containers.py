@@ -15,6 +15,7 @@ from app.handlers import (
     TelegramAccountHandler,
     TelegramMessageHandler,
     TelegramBotMessagesHandler,
+    OrderHandler,
     UserHandler,
 )
 from app.libs.database import RedisPool, Session
@@ -135,6 +136,10 @@ class Container(containers.DeclarativeContainer):
         file_provider=file_provider,
         gina_provider=gina_provider,
         messages_controller=messages_controller
+    )
+    order_handler = providers.Factory(
+        OrderHandler,
+        order_provider=order_provider
     )
     user_handler = providers.Factory(
         UserHandler,

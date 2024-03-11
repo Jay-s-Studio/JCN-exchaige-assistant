@@ -1,15 +1,19 @@
 """
 OrderProvider
 """
-from typing import Optional
+from datetime import datetime
 from uuid import UUID
 
+import pytz
+import sqlalchemy as sa
 from redis.asyncio import Redis
 
 from app.config import settings
-from app.libs.consts.enums import ExpireTime
 from app.libs.database import Session, RedisPool
-from app.schemas.order import OrderCache
+from app.libs.decorators.sentry_tracer import distributed_trace
+from app.models import SysCart, SysOrder
+from app.schemas.order import Order, Cart
+from app.serializers.v1.order import OrderBase
 
 
 class OrderProvider:
@@ -31,67 +35,202 @@ class OrderProvider:
         """
         return f"{settings.APP_NAME}:{name}"
 
-    async def create_order(
+    @distributed_trace()
+    async def get_order_page(
         self,
-        group_id: int,
-        order_id: UUID,
-        order_info: OrderCache
-    ):
+        page_index: int = 0,
+        page_size: int = 10
+    ) -> tuple[list[OrderBase], int]:
         """
-        set order
-        :param group_id:
-        :param order_id:
-        :param order_info:
+        get order by pages
+        :param page_index:
+        :param page_size:
         :return:
         """
-        redis_name = self.redis_name(name=f"order:{group_id}:{str(order_id)}")
-        await self._redis.set(
-            name=redis_name,
-            value=order_info.model_dump_json(),
-            ex=ExpireTime.ONE_HOUR.value * 2
-        )
+        try:
+            result, count = await (
+                self._session.select(
+                    SysOrder.id,
+                    SysOrder.order_no,
+                    SysCart.payment_currency,
+                    SysCart.payment_amount,
+                    SysCart.exchange_currency,
+                    SysCart.original_exchange_rate,
+                    SysCart.with_fee_exchange_rate,
+                    SysCart.group_name,
+                    SysCart.group_id,
+                    SysCart.vendor_name,
+                    SysCart.vendor_id,
+                    SysCart.account_name,
+                    SysCart.account_id,
+                    SysOrder.status,
+                    SysOrder.created_at,
+                    SysOrder.description
+                )
+                .outerjoin(SysCart, SysOrder.cart_id == SysCart.id)
+                .order_by(SysOrder.created_at.desc())
+                .limit(page_size)
+                .offset(page_index * page_size)
+                .fetchpages(as_model=OrderBase)
+            )
+        except Exception as e:
+            raise e
+        else:
+            return result, count
+        finally:
+            await self._session.close()
 
-    async def update_order(
+    @distributed_trace()
+    async def get_order_by_id(
         self,
-        group_id: int,
-        order_id: UUID,
-        order_info: OrderCache
-    ):
+        order_id: UUID
+    ) -> OrderBase:
         """
-        update order
-        :param group_id:
+        get order by no
         :param order_id:
-        :param order_info:
         :return:
         """
-        redis_name = self.redis_name(name=f"order:{group_id}:{str(order_id)}")
-        expire_time = await self._redis.ttl(self.redis_name(name=f"order:{group_id}:{str(order_id)}"))
-        await self._redis.set(
-            name=redis_name,
-            value=order_info.model_dump_json(),
-            ex=expire_time
+        try:
+            order = await (
+                self._session.select(
+                    SysOrder.id,
+                    SysOrder.order_no,
+                    SysCart.payment_currency,
+                    SysCart.payment_amount,
+                    SysCart.exchange_currency,
+                    SysCart.original_exchange_rate,
+                    SysCart.with_fee_exchange_rate,
+                    SysCart.group_name,
+                    SysCart.group_id,
+                    SysCart.vendor_name,
+                    SysCart.vendor_id,
+                    SysCart.account_name,
+                    SysCart.account_id,
+                    SysOrder.status,
+                    SysOrder.created_at,
+                    SysOrder.description
+                )
+                .outerjoin(SysCart, SysOrder.cart_id == SysCart.id)
+                .where(SysOrder.id == order_id)
+                .fetchrow(as_model=OrderBase)
+            )
+        except Exception as e:
+            raise e
+        else:
+            return order
+        finally:
+            await self._session.close()
+
+    @distributed_trace()
+    async def create_cart(self, cart: Cart) -> UUID:
+        """
+        create cart
+        :param cart:
+        :return:
+        """
+        cart_values = cart.model_dump()
+        try:
+            await (
+                self._session.insert(SysCart)
+                .values(**cart_values)
+                .execute()
+            )
+        except Exception as e:
+            await self._session.rollback()
+            raise e
+        else:
+            await self._session.commit()
+            return cart.id
+        finally:
+            await self._session.close()
+
+    @distributed_trace()
+    async def generate_order_no(self) -> str:
+        """
+        generate order no
+        :return:
+        """
+        today = datetime.now(tz=pytz.UTC).strftime('%Y%m%d')
+        count = await (
+            self._session.select(sa.func.count(SysOrder.id))
+            .where(
+                sa.and_(
+                    SysOrder.created_at >= sa.func.CURRENT_DATE(),
+                    SysOrder.created_at < sa.func.CURRENT_DATE() + sa.text("INTERVAL '1 day'")
+                )
+            )
+            .fetchval()
         )
+        count = int(count) + 1
+        return f"O{today}{str(count).zfill(7)}"
 
-    async def get_order(self, group_id: int, order_id: UUID) -> OrderCache:
+    @distributed_trace()
+    async def create_order(self, order: Order) -> str:
         """
-        get order
-        :param group_id:
+        create order
+        :param order:
+        :return:
+        """
+        order_no = await self.generate_order_no()
+        order.order_no = order_no
+        order_values = order.model_dump()
+        try:
+            await (
+                self._session.insert(SysOrder)
+                .values(**order_values)
+                .execute()
+            )
+        except Exception as e:
+            await self._session.rollback()
+            raise e
+        else:
+            await self._session.commit()
+            return order_no
+        finally:
+            await self._session.close()
+
+    @distributed_trace()
+    async def update_order_status(self, order_id: str, status: str) -> None:
+        """
+        update order status
         :param order_id:
+        :param status:
         :return:
         """
-        redis_name = self.redis_name(name=f"order:{group_id}:{str(order_id)}")
-        order_info = await self._redis.get(redis_name)
-        return OrderCache.model_validate_json(order_info) if order_info else None
+        try:
+            await (
+                self._session.update(SysOrder)
+                .values(status=status)
+                .where(SysOrder.id == order_id)
+                .execute()
+            )
+        except Exception as e:
+            await self._session.rollback()
+            raise e
+        else:
+            await self._session.commit()
+        finally:
+            await self._session.close()
 
-    async def get_order_by_group_id(self, group_id: int) -> Optional[OrderCache]:
+    @distributed_trace()
+    async def update_order_description(self, order_id: UUID, description: str) -> None:
         """
-        get order by group id
-        :param group_id:
+        update order description
+        :param order_id:
+        :param description:
         :return:
         """
-        redis_name = self.redis_name(name=f"order:{group_id}:*")
-        keys = await self._redis.keys(redis_name)
-        if not keys:
-            return None
-        order_info = await self._redis.get(keys[0])
-        return OrderCache.model_validate_json(order_info) if order_info else None
+        try:
+            await (
+                self._session.update(SysOrder)
+                .values(description=description)
+                .where(SysOrder.id == order_id)
+                .execute()
+            )
+        except Exception as e:
+            await self._session.rollback()
+            raise e
+        else:
+            await self._session.commit()
+        finally:
+            await self._session.close()

@@ -8,7 +8,6 @@ from sqlalchemy.dialects.postgresql import UUID
 from app.libs.database.orm import Base, ModelBase
 from .handling_fee import SysHandlingFeeConfig
 from .mixins import AuditMixin, DeletedMixin, DescriptionMixin
-from ..libs.consts.enums import PaymentAccountStatus
 
 
 class SysTelegramAccount(Base, AuditMixin, DeletedMixin, DescriptionMixin):

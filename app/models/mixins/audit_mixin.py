@@ -11,6 +11,22 @@ from sqlalchemy.ext.declarative import declared_attr
 from .context import get_current_id, get_current_username
 
 
+class SortableMixin(object):
+    """SortableMixin"""
+
+    @declared_attr
+    def sequence(self):
+        """
+
+        :return:
+        """
+        return Column(
+            Float,
+            server_default=text("extract(epoch from now())"),
+            comment="Display sort, small to large, positive sort, default value current timestamp"
+        )
+
+
 class AuditCreatedAtMixin(object):
     """AuditCreatedAtMixin"""
 
@@ -103,22 +119,6 @@ class AuditMixin(AuditCreatedMixin, AuditUpdatedMixin):
     pass
 
 
-class SortableMixin(object):
-    """SortableMixin"""
-
-    @declared_attr
-    def sequence(self):
-        """
-
-        :return:
-        """
-        return Column(
-            Float,
-            server_default=text("extract(epoch from now())"),
-            comment="Display sort, small to large, positive sort, default value current timestamp"
-        )
-
-
 class DeletedMixin(object):
     """DeletedMixin"""
 
@@ -166,3 +166,11 @@ class RemarkMixin(object):
         :return:
         """
         return Column(String(256), comment="Remark")
+
+
+class BaseMixin(AuditMixin, DeletedMixin, DescriptionMixin, RemarkMixin):
+    """
+    BaseMixin
+    Contains audit information, logical deletion, description, and remark
+    """
+    pass

@@ -4,7 +4,14 @@ Fixtures for providers
 import pytest
 
 from app.containers import Container
-from app.providers import CurrencyProvider, ExchangeRateProvider, HandlingFeeProvider, UserProvider, TelegramAccountProvider
+from app.providers import (
+    CurrencyProvider,
+    ExchangeRateProvider,
+    HandlingFeeProvider,
+    OrderProvider,
+    UserProvider,
+    TelegramAccountProvider
+)
 
 
 @pytest.fixture
@@ -26,6 +33,13 @@ def handling_fee_provider() -> HandlingFeeProvider:
     """Handing fee provider fixture"""
     container = Container()
     return container.handling_fee_provider()
+
+
+@pytest.fixture
+def order_provider() -> OrderProvider:
+    """Order provider fixture"""
+    container = Container()
+    return container.order_provider()
 
 
 @pytest.fixture

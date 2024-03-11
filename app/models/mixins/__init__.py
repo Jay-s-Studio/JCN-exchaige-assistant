@@ -12,5 +12,6 @@ __all__ = [
     "AuditCreatedAtMixin",
     "AuditCreatedByMixin",
     "AuditCreatedMixin",
-    "AuditUpdatedMixin"
+    "AuditUpdatedMixin",
+    "BaseMixin"
 ]
