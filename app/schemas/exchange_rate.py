@@ -12,6 +12,7 @@ class OptimalExchangeRate(BaseModel):
     OptimalExchangeRate
     """
     group_id: int
+    group_name: str
     currency_id: UUID
     currency: str
     buy_rate: Optional[float]

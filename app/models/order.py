@@ -50,6 +50,7 @@ class SysCart(ModelBase, AuditMixin, DeletedMixin):
     payment_currency = Column(sa.String(8), comment="Payment Currency")
     payment_amount = Column(sa.Float, comment="Payment Amount")
     exchange_currency = Column(sa.String(8), comment="Exchange Currency")
+    exchange_amount = Column(sa.Float, comment="Exchange Amount")
     original_exchange_rate = Column(sa.Float, comment="Original Exchange Rate")
     with_fee_exchange_rate = Column(sa.Float, comment="With Fee Exchange Rate")
     status = Column(sa.String(64), nullable=False, comment="Status. Enum option refer to CartStatus")

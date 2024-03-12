@@ -27,6 +27,7 @@ class Cart(UUIDBaseModel):
     payment_currency: str = Field(description="Payment Currency")
     payment_amount: float = Field(description="Payment Amount")
     exchange_currency: str = Field(description="Exchange Currency")
+    exchange_amount: float = Field(description="Exchange Amount")
     original_exchange_rate: float = Field(description="Original Exchange Rate")
     with_fee_exchange_rate: float = Field(description="With Fee Exchange Rate")
     status: CartStatus = Field(default=CartStatus.PENDING, description="Status")

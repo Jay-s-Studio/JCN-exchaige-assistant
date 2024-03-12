@@ -17,7 +17,7 @@ from app.providers import ExchangeRateProvider, TelegramAccountProvider, Handlin
 from app.schemas.exchange_rate import OptimalExchangeRate
 from app.schemas.files import TelegramFile
 from app.schemas.gina import GinaResponse
-from app.schemas.order import Order
+from app.schemas.order import Order, Cart
 from app.schemas.vendors_bot import PaymentAccount, CheckReceipt
 from app.serializers.v1.handling_fee import HandlingFeeConfigItem
 
@@ -141,17 +141,17 @@ class MessagesController:
         :param gina_resp:
         :return:
         """
-        session_id = uuid.uuid4()
         group_id = update.effective_chat.id
         payment_currency = gina_resp.payment_currency
         exchange_currency = gina_resp.exchange_currency
+        payment_amount = gina_resp.amount_to_exchange
         currency = payment_currency
         if exchange_currency == "G":
-            exchange_currency = "GCASH"
-            currency = exchange_currency
+            currency = payment_currency = "GCASH"
+            exchange_currency = "USDT"
         if exchange_currency == "M":
-            exchange_currency = "PAYMAYA"
-            currency = exchange_currency
+            currency = payment_currency = "PAYMAYA"
+            exchange_currency = "USDT"
         if exchange_currency != "USDT":
             currency = exchange_currency
 
@@ -171,33 +171,39 @@ class MessagesController:
             handling_fee=handling_fee,
             operation_type=OperationType.BUY if payment_currency != "USDT" else OperationType.SELL
         )
-        # order_cache = OrderCache(
+        if payment_currency in ["GCASH", "PAYMAYA"]:
+            payment_amount *= 10000
+            exchange_amount = payment_amount / price
+        else:
+            exchange_amount = payment_amount
+            payment_amount *= price
+
+        cart = Cart(
+            message_id=update.effective_message.message_id,
+            language=gina_resp.language,
+            group_name=update.effective_chat.title,
+            group_id=group_id,
+            vendor_name=exchange_rate.group_name,
+            vendor_id=exchange_rate.group_id,
+            account_name=update.effective_user.username,
+            account_id=update.effective_user.id,
+            payment_currency=payment_currency,
+            payment_amount=payment_amount,
+            exchange_currency=exchange_currency,
+            exchange_amount=exchange_amount,
+            original_exchange_rate=exchange_rate.buy_rate,
+            with_fee_exchange_rate=price,
+        )
+        await self._order_provider.create_cart(cart=cart)
+        # payload = PaymentAccount(
         #     session_id=session_id,
-        #     language=gina_resp.language,
-        #     message_id=update.effective_message.message_id,
-        #     group_id=group_id,
-        #     amount_to_exchange=gina_resp.amount_to_exchange,
+        #     customer_id=group_id,
+        #     group_id=exchange_rate.group_id,
         #     payment_currency=payment_currency,
         #     exchange_currency=exchange_currency,
-        #     vendor_id=exchange_rate.group_id,
-        #     original_exchange_rate=exchange_rate.buy_rate,
-        #     with_fee_exchange_rate=price,
         #     total_amount=price * gina_resp.amount_to_exchange
         # )
-        # await self._order_provider.create_order(
-        #     group_id=group_id,
-        #     order_id=session_id,
-        #     order_info=order_cache
-        # )
-        payload = PaymentAccount(
-            session_id=session_id,
-            customer_id=group_id,
-            group_id=exchange_rate.group_id,
-            payment_currency=payment_currency,
-            exchange_currency=exchange_currency,
-            total_amount=price * gina_resp.amount_to_exchange
-        )
-        await self._vendors_bot_provider.payment_account(payload)
+        # await self._vendors_bot_provider.payment_account(payload)
         return Message(text=gina_resp.reply)
 
     @distributed_trace()

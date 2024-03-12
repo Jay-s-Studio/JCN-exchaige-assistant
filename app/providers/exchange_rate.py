@@ -113,6 +113,7 @@ class ExchangeRateProvider:
             result = await (
                 self._session.select(
                     SysExchangeRate.telegram_chat_group_id.label("group_id"),
+                    SysTelegramChatGroup.title.label("group_name"),
                     SysExchangeRate.currency_id,
                     SysCurrency.symbol.label("currency"),
                     SysExchangeRate.buy_rate,
