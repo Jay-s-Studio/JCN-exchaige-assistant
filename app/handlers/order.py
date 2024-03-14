@@ -5,7 +5,7 @@ from uuid import UUID
 
 from app.libs.decorators.sentry_tracer import distributed_trace
 from app.providers import OrderProvider
-from app.serializers.v1.order import OrderBase, OrderList
+from app.serializers.v1.order import OrderDetail, OrderList
 
 
 class OrderHandler:
@@ -36,10 +36,7 @@ class OrderHandler:
         return OrderList(orders=orders, total=total)
 
     @distributed_trace()
-    async def get_order_by_id(
-        self,
-        order_id: UUID
-    ) -> OrderBase:
+    async def get_order_by_id(self, order_id: UUID) -> OrderDetail:
         """
         get order by no
         :param order_id:

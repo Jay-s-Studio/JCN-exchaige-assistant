@@ -1,7 +1,10 @@
 """
 TelegramBotMessagesHandler
 """
+from typing import cast
+
 from telegram import Update
+from telegram.constants import ParseMode
 
 from app.config import settings
 from app.context import CustomContext
@@ -14,6 +17,7 @@ from app.providers import TelegramAccountProvider, GinaProvider, FileProvider
 from app.schemas.files import TelegramFile
 from app.serializers.v1.telegram import TelegramAccount, TelegramChatGroup
 from .base import TelegramBotBaseHandler
+from ...libs.consts.messages import Message
 
 
 class TelegramBotMessagesHandler(TelegramBotBaseHandler):
@@ -42,6 +46,67 @@ class TelegramBotMessagesHandler(TelegramBotBaseHandler):
         :return:
         """
         return f"{settings.APP_NAME}:{name}"
+
+    @distributed_trace()
+    async def reply_message(self, update: Update, message: Message) -> None:
+        """
+        reply message
+        :param update:
+        :param message:
+        :return:
+        """
+        match message.parse_mode:
+            case ParseMode.MARKDOWN:
+                await update.effective_message.reply_markdown(
+                    text=message.text,
+                    reply_markup=message.reply_markup
+                )
+            case ParseMode.MARKDOWN_V2:
+                await update.effective_message.reply_markdown_v2(
+                    text=message.text,
+                    reply_markup=message.reply_markup
+                )
+            case ParseMode.HTML:
+                await update.effective_message.reply_html(
+                    text=message.text,
+                    reply_markup=message.reply_markup
+                )
+            case _:
+                await update.effective_message.reply_text(
+                    text=message.text,
+                    reply_markup=message.reply_markup
+                )
+
+    @distributed_trace()
+    async def pre_process_files(self, update: Update, context: CustomContext) -> TelegramFile:
+        """
+        pre process files
+        :param update:
+        :param context:
+        :return:
+        """
+        if update.message.document:
+            file = await update.message.document.get_file()
+            file_name = update.message.document.file_name
+            content_type = update.message.document.mime_type
+            telegram_file = TelegramFile(
+                file_unique_id=file.file_unique_id,
+                file=file,
+                file_name=file_name,
+                content_type=content_type
+            )
+        else:
+            file = await update.message.photo[-1].get_file()
+            file_name = file.file_path.split("/")[-1]
+            content_type = "image/jpg"
+            telegram_file = TelegramFile(
+                file_unique_id=file.file_unique_id,
+                file=file,
+                file_name=file_name,
+                content_type=content_type
+            )
+        await self._file_provider.set_file(file=telegram_file)
+        return telegram_file
 
     @distributed_trace()
     async def receive_message(self, update: Update, context: CustomContext) -> None:
@@ -95,38 +160,23 @@ class TelegramBotMessagesHandler(TelegramBotBaseHandler):
             logger.exception(e)
             message = await self._messages_controller.on_fallback(update=update, gina_resp=result)
 
-        await update.effective_message.reply_text(
-            text=message.text,
-            parse_mode=message.parse_mode
-        )
+        await self.reply_message(update=update, message=message)
 
     @distributed_trace()
-    async def pre_process_files(self, update: Update, context: CustomContext) -> TelegramFile:
+    async def order_confirmation(self, update: Update, context: CustomContext) -> None:
         """
-        pre process files
+        order confirmation
         :param update:
         :param context:
         :return:
         """
-        if update.message.document:
-            file = await update.message.document.get_file()
-            file_name = update.message.document.file_name
-            content_type = update.message.document.mime_type
-            telegram_file = TelegramFile(
-                file_unique_id=file.file_unique_id,
-                file=file,
-                file_name=file_name,
-                content_type=content_type
-            )
-        else:
-            file = await update.message.photo[-1].get_file()
-            file_name = file.file_path.split("/")[-1]
-            content_type = "image/jpg"
-            telegram_file = TelegramFile(
-                file_unique_id=file.file_unique_id,
-                file=file,
-                file_name=file_name,
-                content_type=content_type
-            )
-        await self._file_provider.set_file(file=telegram_file)
-        return telegram_file
+        await update.effective_chat.send_chat_action("typing")
+        callback_query = update.callback_query
+        _, cart_id = cast(str, callback_query.data).split()
+        # await update.effective_message.edit_text(
+        #     text=update.effective_message.text_markdown_v2,
+        #     parse_mode=ParseMode.MARKDOWN_V2
+        # )
+
+        message = await self._messages_controller.on_order_confirmation(update=update, cart_id=cart_id)
+        await self.reply_message(update=update, message=message)

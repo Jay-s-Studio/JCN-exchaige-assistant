@@ -57,3 +57,11 @@ application.add_handler(
         callback=telegram_bot.receive_message
     )
 )
+
+# Handle callback queries
+application.add_handler(
+    CallbackQueryHandler(
+        callback=telegram_bot.order_confirmation,
+        pattern="^ORDER_CONFIRM"
+    )
+)

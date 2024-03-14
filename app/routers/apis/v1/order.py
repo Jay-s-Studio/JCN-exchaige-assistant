@@ -14,7 +14,7 @@ from app.libs.depends import (
     DEFAULT_RATE_LIMITERS,
 )
 from app.route_classes import LogRoute
-from app.serializers.v1.order import OrderList, UpdateOrder, OrderBase
+from app.serializers.v1.order import OrderList, UpdateOrder, OrderDetail
 
 router = APIRouter(
     dependencies=[
@@ -51,8 +51,9 @@ async def get_order_page(
 
 @router.get(
     path="/{order_id}",
-    response_model=OrderBase,
-    status_code=status.HTTP_200_OK
+    response_model=OrderDetail,
+    status_code=status.HTTP_200_OK,
+    response_model_exclude={"cart_id", "message_id"}
 )
 @inject
 async def get_order_by_id(

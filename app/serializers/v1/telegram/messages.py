@@ -20,7 +20,7 @@ class PaymentAccount(BaseModel):
     """
     Payment Account
     """
-    session_id: UUID
+    order_id: UUID
     customer_id: int
     message: str
 
@@ -37,7 +37,7 @@ class OrderPaymentAccountStatus(GroupPaymentAccountStatus):
     Order Payment Account Status
     """
     customer_id: int
-    session_id: UUID
+    order_id: UUID
     status: PaymentAccountStatus
 
 
@@ -46,4 +46,4 @@ class ConfirmPay(BaseModel):
     Confirm Pay
     """
     customer_id: int
-    session_id: UUID
+    order_id: UUID

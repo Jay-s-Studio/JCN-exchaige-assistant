@@ -41,23 +41,6 @@ async def start(
 
 @inject
 @start_transaction(name=TRANSACTION_NAME)
-async def receive_message(
-    update: Update,
-    context: CustomContext,
-    telegram_bot_messages_handler: TelegramBotMessagesHandler = Provide[Container.telegram_bot_messages_handler]
-) -> None:
-    """
-    Echo the user message.
-    :param update:
-    :param context:
-    :param telegram_bot_messages_handler:
-    :return:
-    """
-    await telegram_bot_messages_handler.receive_message(update, context)
-
-
-@inject
-@start_transaction(name=TRANSACTION_NAME)
 async def track_chats(
     update: Update,
     context: CustomContext,
@@ -105,3 +88,37 @@ async def left_member_handler(
     :return:
     """
     await telegram_bot_messages_handler.left_member_handler(update, context)
+
+
+@inject
+@start_transaction(name=TRANSACTION_NAME)
+async def receive_message(
+    update: Update,
+    context: CustomContext,
+    telegram_bot_messages_handler: TelegramBotMessagesHandler = Provide[Container.telegram_bot_messages_handler]
+) -> None:
+    """
+    Echo the user message.
+    :param update:
+    :param context:
+    :param telegram_bot_messages_handler:
+    :return:
+    """
+    await telegram_bot_messages_handler.receive_message(update, context)
+
+
+@inject
+@start_transaction(name=TRANSACTION_NAME)
+async def order_confirmation(
+    update: Update,
+    context: CustomContext,
+    telegram_bot_messages_handler: TelegramBotMessagesHandler = Provide[Container.telegram_bot_messages_handler]
+) -> None:
+    """
+    Order confirmation
+    :param update:
+    :param context:
+    :param telegram_bot_messages_handler:
+    :return:
+    """
+    await telegram_bot_messages_handler.order_confirmation(update, context)

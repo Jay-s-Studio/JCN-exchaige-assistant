@@ -78,8 +78,9 @@ async def test_create_order(order_provider: OrderProvider):
         cart_id=UUID("c3ef8919-dc0b-4166-a4a5-907cfc266978"),
         expiration_of_pay=now + timedelta(hours=1),
     )
-    order_no = await order_provider.create_order(order=order)
-    assert order_no[1:9] == now.strftime('%Y%m%d')
+    order_base = await order_provider.create_order(order=order)
+    assert order_base.id == order.id
+    assert order_base.order_no[1:9] == now.strftime('%Y%m%d')
 
 
 @pytest.mark.asyncio

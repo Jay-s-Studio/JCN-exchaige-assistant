@@ -13,6 +13,7 @@ from app.libs.consts.enums import OrderStatus
 from app.libs.consts.messages import ConfirmPayMessage
 from app.libs.decorators.sentry_tracer import distributed_trace
 from app.providers import TelegramAccountProvider, OrderProvider
+from app.schemas.order import Order
 from app.serializers.v1.telegram import (
     TelegramBroadcast,
     PaymentAccount,
@@ -58,7 +59,7 @@ class TelegramMessageHandler:
         :return:
         """
         now = datetime.now(tz=pytz.UTC)
-        order_info = await self._order_provider.get_order(group_id=model.customer_id, order_id=model.session_id)
+        order_info = await self._order_provider.get_order_by_id(order_id=model.order_id)
         if not order_info:
             raise APIException(status_code=status.HTTP_404_NOT_FOUND, message="order not found")
         try:
@@ -67,14 +68,14 @@ class TelegramMessageHandler:
                 text=model.message,
                 reply_to_message_id=order_info.message_id
             )
-            order_info.payment_account = model.message
-            order_info.expiration_of_pay = now + timedelta(hours=1)
-            order_info.status = OrderStatus.WAIT_FOR_PAYMENT
-            await self._order_provider.update_order(
-                group_id=model.customer_id,
-                order_id=model.session_id,
-                order_info=order_info
+            order = Order(
+                id=order_info.id,
+                expiration_of_pay=now + timedelta(hours=1),
+                payment_account=model.message,
+                receive_payment_account_at=now,
+                status=OrderStatus.WAIT_FOR_PAYMENT
             )
+            await self._order_provider.update_order(order=order)
         except telegram.error.BadRequest as e:
             raise APIException(status_code=status.HTTP_400_BAD_REQUEST, message=str(e))
         except Exception as e:
@@ -123,10 +124,11 @@ class TelegramMessageHandler:
         :param model:
         :return:
         """
-        order_info = await self._order_provider.get_order(group_id=model.customer_id, order_id=model.session_id)
+        order_info = await self._order_provider.get_order_by_id(order_id=model.order_id)
         if not order_info:
             raise APIException(status_code=status.HTTP_404_NOT_FOUND, message="order not found")
-        message = ConfirmPayMessage.format(language=order_info.language)
+        cart_info = await self._order_provider.get_cart_by_id(cart_id=order_info.cart_id)
+        message = ConfirmPayMessage.format(language=cart_info.language)
         try:
             resp_message = await self._bot.send_message(
                 chat_id=order_info.group_id,
@@ -134,12 +136,12 @@ class TelegramMessageHandler:
                 parse_mode=message.parse_mode,
                 reply_to_message_id=order_info.message_id
             )
-            order_info.status = OrderStatus.PAID
-            await self._order_provider.update_order(
-                group_id=model.customer_id,
-                order_id=model.session_id,
-                order_info=order_info
+            order = Order(
+                id=order_info.id,
+                status=OrderStatus.DONE,
+                done_at=datetime.now(tz=pytz.UTC)
             )
+            await self._order_provider.update_order(order=order)
         except telegram.error.BadRequest as e:
             raise APIException(status_code=status.HTTP_400_BAD_REQUEST, message=str(e))
         except Exception as e:

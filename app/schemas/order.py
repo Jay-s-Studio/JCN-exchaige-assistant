@@ -38,6 +38,10 @@ class Order(UUIDBaseModel):
     Order
     """
     order_no: Optional[str] = Field(default=None, description="Order No")
-    cart_id: UUID = Field(description="Cart ID")
+    cart_id: Optional[UUID] = Field(default=None, description="Cart ID")
     expiration_of_pay: Optional[datetime] = Field(default=None, description="Payment Time")
+    payment_account: Optional[str] = Field(default=None, description="Payment Account")
+    receive_payment_account_at: Optional[datetime] = Field(default=None, description="Receive Payment Account Time")
+    receive_receipt_at: Optional[datetime] = Field(default=None, description="Receive Receipt Time")
     status: OrderStatus = Field(default=OrderStatus.WAIT_FOR_PAYMENT_ACCOUNT, description="Status")
+    done_at: Optional[datetime] = Field(default=None, description="Done Time")

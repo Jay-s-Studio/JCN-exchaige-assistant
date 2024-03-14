@@ -2,6 +2,7 @@
 OrderProvider
 """
 from datetime import datetime
+from typing import Optional
 from uuid import UUID
 
 import pytz
@@ -9,11 +10,12 @@ import sqlalchemy as sa
 from redis.asyncio import Redis
 
 from app.config import settings
+from app.libs.consts.enums import CartStatus, OrderStatus
 from app.libs.database import Session, RedisPool
 from app.libs.decorators.sentry_tracer import distributed_trace
 from app.models import SysCart, SysOrder
 from app.schemas.order import Order, Cart
-from app.serializers.v1.order import OrderBase
+from app.serializers.v1.order import OrderDetail, OrderBase
 
 
 class OrderProvider:
@@ -40,7 +42,7 @@ class OrderProvider:
         self,
         page_index: int = 0,
         page_size: int = 10
-    ) -> tuple[list[OrderBase], int]:
+    ) -> tuple[list[OrderDetail], int]:
         """
         get order by pages
         :param page_index:
@@ -52,12 +54,14 @@ class OrderProvider:
                 self._session.select(
                     SysOrder.id,
                     SysOrder.order_no,
+                    SysOrder.cart_id,
                     SysCart.payment_currency,
                     SysCart.payment_amount,
                     SysCart.exchange_currency,
                     SysCart.exchange_amount,
                     SysCart.original_exchange_rate,
                     SysCart.with_fee_exchange_rate,
+                    SysCart.message_id,
                     SysCart.group_name,
                     SysCart.group_id,
                     SysCart.vendor_name,
@@ -72,7 +76,7 @@ class OrderProvider:
                 .order_by(SysOrder.created_at.desc())
                 .limit(page_size)
                 .offset(page_index * page_size)
-                .fetchpages(as_model=OrderBase)
+                .fetchpages(as_model=OrderDetail)
             )
         except Exception as e:
             raise e
@@ -82,10 +86,7 @@ class OrderProvider:
             await self._session.close()
 
     @distributed_trace()
-    async def get_order_by_id(
-        self,
-        order_id: UUID
-    ) -> OrderBase:
+    async def get_order_by_id(self, order_id: UUID) -> OrderDetail:
         """
         get order by no
         :param order_id:
@@ -96,12 +97,14 @@ class OrderProvider:
                 self._session.select(
                     SysOrder.id,
                     SysOrder.order_no,
+                    SysOrder.cart_id,
                     SysCart.payment_currency,
                     SysCart.payment_amount,
                     SysCart.exchange_currency,
                     SysCart.exchange_amount,
                     SysCart.original_exchange_rate,
                     SysCart.with_fee_exchange_rate,
+                    SysCart.message_id,
                     SysCart.group_name,
                     SysCart.group_id,
                     SysCart.vendor_name,
@@ -114,12 +117,102 @@ class OrderProvider:
                 )
                 .outerjoin(SysCart, SysOrder.cart_id == SysCart.id)
                 .where(SysOrder.id == order_id)
-                .fetchrow(as_model=OrderBase)
+                .fetchrow(as_model=OrderDetail)
             )
         except Exception as e:
             raise e
         else:
             return order
+        finally:
+            await self._session.close()
+
+    @distributed_trace()
+    async def get_order_by_group_id(self, group_id: int, status: Optional[OrderStatus] = None) -> OrderDetail:
+        """
+        get order by group id
+        :param group_id:
+        :param status:
+        :return:
+        """
+        try:
+            result = await (
+                self._session.select(
+                    SysOrder.id,
+                    SysOrder.order_no,
+                    SysOrder.cart_id,
+                    SysCart.payment_currency,
+                    SysCart.payment_amount,
+                    SysCart.exchange_currency,
+                    SysCart.exchange_amount,
+                    SysCart.original_exchange_rate,
+                    SysCart.with_fee_exchange_rate,
+                    SysCart.message_id,
+                    SysCart.group_name,
+                    SysCart.group_id,
+                    SysCart.vendor_name,
+                    SysCart.vendor_id,
+                    SysCart.account_name,
+                    SysCart.account_id,
+                    SysOrder.status,
+                    SysOrder.created_at,
+                    SysOrder.description
+                )
+                .outerjoin(SysCart, SysOrder.cart_id == SysCart.id)
+                .where(SysCart.group_id == group_id)
+                .where(status, lambda: sa.and_(SysOrder.status == status.value, SysOrder.status != OrderStatus.DONE.value))
+                .where(status is None, lambda: SysOrder.status != OrderStatus.DONE.value)
+                .order_by(SysOrder.created_at.desc())
+                .fetchrow(as_model=OrderDetail)
+            )
+        except Exception as e:
+            raise e
+        else:
+            return result
+        finally:
+            await self._session.close()
+
+    @distributed_trace()
+    async def get_cart_by_id(self, cart_id: UUID) -> Optional[Cart]:
+        """
+        get cart by id
+        :param cart_id:
+        :return:
+        """
+        try:
+            cart = await (
+                self._session.select(SysCart)
+                .where(SysCart.id == cart_id)
+                .fetchrow(as_model=Cart)
+            )
+        except Exception as e:
+            raise e
+        else:
+            return cart
+        finally:
+            await self._session.close()
+
+    @distributed_trace()
+    async def get_cart_by_group_id(self, group_id: int) -> Optional[Cart]:
+        """
+        get cart by group id
+        :param group_id:
+        :return:
+        """
+        try:
+            cart = await (
+                self._session.select(SysCart)
+                .where(
+                    sa.and_(
+                        SysCart.group_id == group_id,
+                        SysCart.status == CartStatus.PENDING.value
+                    )
+                )
+                .fetchrow(as_model=Cart)
+            )
+        except Exception as e:
+            raise e
+        else:
+            return cart
         finally:
             await self._session.close()
 
@@ -147,6 +240,52 @@ class OrderProvider:
             await self._session.close()
 
     @distributed_trace()
+    async def update_cart(self, cart: Cart) -> None:
+        """
+        update cart
+        :param cart:
+        :return:
+        """
+        cart_values = cart.model_dump(exclude={"id"})
+        try:
+            await (
+                self._session.update(SysCart)
+                .values(**cart_values)
+                .where(SysCart.id == cart.id)
+                .execute()
+            )
+        except Exception as e:
+            await self._session.rollback()
+            raise e
+        else:
+            await self._session.commit()
+        finally:
+            await self._session.close()
+
+    @distributed_trace()
+    async def update_cart_status(self, cart_id: UUID, status: CartStatus) -> None:
+        """
+        update cart status
+        :param cart_id:
+        :param status:
+        :return:
+        """
+        try:
+            await (
+                self._session.update(SysCart)
+                .values(status=status.value)
+                .where(SysCart.id == cart_id)
+                .execute()
+            )
+        except Exception as e:
+            await self._session.rollback()
+            raise e
+        else:
+            await self._session.commit()
+        finally:
+            await self._session.close()
+
+    @distributed_trace()
     async def generate_order_no(self) -> str:
         """
         generate order no
@@ -167,7 +306,7 @@ class OrderProvider:
         return f"O{today}{str(count).zfill(7)}"
 
     @distributed_trace()
-    async def create_order(self, order: Order) -> str:
+    async def create_order(self, order: Order) -> OrderBase:
         """
         create order
         :param order:
@@ -187,7 +326,30 @@ class OrderProvider:
             raise e
         else:
             await self._session.commit()
-            return order_no
+            return OrderBase(id=order.id, order_no=order_no)
+        finally:
+            await self._session.close()
+
+    @distributed_trace()
+    async def update_order(self, order: Order) -> None:
+        """
+        update order
+        :param order:
+        :return:
+        """
+        order_values = order.model_dump(exclude={"id"}, exclude_none=True)
+        try:
+            await (
+                self._session.update(SysOrder)
+                .values(**order_values)
+                .where(SysOrder.id == order.id)
+                .execute()
+            )
+        except Exception as e:
+            await self._session.rollback()
+            raise e
+        else:
+            await self._session.commit()
         finally:
             await self._session.close()
 

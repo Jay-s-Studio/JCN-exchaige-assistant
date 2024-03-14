@@ -2,16 +2,17 @@
 MessagesController
 """
 import asyncio
-import uuid
+from datetime import datetime
+from uuid import UUID
 from dataclasses import dataclass
 from typing import Optional
 
+import pytz
 from telegram import Update, User
 from telegram.constants import ParseMode
 
 from app.libs.consts import messages
-from app.libs.consts.enums import GinaAction, CurrencySymbol, OperationType, CalculationType, OrderStatus
-from app.libs.consts.messages import Message, OrderInfoNotFoundMessage, OrderInProgressMessage
+from app.libs.consts.enums import GinaAction, CurrencySymbol, OperationType, CalculationType, OrderStatus, Language, CartStatus
 from app.libs.decorators.sentry_tracer import distributed_trace
 from app.providers import ExchangeRateProvider, TelegramAccountProvider, HandlingFeeProvider, OrderProvider, VendorsBotProvider
 from app.schemas.exchange_rate import OptimalExchangeRate
@@ -46,7 +47,7 @@ class MessagesController:
         self._vendors_bot_provider = vendors_bot_provider
 
     @distributed_trace()
-    async def on_exchange_rate(self, update: Update, gina_resp: GinaResponse) -> Message:
+    async def on_exchange_rate(self, update: Update, gina_resp: GinaResponse) -> messages.Message:
         """
         on exchange rate
         :param update:
@@ -59,11 +60,11 @@ class MessagesController:
             case GinaAction.EXCHANGE_RATE_MAIN_TOKEN:
                 message = await self._exchange_rate(update=update, gina_resp=gina_resp, get_default=True)
             case _:
-                message = Message(text=gina_resp.reply)
+                message = messages.Message(text=gina_resp.reply)
         return message
 
     @distributed_trace()
-    async def _exchange_rate(self, update: Update, gina_resp: GinaResponse, get_default: bool = False) -> Message:
+    async def _exchange_rate(self, update: Update, gina_resp: GinaResponse, get_default: bool = False) -> messages.Message:
         """
         exchange rate
         :param update:
@@ -111,30 +112,30 @@ class MessagesController:
         )
 
     @distributed_trace()
-    async def on_swap(self, update: Update, gina_resp: GinaResponse) -> Message:
+    async def on_swap(self, update: Update, gina_resp: GinaResponse) -> messages.Message:
         """
         on swap
         :param update:
         :param gina_resp:
         :return:
         """
-        # order_info = await self._order_provider.get_order_by_group_id(group_id=update.effective_chat.id)
-        # if order_info:
-        #     if order_info.status not in [OrderStatus.EXPIRE, OrderStatus.PAID, OrderStatus.CANCELLED]:
-        #         return OrderInProgressMessage.format(language=gina_resp.language)
+        order_info = await self._order_provider.get_order_by_group_id(group_id=update.effective_chat.id)
+        if order_info:
+            if order_info.status not in [OrderStatus.EXPIRE, OrderStatus.DONE, OrderStatus.CANCELLED]:
+                return messages.OrderInProgressMessage.format(language=gina_resp.language)
         match gina_resp.action:
             case GinaAction.SWAP:
                 message = await self._swap(update=update, gina_resp=gina_resp)
             case GinaAction.SWAP_CRYPTO:
                 message = await self._swap(update=update, gina_resp=gina_resp)
             case GinaAction.SWAP_LEGAL:
-                message = Message(text=gina_resp.reply)
+                message = messages.Message(text=gina_resp.reply)
             case _:
-                message = Message(text=gina_resp.reply)
+                message = messages.Message(text=gina_resp.reply)
         return message
 
     @distributed_trace()
-    async def _swap(self, update: Update, gina_resp: GinaResponse) -> Message:
+    async def _swap(self, update: Update, gina_resp: GinaResponse) -> messages.Message:
         """
         swap
         :param update:
@@ -154,6 +155,31 @@ class MessagesController:
             exchange_currency = "USDT"
         if exchange_currency != "USDT":
             currency = exchange_currency
+
+        # try to get cart by group id
+        exist_cart = await self._order_provider.get_cart_by_group_id(group_id=group_id)
+        if exist_cart:
+            if exist_cart.payment_currency != payment_currency or exist_cart.exchange_currency != exchange_currency:
+                return messages.CartCurrencyMismatchMessage.format(language=gina_resp.language)
+
+            if payment_currency in ["GCASH", "PAYMAYA"]:
+                payment_amount *= 10000
+                exchange_amount = payment_amount / exist_cart.with_fee_exchange_rate
+            else:
+                exchange_amount = payment_amount / exist_cart.with_fee_exchange_rate
+                payment_amount *= exist_cart.with_fee_exchange_rate
+
+            exist_cart.payment_amount += payment_amount
+            exist_cart.exchange_amount += exchange_amount
+            await self._order_provider.update_cart(cart=exist_cart)
+            return messages.CartInfoMessage.format(
+                language=gina_resp.language,
+                payment_currency=exist_cart.payment_currency,
+                exchange_currency=exist_cart.exchange_currency,
+                exchange_rate=exist_cart.with_fee_exchange_rate,
+                total_price=exist_cart.payment_amount,
+                cart_id=exist_cart.id
+            )
 
         exchange_rate, handling_fee = await self._get_rate_and_fee(
             group_id=group_id,
@@ -194,27 +220,25 @@ class MessagesController:
             original_exchange_rate=exchange_rate.buy_rate,
             with_fee_exchange_rate=price,
         )
-        await self._order_provider.create_cart(cart=cart)
-        # payload = PaymentAccount(
-        #     session_id=session_id,
-        #     customer_id=group_id,
-        #     group_id=exchange_rate.group_id,
-        #     payment_currency=payment_currency,
-        #     exchange_currency=exchange_currency,
-        #     total_amount=price * gina_resp.amount_to_exchange
-        # )
-        # await self._vendors_bot_provider.payment_account(payload)
-        return Message(text=gina_resp.reply)
+        cart_id = await self._order_provider.create_cart(cart=cart)
+        return messages.CartInfoMessage.format(
+            language=gina_resp.language,
+            payment_currency=cart.payment_currency,
+            exchange_currency=cart.exchange_currency,
+            exchange_rate=cart.with_fee_exchange_rate,
+            total_price=cart.payment_amount,
+            cart_id=cart_id
+        )
 
     @distributed_trace()
-    async def on_human_customer_service(self, update: Update, gina_resp: GinaResponse) -> Message:
+    async def on_human_customer_service(self, update: Update, gina_resp: GinaResponse) -> messages.Message:
         """
         on human customer service
         :param update:
         :param gina_resp:
         :return:
         """
-        return Message(
+        return messages.Message(
             text=await self.format_message(
                 message=gina_resp.reply,
                 group_id=update.effective_chat.id,
@@ -224,29 +248,32 @@ class MessagesController:
         )
 
     @distributed_trace()
-    async def on_get_account(self, update: Update, gina_resp: GinaResponse) -> Message:
+    async def on_get_account(self, update: Update, gina_resp: GinaResponse) -> messages.Message:
         """
 
         :param update:
         :param gina_resp:
         :return:
         """
-        # order_info = await self._order_provider.get_order_by_group_id(group_id=update.effective_chat.id)
-        # if not order_info:
-        #     return OrderInfoNotFoundMessage.format(language=gina_resp.language)
-        # payload = PaymentAccount(
-        #     session_id=order_info.session_id,
-        #     customer_id=order_info.group_id,
-        #     group_id=order_info.vendor_id,
-        #     payment_currency=order_info.payment_currency,
-        #     exchange_currency=order_info.exchange_currency,
-        #     total_amount=order_info.total_amount
-        # )
-        # await self._vendors_bot_provider.payment_account(payload)
-        return Message(text=gina_resp.reply)
+        order_info = await self._order_provider.get_order_by_group_id(
+            group_id=update.effective_chat.id,
+            status=OrderStatus.WAIT_FOR_PAYMENT_ACCOUNT
+        )
+        if not order_info:
+            return messages.OrderInfoNotFoundMessage.format(language=gina_resp.language)
+        payload = PaymentAccount(
+            order_id=order_info.id,
+            customer_id=order_info.group_id,
+            vendor_id=order_info.vendor_id,
+            payment_currency=order_info.payment_currency,
+            exchange_currency=order_info.exchange_currency,
+            total_amount=order_info.payment_amount
+        )
+        await self._vendors_bot_provider.payment_account(payload)
+        return messages.Message(text=gina_resp.reply)
 
     @distributed_trace()
-    async def on_receipt(self, update: Update, gina_resp: GinaResponse, telegram_file: TelegramFile) -> Message:
+    async def on_receipt(self, update: Update, gina_resp: GinaResponse, telegram_file: TelegramFile) -> messages.Message:
         """
 
         :param update:
@@ -254,85 +281,114 @@ class MessagesController:
         :param telegram_file:
         :return:
         """
-        # order_info = await self._order_provider.get_order_by_group_id(group_id=update.effective_chat.id)
-        # if not order_info:
-        #     return OrderInfoNotFoundMessage.format(language=gina_resp.language)
-        # payload = CheckReceipt(
-        #     session_id=order_info.session_id,
-        #     customer_id=order_info.group_id,
-        #     group_id=order_info.vendor_id,
-        #     file_id=telegram_file.file_unique_id,
-        #     file_name=telegram_file.file_name
-        # )
-        # await self._vendors_bot_provider.check_receipt(payload=payload)
-        # order_info.status = OrderStatus.WAIT_FOR_CONFIRMATION
-        # await self._order_provider.update_order(
-        #     group_id=update.effective_chat.id,
-        #     order_id=order_info.session_id,
-        #     order_info=order_info
-        # )
-        return Message(text=gina_resp.reply)
+        order_info = await self._order_provider.get_order_by_group_id(group_id=update.effective_chat.id)
+        if not order_info:
+            if order_info.status != OrderStatus.WAIT_FOR_PAYMENT:
+                return messages.OrderInfoNotFoundMessage.format(language=gina_resp.language)
+        order = Order(
+            id=order_info.id,
+            status=OrderStatus.WAIT_FOR_CONFIRMATION,
+            receive_receipt_at=datetime.now(tz=pytz.UTC)
+        )
+        await self._order_provider.update_order(order=order)
+        payload = CheckReceipt(
+            order_id=order_info.id,
+            customer_id=order_info.group_id,
+            vendor_id=order_info.vendor_id,
+            file_id=telegram_file.file_unique_id,
+            file_name=telegram_file.file_name
+        )
+        await self._vendors_bot_provider.check_receipt(payload=payload)
+        return messages.Message(text=gina_resp.reply)
 
     @distributed_trace()
-    async def on_payment_check(self, update: Update, gina_resp: GinaResponse) -> Message:
+    async def on_payment_check(self, update: Update, gina_resp: GinaResponse) -> messages.Message:
         """
 
         :param update:
         :param gina_resp:
         :return:
         """
-        return Message(text=gina_resp.reply)
+        return messages.Message(text=gina_resp.reply)
 
     @distributed_trace()
-    async def on_cancel_order(self, update: Update, gina_resp: GinaResponse) -> Message:
+    async def on_cancel_order(self, update: Update, gina_resp: GinaResponse) -> messages.Message:
         """
 
         :param update:
         :param gina_resp:
         :return:
         """
-        # order_info = await self._order_provider.get_order_by_group_id(group_id=update.effective_chat.id)
-        # if not order_info:
-        #     return OrderInfoNotFoundMessage.format(language=gina_resp.language)
-        # order_info.status = OrderStatus.CANCELLED
-        # await self._order_provider.update_order(
-        #     group_id=update.effective_chat.id,
-        #     order_id=order_info.session_id,
-        #     order_info=order_info
-        # )
-        return Message(text=gina_resp.reply)
+        order_info = await self._order_provider.get_order_by_group_id(group_id=update.effective_chat.id)
+        if not order_info:
+            return messages.OrderInfoNotFoundMessage.format(language=gina_resp.language)
+        order = Order(
+            id=order_info.id,
+            status=OrderStatus.CANCELLED,
+            done_at=datetime.now(tz=pytz.UTC)
+        )
+        await self._order_provider.update_order(order=order)
+        return messages.Message(text=gina_resp.reply)
 
     @distributed_trace()
-    async def on_hurry(self, update: Update, gina_resp: GinaResponse) -> Message:
+    async def on_hurry(self, update: Update, gina_resp: GinaResponse) -> messages.Message:
         """
 
         :param update:
         :param gina_resp:
         :return:
         """
-        # order_info = await self._order_provider.get_order_by_group_id(group_id=update.effective_chat.id)
-        # if not order_info:
-        #     return OrderInfoNotFoundMessage.format(language=gina_resp.language)
-        # payload = PaymentAccount(
-        #     session_id=order_info.session_id,
-        #     customer_id=order_info.group_id,
-        #     group_id=order_info.vendor_id,
-        #     payment_currency=order_info.payment_currency,
-        #     exchange_currency=order_info.exchange_currency,
-        #     total_amount=order_info.total_amount
-        # )
-        # await self._vendors_bot_provider.hurry_payment_account(payload=payload)
-        return Message(text=gina_resp.reply)
+        order_info = await self._order_provider.get_order_by_group_id(
+            group_id=update.effective_chat.id,
+            status=OrderStatus.WAIT_FOR_PAYMENT_ACCOUNT
+        )
+        if not order_info:
+            return messages.OrderInfoNotFoundMessage.format(language=gina_resp.language)
+        payload = PaymentAccount(
+            order_id=order_info.id,
+            customer_id=order_info.group_id,
+            vendor_id=order_info.vendor_id,
+            payment_currency=order_info.payment_currency,
+            exchange_currency=order_info.exchange_currency,
+            total_amount=order_info.payment_amount
+        )
+        await self._vendors_bot_provider.hurry_payment_account(payload=payload)
+        return messages.Message(text=gina_resp.reply)
 
     @distributed_trace()
-    async def on_fallback(self, update: Update, gina_resp: GinaResponse) -> Message:
+    async def on_fallback(self, update: Update, gina_resp: GinaResponse) -> messages.Message:
         """
         on fallback
         :param update:
         :param gina_resp:
         :return:
         """
-        return Message(text=gina_resp.reply)
+        return messages.Message(text=gina_resp.reply)
+
+    @distributed_trace()
+    async def on_order_confirmation(self, update: Update, cart_id: UUID) -> messages.Message:
+        """
+        order confirmation
+        :param update:
+        :param cart_id:
+        :return:
+        """
+        cart = await self._order_provider.get_cart_by_id(cart_id=cart_id)
+        if not cart:
+            return messages.messages.OrderInfoNotFoundMessage.format(language=Language.ZH_TW)
+        await self._order_provider.update_cart_status(cart_id=cart.id, status=CartStatus.CONFIRMED)
+        order = Order(cart_id=cart.id)
+        order_base = await self._order_provider.create_order(order=order)
+        payload = PaymentAccount(
+            order_id=order_base.id,
+            customer_id=cart.group_id,
+            vendor_id=cart.vendor_id,
+            payment_currency=cart.payment_currency,
+            exchange_currency=cart.exchange_currency,
+            total_amount=cart.payment_amount
+        )
+        await self._vendors_bot_provider.payment_account(payload)
+        return messages.OrderConfirmationMessage.format(language=cart.language)
 
     async def format_message(
         self,
