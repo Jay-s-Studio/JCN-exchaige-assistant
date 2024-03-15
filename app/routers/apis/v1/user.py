@@ -208,7 +208,6 @@ async def verify_new_otp(
     """
     await user_handler.verify_otp(
         user_id=api_context.user_id,
-        previous_otp=model.previous_otp,
         otp=model.otp
     )
     return {"message": "success"}

@@ -91,5 +91,4 @@ class VerifyOTP(BaseModel):
     """
     Verify OTP
     """
-    previous_otp: str
     otp: str

@@ -304,16 +304,15 @@ class UserHandler:
         return OTPInfo(secret=secret, uri=otp_uri)
 
     @distributed_trace()
-    async def verify_otp(self, user_id: uuid.UUID, previous_otp: str, otp: str):
+    async def verify_otp(self, user_id: uuid.UUID, otp: str):
         """
         Verify otp
         :param user_id:
-        :param previous_otp:
         :param otp:
         :return:
         """
         secret = await self.redis.get(get_user_otp_secret_key(user_id=user_id))
-        result = self.auth_handler.verify_new_otp(secret=secret, previous_otp=previous_otp, otp=otp)
+        result = self.auth_handler.verify_new_otp(secret=secret, otp=otp)
         if not result:
             raise APIException(
                 status_code=status.HTTP_401_UNAUTHORIZED,

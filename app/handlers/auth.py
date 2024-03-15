@@ -132,18 +132,14 @@ class AuthHandler:
         return pyotp.TOTP(secret).verify(otp)
 
     @staticmethod
-    def verify_new_otp(secret: str, previous_otp: str, otp: str) -> bool:
+    def verify_new_otp(secret: str, otp: str) -> bool:
         """
         Verify OTP
-        verify previous and current otp
         :param secret:
-        :param previous_otp:
         :param otp:
         :return:
         """
-        totp = pyotp.TOTP(secret)
-        now = datetime.now(tz=pytz.UTC)
-        return totp.verify(otp=previous_otp, for_time=now - timedelta(seconds=30)) and totp.verify(otp=otp, for_time=now)
+        return pyotp.TOTP(secret).verify(otp=otp)
 
     @staticmethod
     def generate_otp_uri(user_id: UUID, secret: str) -> str:
