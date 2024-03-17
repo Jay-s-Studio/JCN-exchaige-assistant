@@ -68,7 +68,7 @@ class GroupMember(BaseModel):
     last_name: Optional[str] = Field(default=None, description="Last Name")
     full_name: Optional[str] = Field(default=None, description="Full Name")
     name: Optional[str] = Field(default=None, description="Name")
-    is_customer_service: bool = Field(default=False, description="Is Customer Service")
+    is_customer_service: Optional[bool] = Field(default=False, description="Is Customer Service")
 
 
 class GroupMembers(BaseModel):
