@@ -2,7 +2,7 @@
 Telegram Messages API Router
 """
 from dependency_injector.wiring import inject, Provide
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, BackgroundTasks
 from starlette import status
 
 from app.containers import Container
@@ -27,20 +27,23 @@ router = APIRouter(
 
 @router.post(
     path="/broadcast",
-    status_code=status.HTTP_200_OK
+    status_code=status.HTTP_202_ACCEPTED
 )
 @inject
 async def broadcast(
     model: TelegramBroadcast,
+    background_tasks: BackgroundTasks,
     telegram_message_handler: TelegramMessageHandler = Depends(Provide[Container.telegram_message_handler])
 ):
     """
 
     :param model:
+    :param background_tasks:
     :param telegram_message_handler:
     :return:
     """
-    return await telegram_message_handler.broadcast_message(model=model)
+    background_tasks.add_task(telegram_message_handler.broadcast_message, model=model)
+    return {"message": "accepted"}
 
 
 @router.post(

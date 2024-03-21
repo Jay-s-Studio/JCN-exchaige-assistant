@@ -3,17 +3,18 @@ Serializers for Telegram Messages API
 """
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
-from app.libs.consts.enums import PaymentAccountStatus
+from app.libs.consts.enums import PaymentAccountStatus, BotType
 
 
 class TelegramBroadcast(BaseModel):
     """
     Telegram Broadcast
     """
-    chat_id: str
-    message: str
+    chat_id_list: list[int] = Field(description="Chat ID List")
+    message: str = Field(description="Message", max_length=4096)
+    type: BotType = Field(description="Bot Type")
 
 
 class PaymentAccount(BaseModel):

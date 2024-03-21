@@ -9,8 +9,7 @@ from redis.asyncio import Redis
 from app.libs.consts.enums import BotType, PaymentAccountStatus
 from app.libs.database import RedisPool, Session
 from app.libs.decorators.sentry_tracer import distributed_trace
-from app.models import SysTelegramAccount, SysTelegramChatGroup, SysTelegramChatGroupMember, SysCurrency
-from app.models.handling_fee import SysHandlingFeeConfig
+from app.models import SysTelegramAccount, SysTelegramChatGroup, SysTelegramChatGroupMember, SysCurrency, SysHandlingFeeConfig
 from app.serializers.v1.telegram import TelegramAccount, TelegramChatGroup, GroupMember, GroupInfo, UpdateGroupInfo
 
 

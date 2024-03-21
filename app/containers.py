@@ -14,6 +14,7 @@ from app.handlers import (
     HandlingFeeHandler,
     TelegramAccountHandler,
     TelegramMessageHandler,
+    TelegramGroupTypeHandler,
     TelegramBotMessagesHandler,
     OrderHandler,
     UserHandler,
@@ -21,11 +22,13 @@ from app.handlers import (
 from app.libs.database import RedisPool, Session
 from app.providers import (
     TelegramAccountProvider,
+    TelegramGroupTypeProvider,
     CurrencyProvider,
     ExchangeRateProvider,
     FileProvider,
     GinaProvider,
     HandlingFeeProvider,
+    MessageProvider,
     OrderProvider,
     UserProvider,
     VendorsBotProvider
@@ -57,6 +60,10 @@ class Container(containers.DeclarativeContainer):
         session=aio_session,
         redis=redis_pool
     )
+    telegram_group_type_provider = providers.Factory(
+        TelegramGroupTypeProvider,
+        session=aio_session
+    )
     currency_provider = providers.Factory(
         CurrencyProvider,
         session=aio_session,
@@ -77,6 +84,10 @@ class Container(containers.DeclarativeContainer):
         HandlingFeeProvider,
         session=aio_session,
         redis=redis_pool
+    )
+    message_provider = providers.Factory(
+        MessageProvider,
+        session=aio_session
     )
     order_provider = providers.Factory(
         OrderProvider,
@@ -127,7 +138,12 @@ class Container(containers.DeclarativeContainer):
         TelegramMessageHandler,
         bot=bot,
         telegram_account_provider=telegram_account_provider,
-        order_provider=order_provider
+        order_provider=order_provider,
+        message_provider=message_provider
+    )
+    telegram_group_type_handler = providers.Factory(
+        TelegramGroupTypeHandler,
+        group_type_provider=telegram_group_type_provider
     )
     telegram_bot_messages_handler = providers.Factory(
         TelegramBotMessagesHandler,

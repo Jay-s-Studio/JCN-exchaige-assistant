@@ -9,6 +9,7 @@ from app.handlers import (
     ExchangeRateHandler,
     TelegramAccountHandler,
     TelegramMessageHandler,
+    TelegramGroupTypeHandler,
     HandlingFeeHandler,
     UserHandler,
 )
@@ -58,6 +59,15 @@ def telegram_message_handler() -> TelegramMessageHandler:
     :return:
     """
     return Container.telegram_message_handler()
+
+
+@pytest.fixture
+def telegram_group_type_handler() -> TelegramGroupTypeHandler:
+    """
+    telegram_group_type_handler
+    :return:
+    """
+    return Container.telegram_group_type_handler()
 
 
 @pytest.fixture

@@ -9,10 +9,11 @@ from starlette import status
 from telegram import Bot
 
 from app.exceptions.api_base import APIException
-from app.libs.consts.enums import OrderStatus
+from app.libs.consts.enums import OrderStatus, BotType, MessageStatus
 from app.libs.consts.messages import ConfirmPayMessage
 from app.libs.decorators.sentry_tracer import distributed_trace
-from app.providers import TelegramAccountProvider, OrderProvider
+from app.providers import TelegramAccountProvider, OrderProvider, MessageProvider
+from app.schemas.broadcast_message import BroadcastMessage, BroadcastMessageHistory
 from app.schemas.order import Order
 from app.serializers.v1.telegram import (
     TelegramBroadcast,
@@ -30,11 +31,13 @@ class TelegramMessageHandler:
         self,
         bot: Bot,
         telegram_account_provider: TelegramAccountProvider,
-        order_provider: OrderProvider
+        order_provider: OrderProvider,
+        message_provider: MessageProvider
     ):
         self._bot = bot
         self._telegram_account_provider = telegram_account_provider
         self._order_provider = order_provider
+        self._message_provider = message_provider
 
     @distributed_trace()
     async def broadcast_message(self, model: TelegramBroadcast):
@@ -43,13 +46,29 @@ class TelegramMessageHandler:
         :param model:
         :return:
         """
-        try:
-            message = await self._bot.send_message(chat_id=model.chat_id, text=model.message)
-        except telegram.error.BadRequest as e:
-            raise APIException(status_code=status.HTTP_400_BAD_REQUEST, message=str(e))
-        except Exception as e:
-            raise APIException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, message=str(e))
-        return message.to_dict()
+        message = BroadcastMessage(content=model.message, type=model.type)
+        broadcast_message_id = await self._message_provider.create_message(message=message)
+        for chat_id in model.chat_id_list:
+            history = BroadcastMessageHistory(message_id=broadcast_message_id, chat_group_id=chat_id)
+            await self._message_provider.create_message_history(message_history=history)
+            try:
+                match model.type:
+                    case BotType.CUSTOMER:
+                        resp = await self._bot.send_message(chat_id=chat_id, text=model.message)
+                        history.telegram_message_id = resp.message_id
+                    case BotType.VENDORS:
+                        # call vendor bot api
+                        pass
+            except telegram.error.BadRequest as e:
+                history.status = MessageStatus.FAILED
+                history.telegram_error_description = e.message
+            except Exception as e:
+                history.status = MessageStatus.FAILED
+                history.telegram_error_description = str(e)
+            else:
+                history.status = MessageStatus.SENT
+            finally:
+                await self._message_provider.update_message_history(message_history=history)
 
     @distributed_trace()
     async def receive_payment_account(self, model: PaymentAccount):

@@ -125,3 +125,9 @@ class OrderStatus(StrEnum):
     WAIT_FOR_CONFIRMATION = "wait_for_confirmation"
     DONE = "done"
     CANCELLED = "cancelled"
+
+
+class MessageStatus(StrEnum):
+    """MessageStatus"""
+    SENT = "sent"
+    FAILED = "failed"

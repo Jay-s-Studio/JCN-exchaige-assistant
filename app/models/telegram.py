@@ -7,7 +7,7 @@ from sqlalchemy.dialects.postgresql import UUID
 
 from app.libs.database.orm import Base, ModelBase
 from .handling_fee import SysHandlingFeeConfig
-from .mixins import AuditMixin, DeletedMixin, DescriptionMixin
+from .mixins import AuditMixin, DeletedMixin, DescriptionMixin, RemarkMixin
 
 
 class SysTelegramAccount(Base, AuditMixin, DeletedMixin, DescriptionMixin):
@@ -88,3 +88,43 @@ class SysTelegramChatGroupMember(ModelBase, AuditMixin, DeletedMixin):
         comment="Account ID",
     )
     is_customer_service = Column(sa.Boolean, server_default=sa.text("false"), comment="Is Customer Service")
+
+
+class SysTelegramChatGroupType(ModelBase, AuditMixin, DeletedMixin, RemarkMixin):
+    """SysTelegramChatGroupType"""
+    __tablename__ = "telegram_chat_group_type"
+    __table_args__ = (
+        sa.UniqueConstraint("name", name="unique_telegram_chat_group_type_name_key"),
+        {"schema": "public"}
+    )
+
+    name = Column(sa.String(16), comment="Name")
+
+
+class SysTelegramChatGroupTypeRelation(ModelBase):
+    """SysTelegramChatGroupTypeRelation"""
+    __tablename__ = "telegram_chat_group_type_relation"
+    __table_args__ = (
+        sa.UniqueConstraint("chat_group_id", "chat_group_type_id", name="unique_telegram_chat_group_type_relation_key"),
+        {"schema": "public"}
+    )
+    chat_group_id = Column(
+        sa.BigInteger,
+        sa.ForeignKey(
+            column=SysTelegramChatGroup.id,
+            name="telegram_chat_group_relation_chat_group_id_fkey",
+            ondelete="CASCADE",
+        ),
+        nullable=False,
+        comment="Chat Group ID",
+    )
+    chat_group_type_id = Column(
+        UUID,
+        sa.ForeignKey(
+            column=SysTelegramChatGroupType.id,
+            name="telegram_chat_group_relation_chat_group_type_id_fkey",
+            ondelete="CASCADE",
+        ),
+        nullable=False,
+        comment="Chat Group Type ID",
+    )

@@ -6,7 +6,7 @@ from .currency import CurrencyHandler
 from .exchange_rate import ExchangeRateHandler
 from .files import FileHandler
 from .handling_fee import HandlingFeeHandler
-from .telegram import TelegramAccountHandler, TelegramMessageHandler
+from .telegram import TelegramAccountHandler, TelegramMessageHandler, TelegramGroupTypeHandler
 from .telegram_bot import TelegramBotMessagesHandler
 from .order import OrderHandler
 from .user import UserHandler
@@ -25,6 +25,7 @@ __all__ = [
     # telegram
     "TelegramAccountHandler",
     "TelegramMessageHandler",
+    "TelegramGroupTypeHandler",
     # telegram_bot
     "TelegramBotMessagesHandler",
     # order
