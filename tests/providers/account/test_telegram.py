@@ -25,7 +25,7 @@ async def test_get_chat_groups(telegram_account_provider: TelegramAccountProvide
     :param telegram_account_provider:
     :return:
     """
-    groups = await telegram_account_provider.get_chat_groups(50, 0)
+    groups = await telegram_account_provider.get_chat_groups()
     assert groups is not None
 
 

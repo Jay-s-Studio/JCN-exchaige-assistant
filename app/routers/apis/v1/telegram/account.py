@@ -1,17 +1,22 @@
 """
 Telegram Account API Router
 """
+from typing import Optional
+from uuid import UUID
+
 from dependency_injector.wiring import inject, Provide
 from fastapi import APIRouter, Depends, Query
 from starlette import status
 
 from app.containers import Container
+from app.exceptions.api_base import ApiBaseException
 from app.handlers.telegram import TelegramAccountHandler
+from app.libs.consts.enums import BotType, PaymentAccountStatus
 from app.libs.depends import (
     check_all_authenticators,
     check_api_key_authenticator,
     check_access_token,
-    DEFAULT_RATE_LIMITERS
+    DEFAULT_RATE_LIMITERS,
 )
 from app.route_classes import LogRoute
 from app.serializers.v1.telegram import (
@@ -23,13 +28,31 @@ from app.serializers.v1.telegram import (
     GroupInfo,
     GroupList,
     GroupMembers,
-    UpdateGroupInfo,
+    UpdateGroupInfo, GroupQuery,
 )
 
 router = APIRouter(
     dependencies=DEFAULT_RATE_LIMITERS,
     route_class=LogRoute
 )
+
+
+def parse_uuid_list(group_type_ids: str = Query(None)) -> Optional[list[UUID]]:
+    """
+
+    :param group_type_ids:
+    :return:
+    """
+    if group_type_ids is None:
+        return
+
+    try:
+        return [UUID(group_type_id) for group_type_id in group_type_ids.split(",")]
+    except ValueError:
+        raise ApiBaseException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid format."
+        )
 
 
 @router.post(
@@ -141,22 +164,44 @@ async def get_vendors(
     dependencies=[Depends(check_access_token)]
 )
 @inject
-async def get_accounts(
+async def get_chat_groups(
     page_size: int = Query(default=20, description="Page Size", lt=100, gt=0),
     page_index: int = Query(default=0, description="Page Index", ge=0),
+    title: Optional[str] = Query(default=None, description="Title"),
+    bot_type: Optional[BotType] = Query(default=None, description="Bot Type"),
+    in_group: Optional[bool] = Query(default=None, description="In Group"),
+    payment_account_status: Optional[PaymentAccountStatus] = Query(default=None, description="Payment Account Status"),
+    currency_id: Optional[UUID] = Query(default=None, description="Currency ID"),
+    handling_fee_config_id: Optional[UUID] = Query(default=None, description="Handling Fee Config ID"),
+    group_type_ids: Optional[list[UUID]] = Depends(parse_uuid_list),
     telegram_account_handler: TelegramAccountHandler = Depends(Provide[Container.telegram_account_handler])
 ):
     """
 
     :param page_size:
     :param page_index:
+    :param title:
+    :param bot_type:
+    :param in_group:
+    :param payment_account_status:
+    :param currency_id:
+    :param handling_fee_config_id:
+    :param group_type_ids:
     :param telegram_account_handler:
     :return:
     """
-    return await telegram_account_handler.get_chat_groups(
+    group_query = GroupQuery(
         page_size=page_size,
-        page_index=page_index
+        page_index=page_index,
+        title=title,
+        bot_type=bot_type,
+        in_group=in_group,
+        payment_account_status=payment_account_status,
+        currency_id=currency_id,
+        handling_fee_config_id=handling_fee_config_id,
+        group_type_ids=group_type_ids
     )
+    return await telegram_account_handler.get_chat_groups(group_query=group_query)
 
 
 @router.get(

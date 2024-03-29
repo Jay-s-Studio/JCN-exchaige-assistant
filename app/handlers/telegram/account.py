@@ -7,7 +7,8 @@ from telegram import Bot
 from app.exceptions.api_base import APIException
 from app.libs.consts.enums import BotType
 from app.libs.decorators.sentry_tracer import distributed_trace
-from app.providers import TelegramAccountProvider
+from app.providers import TelegramAccountProvider, TelegramGroupTypeProvider
+from app.schemas.group_type import GroupTypeRelation
 from app.serializers.v1.telegram import (
     TelegramChatGroup,
     TelegramAccount,
@@ -16,16 +17,22 @@ from app.serializers.v1.telegram import (
     GroupMembers,
     GroupList,
     GroupInfo,
-    UpdateGroupInfo,
+    UpdateGroupInfo, GroupQuery,
 )
 
 
 class TelegramAccountHandler:
     """TelegramAccountHandler"""
 
-    def __init__(self, bot: Bot, telegram_account_provider: TelegramAccountProvider):
+    def __init__(
+        self,
+        bot: Bot,
+        telegram_account_provider: TelegramAccountProvider,
+        group_type_provider: TelegramGroupTypeProvider
+    ):
         self._bot = bot
         self._telegram_account_provider = telegram_account_provider
+        self._group_type_provider = group_type_provider
 
     @distributed_trace()
     async def set_account(self, telegram_account: TelegramAccount):
@@ -74,21 +81,13 @@ class TelegramAccountHandler:
         return VendorResponse(vendors=vendors)
 
     @distributed_trace()
-    async def get_chat_groups(
-        self,
-        page_size: int = 20,
-        page_index: int = 0
-    ) -> GroupList:
+    async def get_chat_groups(self, group_query: GroupQuery) -> GroupList:
         """
 
-        :param page_size:
-        :param page_index:
+        :param group_query:
         :return:
         """
-        groups, total = await self._telegram_account_provider.get_chat_groups(
-            page_size=page_size,
-            page_index=page_index
-        )
+        groups, total = await self._telegram_account_provider.get_chat_groups(query=group_query)
         return GroupList(
             total=total,
             groups=groups
@@ -117,16 +116,23 @@ class TelegramAccountHandler:
         :param group_info:
         :return:
         """
-        await self._telegram_account_provider.update_group(
-            group_id=group_id,
-            group_info=group_info
-        )
+        await self._telegram_account_provider.update_group(group_id=group_id, group_info=group_info)
         if group_info.customer_service_ids:
+            await self._telegram_account_provider.update_customer_service(chat_group_id=group_id, is_customer_service=False)
             for customer_service_id in group_info.customer_service_ids:
                 await self._telegram_account_provider.update_customer_service(
                     chat_group_id=group_id,
                     account_id=customer_service_id,
                     is_customer_service=True
+                )
+        if group_info.group_type_ids:
+            await self._group_type_provider.delete_group_type_relation(chat_group_id=group_id)
+            for group_type_id in group_info.group_type_ids:
+                await self._group_type_provider.create_group_type_relation(
+                    group_type_relation=GroupTypeRelation(
+                        chat_group_id=group_id,
+                        chat_group_type_id=group_type_id
+                    )
                 )
 
     @distributed_trace()

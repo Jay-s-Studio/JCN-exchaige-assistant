@@ -18,7 +18,7 @@ class TelegramGroupTypeProvider:
         self._session = session
 
     @distributed_trace()
-    async def get_group_types(self):
+    async def get_group_types(self, name: str = None) -> list[TelegramGroupType]:
         """
         get group types
         :return:
@@ -29,6 +29,8 @@ class TelegramGroupTypeProvider:
                     SysTelegramChatGroupType.id,
                     SysTelegramChatGroupType.name
                 )
+                .where(SysTelegramChatGroupType.is_deleted.is_(False))
+                .where(SysTelegramChatGroupType.name.ilike(f"%{name}%"))
                 .order_by(SysTelegramChatGroupType.created_at.desc())
                 .fetch(as_model=TelegramGroupType)
             )
@@ -116,6 +118,26 @@ class TelegramGroupTypeProvider:
                 .execute()
             )
         except Exception as e:
+            raise e
+        else:
+            await self._session.commit()
+        finally:
+            await self._session.close()
+
+    @distributed_trace()
+    async def delete_group_type_relation(self, chat_group_id: int) -> None:
+        """
+        delete a group type relation
+        :return:
+        """
+        try:
+            await (
+                self._session.delete(SysTelegramChatGroupTypeRelation)
+                .where(SysTelegramChatGroupTypeRelation.chat_group_id == chat_group_id)
+                .execute()
+            )
+        except Exception as e:
+            await self._session.rollback()
             raise e
         else:
             await self._session.commit()

@@ -117,11 +117,12 @@ async def run_application():
     :return:
     """
     # Pass webhook settings to telegram
-    await application.bot.set_webhook(
-        url=urljoin(base=settings.BASE_URL, url=TELEGRAM_WEBHOOK_PATH),
-        allowed_updates=Update.ALL_TYPES,
-        pool_timeout=5
-    )
+    if not settings.DEBUG_WEBSERVER_ONLY:
+        await application.bot.set_webhook(
+            url=urljoin(base=settings.BASE_URL, url=TELEGRAM_WEBHOOK_PATH),
+            allowed_updates=Update.ALL_TYPES,
+            pool_timeout=5
+        )
 
     web_application = get_application()
 
@@ -158,8 +159,11 @@ async def run_application():
         )
     )
 
-    # Run application and webserver together
-    async with application:
-        await application.start()
+    if settings.DEBUG_WEBSERVER_ONLY:
         await webserver.serve()
-        await application.stop()
+    else:
+        # Run application and webserver together
+        async with application:
+            await application.start()
+            await webserver.serve()
+            await application.stop()

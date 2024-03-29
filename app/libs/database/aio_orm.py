@@ -14,8 +14,9 @@ from sqlalchemy import String, Numeric, Integer, Float, Boolean, DateTime, Date
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.dialects.postgresql.dml import Insert as PgInsert
+from sqlalchemy.dialects.postgresql.psycopg2 import PGCompiler_psycopg2
 from sqlalchemy.orm import Query
-from sqlalchemy.sql import FromClause, Subquery
+from sqlalchemy.sql import FromClause
 from sqlalchemy.sql.dml import Update, Delete, Insert
 from sqlalchemy.sql.selectable import ScalarSelect
 
@@ -364,7 +365,7 @@ class _Select:
         self._select = self._select.limit(limit)
         return self
 
-    def subquery(self, name: str = None, with_labels=False, reduce_columns=False) -> Subquery:
+    def subquery(self, name: str = None, with_labels=False, reduce_columns=False):
         """
         :rtype:subquery
         """
@@ -694,7 +695,7 @@ class Session(ISession):
                     )
                     index += 1
         else:
-            result = statement.compile(dialect=postgresql.dialect())
+            result: PGCompiler_psycopg2 = statement.compile(dialect=postgresql.dialect())
             sql = str(result)
             raw_sql = sql
             index = 1

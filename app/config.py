@@ -55,6 +55,9 @@ class Configuration(BaseSettings):
     APP_FQDN: str = os.getenv(key="APP_FQDN", default="localhost")
     BASE_URL: str = f"https://{APP_FQDN}"
 
+    # [DEBUG]
+    DEBUG_WEBSERVER_ONLY: bool = os.getenv(key="DEBUG_WEBSERVER_ONLY", default=False)
+
     # [JWT]
     JWT_SECRET: str = os.getenv(key="JWT_SECRET")
 

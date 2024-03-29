@@ -5,6 +5,7 @@ from uuid import UUID
 
 from app.libs.decorators.sentry_tracer import distributed_trace
 from app.providers import TelegramGroupTypeProvider
+from app.schemas.mixins import UUIDBaseModel
 from app.serializers.v1.telegram.group_type import TelegramGroupType, TelegramGroupTypes
 
 
@@ -15,21 +16,22 @@ class TelegramGroupTypeHandler:
         self._group_type_provider = group_type_provider
 
     @distributed_trace()
-    async def get_group_types(self) -> TelegramGroupTypes:
+    async def get_group_types(self, name: str = None) -> TelegramGroupTypes:
         """
         get group types
         :return:
         """
-        values = await self._group_type_provider.get_group_types()
+        values = await self._group_type_provider.get_group_types(name=name)
         return TelegramGroupTypes(values=values)
 
     @distributed_trace()
-    async def create_group_type(self, group_type: TelegramGroupType) -> UUID:
+    async def create_group_type(self, group_type: TelegramGroupType) -> UUIDBaseModel:
         """
         create a group type
         :return:
         """
-        return await self._group_type_provider.create_group_type(group_type=group_type)
+        group_type_id = await self._group_type_provider.create_group_type(group_type=group_type)
+        return UUIDBaseModel(id=group_type_id)
 
     @distributed_trace()
     async def update_group_type(self, group_type: TelegramGroupType):

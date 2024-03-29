@@ -79,6 +79,21 @@ class GroupMembers(BaseModel):
     members: List[GroupMember] = Field(default=[], description="Group Members")
 
 
+class GroupQuery(BaseModel):
+    """
+    Group Query
+    """
+    page_size: int = Field(default=20, description="Page Size")
+    page_index: int = Field(default=0, description="Page Index")
+    title: Optional[str] = Field(default=None, description="Title")
+    bot_type: Optional[BotType] = Field(default=None, description="Bot Type")
+    in_group: Optional[bool] = Field(default=None, description="In Group")
+    payment_account_status: Optional[PaymentAccountStatus] = Field(default=None, description="Payment Account Status")
+    currency_id: Optional[UUID] = Field(default=None, description="Currency ID")
+    handling_fee_config_id: Optional[UUID] = Field(default=None, description="Handling Fee Config ID")
+    group_type_ids: Optional[List[UUID]] = Field(default=None, description="Group Types")
+
+
 class GroupInfo(BaseModel):
     """
     Group Info
@@ -89,9 +104,10 @@ class GroupInfo(BaseModel):
     bot_type: BotType
     description: Optional[str] = Field(default=None)
     payment_account_status: Optional[PaymentAccountStatus] = Field(default=None)
-    customer_services: List[GroupMember] = Field(default=[])
+    customer_services: list[GroupMember] = Field(default=[])
     currency_symbol: Optional[str] = Field(default=None)
     handling_fee_name: Optional[str] = Field(default=None)
+    group_types: Optional[list[str]] = Field(default=[])
 
     @field_validator("customer_services", mode="before")
     def validate_customer_services(cls, value: List[str]):
@@ -103,6 +119,17 @@ class GroupInfo(BaseModel):
         if validator.is_empty(value):
             return []
         return [json.loads(item) for item in value]
+
+    @field_validator("group_types", mode="before")
+    def validate_group_types(cls, value: List[str]):
+        """
+        Validate Group Types
+        :param value:
+        :return:
+        """
+        if validator.is_empty(value):
+            return []
+        return [item for item in value]
 
 
 class GroupList(BaseModel):
@@ -121,6 +148,7 @@ class UpdateGroupInfo(BaseModel):
     customer_service_ids: Optional[List[int]] = Field(default=None, description="Customer Service IDs")
     currency_id: Optional[UUID] = Field(default=None, description="Currency ID")
     handling_fee_config_id: Optional[UUID] = Field(default=None, description="Handling Fee Config ID")
+    group_type_ids: Optional[list[UUID]] = Field(default=None, description="Group Type IDs")
 
     @field_validator("currency_id", "handling_fee_config_id", mode="before")
     def validate_name(cls, value: str):

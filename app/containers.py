@@ -132,7 +132,8 @@ class Container(containers.DeclarativeContainer):
     telegram_account_handler = providers.Factory(
         TelegramAccountHandler,
         bot=bot,
-        telegram_account_provider=telegram_account_provider
+        telegram_account_provider=telegram_account_provider,
+        group_type_provider=telegram_group_type_provider
     )
     telegram_message_handler = providers.Factory(
         TelegramMessageHandler,
