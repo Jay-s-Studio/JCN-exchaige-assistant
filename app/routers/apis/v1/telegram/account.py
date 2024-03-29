@@ -37,7 +37,9 @@ router = APIRouter(
 )
 
 
-def parse_uuid_list(group_type_ids: str = Query(None)) -> Optional[list[UUID]]:
+def parse_uuid_list(
+    group_type_ids: str = Query(default=None, description="Group Type IDs (multiple values separated by comma)")
+) -> Optional[list[UUID]]:
     """
 
     :param group_type_ids:
@@ -167,13 +169,13 @@ async def get_vendors(
 async def get_chat_groups(
     page_size: int = Query(default=20, description="Page Size", lt=100, gt=0),
     page_index: int = Query(default=0, description="Page Index", ge=0),
-    title: Optional[str] = Query(default=None, description="Title"),
-    bot_type: Optional[BotType] = Query(default=None, description="Bot Type"),
-    in_group: Optional[bool] = Query(default=None, description="In Group"),
-    payment_account_status: Optional[PaymentAccountStatus] = Query(default=None, description="Payment Account Status"),
-    currency_id: Optional[UUID] = Query(default=None, description="Currency ID"),
-    handling_fee_config_id: Optional[UUID] = Query(default=None, description="Handling Fee Config ID"),
-    group_type_ids: Optional[list[UUID]] = Depends(parse_uuid_list),
+    title: str = Query(default=None, description="Title"),
+    bot_type: BotType = Query(default=None, description="Bot Type"),
+    in_group: bool = Query(default=None, description="In Group"),
+    payment_account_status: PaymentAccountStatus = Query(default=None, description="Payment Account Status"),
+    currency_id: UUID = Query(default=None, description="Currency ID"),
+    handling_fee_config_id: UUID = Query(default=None, description="Handling Fee Config ID"),
+    group_type_ids: list[UUID] = Depends(parse_uuid_list),
     telegram_account_handler: TelegramAccountHandler = Depends(Provide[Container.telegram_account_handler])
 ):
     """
