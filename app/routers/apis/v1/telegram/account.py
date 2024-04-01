@@ -26,9 +26,11 @@ from app.serializers.v1.telegram import (
     GroupMemberBase,
     InitGroupMember,
     GroupInfo,
+    GroupPage,
     GroupList,
     GroupMembers,
-    UpdateGroupInfo, GroupQuery,
+    UpdateGroupInfo,
+    GroupQuery,
 )
 
 router = APIRouter(
@@ -160,8 +162,28 @@ async def get_vendors(
 
 
 @router.get(
-    path="/groups",
+    path="/groups_by_type",
     response_model=GroupList,
+    status_code=status.HTTP_200_OK,
+    dependencies=[Depends(check_access_token)]
+)
+@inject
+async def get_chat_groups_by_type(
+    group_type: BotType,
+    telegram_account_handler: TelegramAccountHandler = Depends(Provide[Container.telegram_account_handler])
+):
+    """
+
+    :param group_type:
+    :param telegram_account_handler:
+    :return:
+    """
+    return await telegram_account_handler.get_chat_groups_by_type(group_type=group_type)
+
+
+@router.get(
+    path="/groups",
+    response_model=GroupPage,
     status_code=status.HTTP_200_OK,
     dependencies=[Depends(check_access_token)]
 )

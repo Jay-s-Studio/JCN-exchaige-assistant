@@ -136,6 +136,13 @@ class GroupList(BaseModel):
     """
     Group List
     """
+    groups: List[TelegramChatGroup] = Field(default=[])
+
+
+class GroupPage(BaseModel):
+    """
+    Group Page
+    """
     total: int = Field(default=0)
     groups: List[GroupInfo] = Field(default=[])
 

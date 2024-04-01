@@ -16,8 +16,10 @@ from app.serializers.v1.telegram import (
     VendorResponse,
     GroupMembers,
     GroupList,
+    GroupPage,
     GroupInfo,
-    UpdateGroupInfo, GroupQuery,
+    UpdateGroupInfo,
+    GroupQuery,
 )
 
 
@@ -81,14 +83,24 @@ class TelegramAccountHandler:
         return VendorResponse(vendors=vendors)
 
     @distributed_trace()
-    async def get_chat_groups(self, group_query: GroupQuery) -> GroupList:
+    async def get_chat_groups_by_type(self, group_type: BotType) -> GroupList:
+        """
+        get chat groups by type
+        :param group_type:
+        :return:
+        """
+        groups = await self._telegram_account_provider.get_chat_group_by_bot_type(bot_type=group_type)
+        return GroupList(groups=groups)
+
+    @distributed_trace()
+    async def get_chat_groups(self, group_query: GroupQuery) -> GroupPage:
         """
 
         :param group_query:
         :return:
         """
         groups, total = await self._telegram_account_provider.get_chat_groups(query=group_query)
-        return GroupList(
+        return GroupPage(
             total=total,
             groups=groups
         )
