@@ -55,4 +55,11 @@ class HandlingFeeConfigPage(BaseModel):
     HandlingFeeConfigPage
     """
     total: int = Field(title="Total", description="Total count")
-    configs: List[HandlingFeeConfigBase] = Field(title="Items", description="Items of the page")
+    configs: List[HandlingFeeConfigBase] = Field(title="Configs", description="Configs of the page")
+
+
+class HandlingFeeConfigs(BaseModel):
+    """
+    HandlingFeeConfigs
+    """
+    values: List[HandlingFeeConfigBase] = Field(title="Values", description="Values of the configs")

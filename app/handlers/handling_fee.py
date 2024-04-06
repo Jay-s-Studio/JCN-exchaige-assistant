@@ -9,7 +9,7 @@ from starlette import status
 from app.exceptions.api_base import ResourceExistsException, APIException
 from app.libs.decorators.sentry_tracer import distributed_trace
 from app.providers import HandlingFeeProvider
-from app.serializers.v1.handling_fee import HandlingFeeConfig, HandlingFeeConfigPage
+from app.serializers.v1.handling_fee import HandlingFeeConfig, HandlingFeeConfigPage, HandlingFeeConfigs
 
 
 class HandlingFeeHandler:
@@ -31,6 +31,15 @@ class HandlingFeeHandler:
         """
         configs, total = await self._handling_fee_provider.get_handling_fee_config_page(page_index, page_size)
         return HandlingFeeConfigPage(configs=configs, total=total)
+
+    @distributed_trace()
+    async def get_handling_fee_configs(self) -> HandlingFeeConfigs:
+        """
+        get handling fee configs
+        :return:
+        """
+        configs = await self._handling_fee_provider.get_handling_fee_configs()
+        return HandlingFeeConfigs(values=configs)
 
     @distributed_trace()
     async def get_handling_fee_config(self, config_id: UUID) -> HandlingFeeConfig:

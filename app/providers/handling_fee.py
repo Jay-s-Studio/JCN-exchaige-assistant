@@ -52,6 +52,32 @@ class HandlingFeeProvider:
             await self._session.close()
 
     @distributed_trace()
+    async def get_handling_fee_configs(self) -> List[HandlingFeeConfigBase]:
+        """
+        get handling fee config list
+        :return:
+        """
+        try:
+            configs = await (
+                self._session.select(
+                    SysHandlingFeeConfig.id,
+                    SysHandlingFeeConfig.name,
+                    SysHandlingFeeConfig.is_global,
+                    SysHandlingFeeConfig.description
+                )
+                .where(SysHandlingFeeConfig.is_global.is_(False))
+                .order_by(SysHandlingFeeConfig.updated_at.desc())
+                .fetch(as_model=HandlingFeeConfigBase)
+            )
+        except Exception as e:
+            raise e
+        else:
+            return configs
+        finally:
+            await self._session.close()
+
+
+    @distributed_trace()
     async def get_handling_fee_config(self, config_id: UUID) -> HandlingFeeConfig:
         """
         get handling fee config

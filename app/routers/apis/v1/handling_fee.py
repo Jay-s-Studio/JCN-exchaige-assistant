@@ -14,7 +14,7 @@ from app.libs.depends import (
     DEFAULT_RATE_LIMITERS,
 )
 from app.route_classes import LogRoute
-from app.serializers.v1.handling_fee import HandlingFeeConfig, HandlingFeeConfigPage
+from app.serializers.v1.handling_fee import HandlingFeeConfig, HandlingFeeConfigPage, HandlingFeeConfigs
 
 router = APIRouter(
     dependencies=[
@@ -40,6 +40,21 @@ async def get_handling_fee_config_page(
     Get handling fee config page
     """
     return await handling_fee_handler.get_handling_fee_config_page(page_index, page_size)
+
+
+@router.get(
+    path="/config/list",
+    response_model=HandlingFeeConfigs,
+    status_code=status.HTTP_200_OK
+)
+@inject
+async def get_handling_fee_configs(
+    handling_fee_handler: HandlingFeeHandler = Depends(Provide[Container.handling_fee_handler])
+) -> HandlingFeeConfigs:
+    """
+    Get handling fee configs
+    """
+    return await handling_fee_handler.get_handling_fee_configs()
 
 
 @router.get(
