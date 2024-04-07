@@ -30,7 +30,7 @@ class TelegramGroupTypeProvider:
                     SysTelegramChatGroupType.name
                 )
                 .where(SysTelegramChatGroupType.is_deleted.is_(False))
-                .where(SysTelegramChatGroupType.name.ilike(f"%{name}%"))
+                .where(name is not None, lambda: SysTelegramChatGroupType.name.ilike(f"%{name}%"))
                 .order_by(SysTelegramChatGroupType.created_at.desc())
                 .fetch(as_model=TelegramGroupType)
             )
