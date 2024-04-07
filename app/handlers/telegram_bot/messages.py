@@ -147,7 +147,7 @@ class TelegramBotMessagesHandler(TelegramBotBaseHandler):
                 case GinaIntention.GET_ACCOUNT:
                     message = await self._messages_controller.on_get_account(update=update, gina_resp=result)
                 case GinaIntention.RECEIPT:
-                    message = await self._messages_controller.on_receipt(update=update, gina_resp=result, telegram_file=telegram_file)
+                    message = await self._messages_controller.on_confirm_payment(update=update, gina_resp=result)
                 case GinaIntention.PAYMENT_CHECK:
                     message = await self._messages_controller.on_payment_check(update=update, gina_resp=result)
                 case GinaIntention.CANCEL_ORDER:
@@ -158,7 +158,7 @@ class TelegramBotMessagesHandler(TelegramBotBaseHandler):
                     message = await self._messages_controller.on_fallback(update=update, gina_resp=result)
         except Exception as e:
             logger.exception(e)
-            message = await self._messages_controller.on_fallback(update=update, gina_resp=result)
+            message = await self._messages_controller.on_exception(update=update, gina_resp=result)
 
         await self.reply_message(update=update, message=message)
 
@@ -173,10 +173,10 @@ class TelegramBotMessagesHandler(TelegramBotBaseHandler):
         await update.effective_chat.send_chat_action("typing")
         callback_query = update.callback_query
         _, cart_id = cast(str, callback_query.data).split()
-        # await update.effective_message.edit_text(
-        #     text=update.effective_message.text_markdown_v2,
-        #     parse_mode=ParseMode.MARKDOWN_V2
-        # )
+        await update.effective_message.edit_text(
+            text=update.effective_message.text_markdown_v2,
+            parse_mode=ParseMode.MARKDOWN_V2
+        )
 
         message = await self._messages_controller.on_order_confirmation(update=update, cart_id=cart_id)
         await self.reply_message(update=update, message=message)

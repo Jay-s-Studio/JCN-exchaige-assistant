@@ -73,6 +73,7 @@ class SysOrder(ModelBase, BaseMixin):
     )
     expiration_of_pay = Column(sa.DateTime(timezone=True), comment="Expiration of Pay")
     payment_account = Column(sa.String(255), comment="Payment Account")
+    payment_message_id = Column(sa.BigInteger, comment="Payment Message ID")
     receive_payment_account_at = Column(sa.DateTime(timezone=True), comment="Receive Payment Account Time")
     receive_receipt_at = Column(sa.DateTime(timezone=True), comment="Receive Receipt Time")
     status = Column(sa.String(64), comment="Order Status. Enum option refer to OrderStatus")

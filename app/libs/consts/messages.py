@@ -185,6 +185,15 @@ class OrderInfoNotFoundMessage(MessagesBase):
     parse_mode = ParseMode.MARKDOWN_V2
 
 
+class ConfirmPaymentMessage(MessagesBase):
+    """ConfirmPaymentMessage"""
+    message = {
+        Language.ZH_TW: "為您查收中，請稍等",
+        Language.EN_US: "Checking for you, please wait",
+    }
+    parse_mode = ParseMode.MARKDOWN_V2
+
+
 class ConfirmPayMessage(MessagesBase):
     """ConfirmPayMessage"""
     message = {

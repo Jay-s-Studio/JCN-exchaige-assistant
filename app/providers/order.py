@@ -68,7 +68,9 @@ class OrderProvider:
                     SysCart.vendor_id,
                     SysCart.account_name,
                     SysCart.account_id,
+                    SysCart.language,
                     SysOrder.status,
+                    SysOrder.payment_message_id,
                     SysOrder.created_at,
                     SysOrder.description
                 )
@@ -111,7 +113,9 @@ class OrderProvider:
                     SysCart.vendor_id,
                     SysCart.account_name,
                     SysCart.account_id,
+                    SysCart.language,
                     SysOrder.status,
+                    SysOrder.payment_message_id,
                     SysOrder.created_at,
                     SysOrder.description
                 )
@@ -153,7 +157,9 @@ class OrderProvider:
                     SysCart.vendor_id,
                     SysCart.account_name,
                     SysCart.account_id,
+                    SysCart.language,
                     SysOrder.status,
+                    SysOrder.payment_message_id,
                     SysOrder.created_at,
                     SysOrder.description
                 )

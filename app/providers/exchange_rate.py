@@ -107,7 +107,7 @@ class ExchangeRateProvider:
                 .select_from(SysExchangeRate)
                 .outerjoin(SysCurrency, SysCurrency.id == SysExchangeRate.currency_id)
                 .where(SysCurrency.symbol == currency)
-                .scalar_subquery()
+                .subquery()
             )
 
             result = await (

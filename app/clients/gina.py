@@ -49,6 +49,7 @@ class GinaClient:
                 .add_headers(headers_dict)
                 .add_header(name="x-api-key", value=self._api_key)
                 .add_json(payload_dict)
+                .verify(False)
                 .apost()
             )
             resp.raise_for_status()

@@ -7,7 +7,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from app.libs.consts.enums import OrderStatus
+from app.libs.consts.enums import OrderStatus, Language
 from app.schemas.mixins import UUIDBaseModel
 
 
@@ -36,7 +36,9 @@ class OrderDetail(OrderBase):
     vendor_id: int = Field(description="Vendor ID")
     account_name: str = Field(description="Order Account Name")
     account_id: int = Field(description="Order Account ID")
+    language: Language = Field(description="Language")
     status: OrderStatus = Field(description="Status")
+    payment_message_id: Optional[int] = Field(description="Payment Message ID")
     created_at: Optional[datetime] = Field(description="Created At")
     description: Optional[str] = Field(description="Description")
 

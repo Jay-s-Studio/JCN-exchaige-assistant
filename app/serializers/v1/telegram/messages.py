@@ -24,6 +24,7 @@ class PaymentAccount(BaseModel):
     order_id: UUID
     customer_id: int
     message: str
+    message_id: int
 
 
 class GroupPaymentAccountStatus(BaseModel):

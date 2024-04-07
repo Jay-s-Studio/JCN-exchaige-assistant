@@ -2,10 +2,12 @@
 MessagesController
 """
 import asyncio
-from datetime import datetime
-from uuid import UUID
+import re
 from dataclasses import dataclass
+from datetime import datetime
+from decimal import Decimal, ROUND_HALF_UP
 from typing import Optional
+from uuid import UUID
 
 import pytz
 from telegram import Update, User
@@ -16,10 +18,9 @@ from app.libs.consts.enums import GinaAction, CurrencySymbol, OperationType, Cal
 from app.libs.decorators.sentry_tracer import distributed_trace
 from app.providers import ExchangeRateProvider, TelegramAccountProvider, HandlingFeeProvider, OrderProvider, VendorsBotProvider
 from app.schemas.exchange_rate import OptimalExchangeRate
-from app.schemas.files import TelegramFile
 from app.schemas.gina import GinaResponse
 from app.schemas.order import Order, Cart
-from app.schemas.vendors_bot import PaymentAccount, CheckReceipt
+from app.schemas.vendors_bot import PaymentAccount, ConfirmPayment
 from app.serializers.v1.handling_fee import HandlingFeeConfigItem
 
 
@@ -163,14 +164,13 @@ class MessagesController:
                 return messages.CartCurrencyMismatchMessage.format(language=gina_resp.language)
 
             if payment_currency in ["GCASH", "PAYMAYA"]:
-                payment_amount *= 10000
-                exchange_amount = payment_amount / exist_cart.with_fee_exchange_rate
+                payment_amount = self._round_to_nearest((Decimal(payment_amount) * Decimal("10000")))
             else:
-                exchange_amount = payment_amount / exist_cart.with_fee_exchange_rate
-                payment_amount *= exist_cart.with_fee_exchange_rate
+                payment_amount = self._round_to_nearest((Decimal(payment_amount) * Decimal(exist_cart.with_fee_exchange_rate)))
+            exchange_amount = self._round_to_nearest((Decimal(payment_amount) / Decimal(exist_cart.with_fee_exchange_rate)))
 
-            exist_cart.payment_amount += payment_amount
-            exist_cart.exchange_amount += exchange_amount
+            exist_cart.payment_amount = float(self._round_to_nearest(Decimal(exist_cart.payment_amount) + payment_amount))
+            exist_cart.exchange_amount = float(self._round_to_nearest(Decimal(exist_cart.exchange_amount) + exchange_amount))
             await self._order_provider.update_cart(cart=exist_cart)
             return messages.CartInfoMessage.format(
                 language=gina_resp.language,
@@ -198,11 +198,11 @@ class MessagesController:
             operation_type=OperationType.BUY if payment_currency != "USDT" else OperationType.SELL
         )
         if payment_currency in ["GCASH", "PAYMAYA"]:
-            payment_amount *= 10000
-            exchange_amount = payment_amount / price
+            payment_amount = self._round_to_nearest((Decimal(payment_amount) * Decimal("10000")))
+            exchange_amount = self._round_to_nearest((Decimal(payment_amount) / Decimal(price)))
         else:
             exchange_amount = payment_amount
-            payment_amount *= price
+            payment_amount = self._round_to_nearest((Decimal(payment_amount) * Decimal(price)))
 
         cart = Cart(
             message_id=update.effective_message.message_id,
@@ -214,9 +214,9 @@ class MessagesController:
             account_name=update.effective_user.username,
             account_id=update.effective_user.id,
             payment_currency=payment_currency,
-            payment_amount=payment_amount,
+            payment_amount=float(payment_amount),
             exchange_currency=exchange_currency,
-            exchange_amount=exchange_amount,
+            exchange_amount=float(exchange_amount),
             original_exchange_rate=exchange_rate.buy_rate,
             with_fee_exchange_rate=price,
         )
@@ -273,12 +273,11 @@ class MessagesController:
         return messages.Message(text=gina_resp.reply)
 
     @distributed_trace()
-    async def on_receipt(self, update: Update, gina_resp: GinaResponse, telegram_file: TelegramFile) -> messages.Message:
+    async def on_confirm_payment(self, update: Update, gina_resp: GinaResponse) -> messages.Message:
         """
 
         :param update:
         :param gina_resp:
-        :param telegram_file:
         :return:
         """
         order_info = await self._order_provider.get_order_by_group_id(group_id=update.effective_chat.id)
@@ -291,14 +290,13 @@ class MessagesController:
             receive_receipt_at=datetime.now(tz=pytz.UTC)
         )
         await self._order_provider.update_order(order=order)
-        payload = CheckReceipt(
+        payload = ConfirmPayment(
             order_id=order_info.id,
             customer_id=order_info.group_id,
             vendor_id=order_info.vendor_id,
-            file_id=telegram_file.file_unique_id,
-            file_name=telegram_file.file_name
+            message_id=order_info.payment_message_id,
         )
-        await self._vendors_bot_provider.check_receipt(payload=payload)
+        await self._vendors_bot_provider.confirm_payment(payload=payload)
         return messages.Message(text=gina_resp.reply)
 
     @distributed_trace()
@@ -363,6 +361,34 @@ class MessagesController:
         :param gina_resp:
         :return:
         """
+        text = update.message.text
+        intent_to_pay = re.compile(r"查收|完成|到|Finish")
+        order_info = await self._order_provider.get_order_by_group_id(group_id=update.effective_chat.id)
+        if order_info.status == OrderStatus.WAIT_FOR_PAYMENT and intent_to_pay.search(text):
+            order = Order(
+                id=order_info.id,
+                status=OrderStatus.WAIT_FOR_CONFIRMATION,
+                receive_receipt_at=datetime.now(tz=pytz.UTC)
+            )
+            await self._order_provider.update_order(order=order)
+            payload = ConfirmPayment(
+                order_id=order_info.id,
+                customer_id=order_info.group_id,
+                vendor_id=order_info.vendor_id,
+                message_id=order_info.payment_message_id,
+            )
+            await self._vendors_bot_provider.confirm_payment(payload=payload)
+            return messages.ConfirmPaymentMessage.format(language=order_info.language)
+        return messages.Message(text=gina_resp.reply)
+
+    @distributed_trace()
+    async def on_exception(self, update: Update, gina_resp: GinaResponse) -> messages.Message:
+        """
+        on exception
+        :param update:
+        :param gina_resp:
+        :return:
+        """
         return messages.Message(text=gina_resp.reply)
 
     @distributed_trace()
@@ -375,7 +401,7 @@ class MessagesController:
         """
         cart = await self._order_provider.get_cart_by_id(cart_id=cart_id)
         if not cart:
-            return messages.messages.OrderInfoNotFoundMessage.format(language=Language.ZH_TW)
+            return messages.OrderInfoNotFoundMessage.format(language=Language.ZH_TW)
         await self._order_provider.update_cart_status(cart_id=cart.id, status=CartStatus.CONFIRMED)
         order = Order(cart_id=cart.id)
         order_base = await self._order_provider.create_order(order=order)
@@ -471,7 +497,16 @@ class MessagesController:
         return price
 
     @staticmethod
+    def _round_to_nearest(price: Decimal, base: Decimal = Decimal('0.01')) -> Decimal:
+        """
+        round to the nearest
+        :param price:
+        :return:
+        """
+        return (price / base).quantize(Decimal('1'), rounding=ROUND_HALF_UP) * base
+
     def _calculate_fee(
+        self,
         calculation_type: CalculationType,
         rate: float,
         fee: float
@@ -482,14 +517,19 @@ class MessagesController:
         :param fee:
         :return:
         """
+        d_rate, d_fee = Decimal(str(rate)), Decimal(str(fee))
+        base = Decimal('0.05')
         match calculation_type:
             case CalculationType.ADDITION:
-                return rate + fee
+                result = d_rate + d_fee
             case CalculationType.SUBTRACTION:
-                return rate - fee
+                result = d_rate - d_fee
             case CalculationType.MULTIPLICATION:
-                return rate * fee
+                result = d_rate * d_fee
             case CalculationType.DIVISION:
-                return rate / fee
+                result = d_rate / d_fee
             case _:
-                return rate
+                result = d_rate
+
+        round_result = self._round_to_nearest(price=result, base=base)
+        return float(round_result)

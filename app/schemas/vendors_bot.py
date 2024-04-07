@@ -47,3 +47,23 @@ class CheckReceipt(BaseModel):
         :return:
         """
         return str(value)
+
+
+class ConfirmPayment(BaseModel):
+    """
+    Confirm Payment
+    """
+    order_id: UUID
+    customer_id: int
+    vendor_id: int
+    message_id: int
+
+    @field_serializer("order_id")
+    def serialize_uuid(self, value: UUID, _info) -> str:
+        """
+
+        :param value:
+        :param _info:
+        :return:
+        """
+        return str(value)

@@ -3,7 +3,7 @@ VendorsBotProvider
 """
 from app.clients.vendors_bot import VendorsBotClient
 from app.libs.decorators.sentry_tracer import distributed_trace
-from app.schemas.vendors_bot import PaymentAccount, CheckReceipt
+from app.schemas.vendors_bot import PaymentAccount, CheckReceipt, ConfirmPayment
 
 
 class VendorsBotProvider:
@@ -38,3 +38,12 @@ class VendorsBotProvider:
         :return:
         """
         await self._client.check_receipt(payload=payload)
+
+    @distributed_trace()
+    async def confirm_payment(self, payload: ConfirmPayment):
+        """
+        confirm payment
+        :param payload:
+        :return:
+        """
+        await self._client.confirm_payment(payload=payload)

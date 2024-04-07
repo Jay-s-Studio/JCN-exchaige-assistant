@@ -91,6 +91,7 @@ class TelegramMessageHandler:
                 id=order_info.id,
                 expiration_of_pay=now + timedelta(hours=1),
                 payment_account=model.message,
+                payment_message_id=model.message_id,
                 receive_payment_account_at=now,
                 status=OrderStatus.WAIT_FOR_PAYMENT
             )
