@@ -7,8 +7,7 @@ import pytest
 
 from app.libs.consts.enums import PaymentAccountStatus
 from app.providers import TelegramAccountProvider
-from app.serializers.v1.telegram import UpdateGroupInfo
-
+from app.serializers.v1.telegram import UpdateGroupInfo, GroupQuery
 
 UPDATE_GROUP_INFO = UpdateGroupInfo(
     description="Test description",
@@ -25,7 +24,8 @@ async def test_get_chat_groups(telegram_account_provider: TelegramAccountProvide
     :param telegram_account_provider:
     :return:
     """
-    groups = await telegram_account_provider.get_chat_groups()
+    query = GroupQuery()
+    groups = await telegram_account_provider.get_chat_groups(query=query)
     assert groups is not None
 
 

@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field, field_validator, ConfigDict
 
 from app.libs.consts.enums import BotType, PaymentAccountStatus
 from app.libs.shared import validator
+from .group_type import TelegramGroupType
 
 
 class TelegramAccount(BaseModel):
@@ -107,29 +108,18 @@ class GroupInfo(BaseModel):
     customer_services: list[GroupMember] = Field(default=[])
     currency_symbol: Optional[str] = Field(default=None)
     handling_fee_name: Optional[str] = Field(default=None)
-    group_types: Optional[list[str]] = Field(default=[])
+    group_types: Optional[list[TelegramGroupType]] = Field(default=[])
 
-    @field_validator("customer_services", mode="before")
-    def validate_customer_services(cls, value: List[str]):
+    @field_validator("customer_services", "group_types", mode="before")
+    def validate_json_string(cls, value: List[str]):
         """
-        Validate customer services
+        Validate JSON String
         :param value:
         :return:
         """
         if validator.is_empty(value):
             return []
         return [json.loads(item) for item in value]
-
-    @field_validator("group_types", mode="before")
-    def validate_group_types(cls, value: List[str]):
-        """
-        Validate Group Types
-        :param value:
-        :return:
-        """
-        if validator.is_empty(value):
-            return []
-        return [item for item in value]
 
 
 class GroupList(BaseModel):

@@ -197,11 +197,16 @@ class TelegramAccountProvider:
             group_type_cte = (
                 self._session.select(
                     SysTelegramChatGroupTypeRelation.chat_group_id,
-                    SysTelegramChatGroupTypeRelation.chat_group_type_id,
-                    SysTelegramChatGroupType.name
+                    sa.func.array_agg(
+                        sa.func.jsonb_build_object(
+                            sa.cast("id", sa.VARCHAR(32)), SysTelegramChatGroupType.id,
+                            sa.cast("name", sa.VARCHAR(32)), SysTelegramChatGroupType.name
+                        )
+                    ).label("group_types")
                 )
                 .outerjoin(SysTelegramChatGroupType, SysTelegramChatGroupType.id == SysTelegramChatGroupTypeRelation.chat_group_type_id)
                 .where(SysTelegramChatGroupType.is_deleted.is_(False))
+                .group_by(SysTelegramChatGroupTypeRelation.chat_group_id)
                 .cte("group_type_cte")
             )
 
@@ -216,7 +221,8 @@ class TelegramAccountProvider:
                     SysCurrency.symbol.label("currency_symbol"),
                     SysHandlingFeeConfig.name.label("handling_fee_name"),
                     customer_service_cte.c.customer_services,
-                    sa.func.array_remove(sa.func.array_agg(group_type_cte.c.name), None).label("group_types")
+                    group_type_cte.c.group_types
+                    # sa.func.array_remove(sa.func.array_agg(group_type_cte.c.name), None).label("group_types")
                 )
                 .outerjoin(customer_service_cte, customer_service_cte.c.chat_group_id == SysTelegramChatGroup.id)
                 .outerjoin(group_type_cte, group_type_cte.c.chat_group_id == SysTelegramChatGroup.id)
@@ -234,7 +240,8 @@ class TelegramAccountProvider:
                     SysTelegramChatGroup.id,
                     SysCurrency.symbol,
                     SysHandlingFeeConfig.name,
-                    customer_service_cte.c.customer_services
+                    customer_service_cte.c.customer_services,
+                    group_type_cte.c.group_types
                 )
                 .limit(query.page_size)
                 .offset(query.page_index * query.page_size)
@@ -255,21 +262,43 @@ class TelegramAccountProvider:
         :return:
         """
         try:
-            customer_service = (
+            customer_service_cte = (
                 self._session.select(
                     SysTelegramChatGroupMember.chat_group_id,
-                    SysTelegramAccount.id,
-                    SysTelegramAccount.username,
-                    SysTelegramAccount.first_name,
-                    SysTelegramAccount.last_name,
-                    SysTelegramAccount.full_name,
-                    SysTelegramAccount.name,
-                    SysTelegramChatGroupMember.is_customer_service
+                    sa.func.array_agg(
+                        sa.func.jsonb_build_object(
+                            sa.cast("id", sa.VARCHAR(32)), SysTelegramAccount.id,
+                            sa.cast("username", sa.VARCHAR(32)), SysTelegramAccount.username,
+                            sa.cast("first_name", sa.VARCHAR(32)), SysTelegramAccount.first_name,
+                            sa.cast("last_name", sa.VARCHAR(32)), SysTelegramAccount.last_name,
+                            sa.cast("full_name", sa.VARCHAR(32)), SysTelegramAccount.full_name,
+                            sa.cast("name", sa.VARCHAR(32)), SysTelegramAccount.name,
+                            sa.cast("is_customer_service", sa.VARCHAR(32)), SysTelegramChatGroupMember.is_customer_service
+                        )
+                    ).label("customer_services")
                 )
                 .outerjoin(SysTelegramChatGroupMember, SysTelegramChatGroupMember.account_id == SysTelegramAccount.id)
                 .where(SysTelegramChatGroupMember.is_customer_service.is_(True))
-                .subquery()
+                .group_by(SysTelegramChatGroupMember.chat_group_id)
+                .cte("customer_service_cte")
             )
+
+            group_type_cte = (
+                self._session.select(
+                    SysTelegramChatGroupTypeRelation.chat_group_id,
+                    sa.func.array_agg(
+                        sa.func.jsonb_build_object(
+                            sa.cast("id", sa.VARCHAR(32)), SysTelegramChatGroupType.id,
+                            sa.cast("name", sa.VARCHAR(32)), SysTelegramChatGroupType.name
+                        )
+                    ).label("group_types")
+                )
+                .outerjoin(SysTelegramChatGroupType, SysTelegramChatGroupType.id == SysTelegramChatGroupTypeRelation.chat_group_type_id)
+                .where(SysTelegramChatGroupType.is_deleted.is_(False))
+                .group_by(SysTelegramChatGroupTypeRelation.chat_group_id)
+                .cte("group_type_cte")
+            )
+
             result: Optional[GroupInfo] = await (
                 self._session.select(
                     SysTelegramChatGroup.id,
@@ -278,21 +307,13 @@ class TelegramAccountProvider:
                     SysTelegramChatGroup.bot_type,
                     SysTelegramChatGroup.description,
                     SysTelegramChatGroup.payment_account_status,
-                    sa.func.array_agg(
-                        sa.func.json_build_object(
-                            sa.cast("id", sa.VARCHAR(32)), customer_service.c.id,
-                            sa.cast("username", sa.VARCHAR(32)), customer_service.c.username,
-                            sa.cast("first_name", sa.VARCHAR(32)), customer_service.c.first_name,
-                            sa.cast("last_name", sa.VARCHAR(32)), customer_service.c.last_name,
-                            sa.cast("full_name", sa.VARCHAR(32)), customer_service.c.full_name,
-                            sa.cast("name", sa.VARCHAR(32)), customer_service.c.name,
-                            sa.cast("is_customer_service", sa.VARCHAR(32)), customer_service.c.is_customer_service
-                        )
-                    ).label("customer_services"),
                     SysCurrency.symbol.label("currency_symbol"),
-                    SysHandlingFeeConfig.name.label("handling_fee_name")
+                    SysHandlingFeeConfig.name.label("handling_fee_name"),
+                    customer_service_cte.c.customer_services,
+                    group_type_cte.c.group_types
                 )
-                .outerjoin(customer_service, customer_service.c.chat_group_id == SysTelegramChatGroup.id)
+                .outerjoin(customer_service_cte, customer_service_cte.c.chat_group_id == SysTelegramChatGroup.id)
+                .outerjoin(group_type_cte, group_type_cte.c.chat_group_id == SysTelegramChatGroup.id)
                 .outerjoin(SysCurrency, SysCurrency.id == SysTelegramChatGroup.currency_id)
                 .outerjoin(SysHandlingFeeConfig, SysHandlingFeeConfig.id == SysTelegramChatGroup.handling_fee_config_id)
                 .where(SysTelegramChatGroup.is_deleted.is_(False))
@@ -300,7 +321,9 @@ class TelegramAccountProvider:
                 .group_by(
                     SysTelegramChatGroup.id,
                     SysCurrency.symbol,
-                    SysHandlingFeeConfig.name
+                    SysHandlingFeeConfig.name,
+                    customer_service_cte.c.customer_services,
+                    group_type_cte.c.group_types
                 )
                 .fetchrow(as_model=GroupInfo)
             )
