@@ -42,7 +42,7 @@ async def get_group_types(
 
 
 @router.post(
-    path="/",
+    path="/create",
     response_model=UUIDBaseModel,
     status_code=status.HTTP_201_CREATED
 )

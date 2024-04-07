@@ -58,7 +58,7 @@ async def get_currencies(
 
 
 @router.post(
-    path="/",
+    path="/create",
     status_code=status.HTTP_204_NO_CONTENT,
     dependencies=[Depends(check_access_token)]
 )
