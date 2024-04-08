@@ -1,10 +1,12 @@
 """
 TelegramMessageHandler
 """
+import traceback
 from datetime import datetime, timedelta
 
 import pytz
 import telegram
+from httpx import HTTPStatusError
 from starlette import status
 from telegram import Bot
 
@@ -12,9 +14,11 @@ from app.exceptions.api_base import APIException
 from app.libs.consts.enums import OrderStatus, BotType, MessageStatus
 from app.libs.consts.messages import ConfirmPayMessage
 from app.libs.decorators.sentry_tracer import distributed_trace
-from app.providers import TelegramAccountProvider, OrderProvider, MessageProvider
+from app.libs.logger import logger
+from app.providers import TelegramAccountProvider, OrderProvider, MessageProvider, VendorsBotProvider
 from app.schemas.broadcast_message import BroadcastMessage, BroadcastMessageHistory
 from app.schemas.order import Order
+from app.schemas.vendors_bot import VendorBotBroadcast
 from app.serializers.v1.telegram import (
     TelegramBroadcast,
     PaymentAccount,
@@ -32,12 +36,14 @@ class TelegramMessageHandler:
         bot: Bot,
         telegram_account_provider: TelegramAccountProvider,
         order_provider: OrderProvider,
-        message_provider: MessageProvider
+        message_provider: MessageProvider,
+        vendors_bot_provider: VendorsBotProvider
     ):
         self._bot = bot
         self._telegram_account_provider = telegram_account_provider
         self._order_provider = order_provider
         self._message_provider = message_provider
+        self._vendors_bot_provider = vendors_bot_provider
 
     @distributed_trace()
     async def broadcast_message(self, model: TelegramBroadcast):
@@ -57,14 +63,19 @@ class TelegramMessageHandler:
                         resp = await self._bot.send_message(chat_id=chat_id, text=model.message)
                         history.telegram_message_id = resp.message_id
                     case BotType.VENDORS:
-                        # call vendor bot api
-                        pass
-            except telegram.error.BadRequest as e:
+                        payload = VendorBotBroadcast(chat_id=chat_id, message=model.message)
+                        resp = await self._vendors_bot_provider.broadcast(payload=payload)
+                        history.telegram_message_id = resp.message_id
+            except telegram.error.BadRequest as exc:
                 history.status = MessageStatus.FAILED
-                history.telegram_error_description = e.message
-            except Exception as e:
+                history.telegram_error_description = exc.message
+            except HTTPStatusError as exc:
                 history.status = MessageStatus.FAILED
-                history.telegram_error_description = str(e)
+                history.telegram_error_description = f"({exc.response.status_code}) {exc.response.text}"
+            except Exception as exc:
+                history.status = MessageStatus.FAILED
+                history.telegram_error_description = traceback.format_exc()
+                logger.error(exc)
             else:
                 history.status = MessageStatus.SENT
             finally:

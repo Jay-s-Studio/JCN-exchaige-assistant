@@ -140,7 +140,8 @@ class Container(containers.DeclarativeContainer):
         bot=bot,
         telegram_account_provider=telegram_account_provider,
         order_provider=order_provider,
-        message_provider=message_provider
+        message_provider=message_provider,
+        vendors_bot_provider=vendors_bot_provider
     )
     telegram_group_type_handler = providers.Factory(
         TelegramGroupTypeHandler,

@@ -16,10 +16,11 @@ async def test_broadcast_message(telegram_message_handler: TelegramMessageHandle
     :return:
     """
     broadcast = TelegramBroadcast(
-        message="test",
-        type=BotType.CUSTOMER,
+        message="Test broadcast message",
+        type=BotType.VENDORS,
         chat_id_list=[
-            -4162931997
+            -4100117630,
+            -1002003483337
         ]
     )
     await telegram_message_handler.broadcast_message(model=broadcast)
