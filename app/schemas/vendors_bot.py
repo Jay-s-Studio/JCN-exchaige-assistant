@@ -47,9 +47,9 @@ class VendorBotMessage(BaseModel):
     from_: Optional[VendorBotFrom] = Field(default=None, alias="from", description="Sender of the message")
 
 
-class PaymentAccount(BaseModel):
+class GetPaymentAccount(BaseModel):
     """
-    Telegram Flow Chat
+    Get Payment Account
     """
     order_id: UUID
     customer_id: int

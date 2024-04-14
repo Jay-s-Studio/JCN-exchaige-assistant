@@ -12,7 +12,7 @@ from app.config import settings
 from app.libs.decorators.sentry_tracer import distributed_trace
 from app.libs.http_client import http_client
 from app.libs.logger import logger
-from app.schemas.vendors_bot import PaymentAccount, CheckReceipt, ConfirmPayment, VendorBotBroadcast
+from app.schemas.vendors_bot import GetPaymentAccount, CheckReceipt, ConfirmPayment, VendorBotBroadcast
 
 
 class VendorsBotClient:
@@ -72,7 +72,7 @@ class VendorsBotClient:
     @distributed_trace(inject_span=True)
     async def payment_account(
         self,
-        payload: PaymentAccount,
+        payload: GetPaymentAccount,
         *,
         _span: Span
     ):
@@ -107,7 +107,7 @@ class VendorsBotClient:
     @distributed_trace(inject_span=True)
     async def hurry_payment_account(
         self,
-        payload: PaymentAccount,
+        payload: GetPaymentAccount,
         *,
         _span: Span
     ):

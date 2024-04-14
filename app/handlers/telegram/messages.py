@@ -3,6 +3,7 @@ TelegramMessageHandler
 """
 import traceback
 from datetime import datetime, timedelta
+from decimal import Decimal
 
 import pytz
 import telegram
@@ -11,14 +12,15 @@ from starlette import status
 from telegram import Bot
 
 from app.exceptions.api_base import APIException
-from app.libs.consts.enums import OrderStatus, BotType, MessageStatus
+from app.libs.consts.enums import OrderStatus, BotType, MessageStatus, OperationType
 from app.libs.consts.messages import ConfirmPayMessage
 from app.libs.decorators.sentry_tracer import distributed_trace
 from app.libs.logger import logger
-from app.providers import TelegramAccountProvider, OrderProvider, MessageProvider, VendorsBotProvider
+from app.libs.utils.calculator import Calculator
+from app.providers import TelegramAccountProvider, OrderProvider, MessageProvider, VendorsBotProvider, ExchangeRateProvider, PriceProvider
 from app.schemas.broadcast_message import BroadcastMessage, BroadcastMessageHistory
 from app.schemas.order import Order
-from app.schemas.vendors_bot import VendorBotBroadcast
+from app.schemas.vendors_bot import VendorBotBroadcast, GetPaymentAccount
 from app.serializers.v1.telegram import (
     TelegramBroadcast,
     PaymentAccount,
@@ -36,12 +38,14 @@ class TelegramMessageHandler:
         bot: Bot,
         telegram_account_provider: TelegramAccountProvider,
         order_provider: OrderProvider,
+        price_provider: PriceProvider,
         message_provider: MessageProvider,
         vendors_bot_provider: VendorsBotProvider
     ):
         self._bot = bot
         self._telegram_account_provider = telegram_account_provider
         self._order_provider = order_provider
+        self._price_provider = price_provider
         self._message_provider = message_provider
         self._vendors_bot_provider = vendors_bot_provider
 
@@ -146,7 +150,28 @@ class TelegramMessageHandler:
             group_id=group_id,
             status=model.status
         )
-        # TODO: Get order info and second lowest price
+        order = await self._order_provider.get_order_by_id(order_id=model.order_id)
+        cart = await self._order_provider.get_cart_by_id(cart_id=order.cart_id)
+        price_info = await self._price_provider.get_price_info(
+            group_id=order.group_id,
+            currency=order.payment_currency if order.payment_currency != "USDT" else order.exchange_currency,
+            operation_type=OperationType.BUY if order.payment_currency != "USDT" else OperationType.SELL
+        )
+        cart.vendor_name = price_info.vendor_name
+        cart.vendor_id = price_info.vendor_id
+        cart.exchange_amount = Calculator.round_to_nearest((Decimal(cart.payment_amount) / Decimal(price_info.price)))
+        cart.original_exchange_rate = price_info.original_rate
+        cart.price = price_info.price
+        await self._order_provider.update_cart(cart=cart)
+        payload = GetPaymentAccount(
+            order_id=order.id,
+            customer_id=cart.group_id,
+            vendor_id=cart.vendor_id,
+            payment_currency=cart.payment_currency,
+            exchange_currency=cart.exchange_currency,
+            total_amount=cart.payment_amount
+        )
+        await self._vendors_bot_provider.payment_account(payload)
 
     @distributed_trace()
     async def confirm_pay(self, model: ConfirmPay):

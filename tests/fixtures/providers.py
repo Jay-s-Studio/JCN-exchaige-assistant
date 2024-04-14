@@ -10,7 +10,8 @@ from app.providers import (
     HandlingFeeProvider,
     OrderProvider,
     UserProvider,
-    TelegramAccountProvider
+    TelegramAccountProvider,
+    PriceProvider
 )
 
 
@@ -54,3 +55,10 @@ def telegram_account_provider() -> TelegramAccountProvider:
     """Telegram account provider fixture"""
     container = Container()
     return container.telegram_account_provider()
+
+
+@pytest.fixture
+def price_provider() -> PriceProvider:
+    """Price provider fixture"""
+    container = Container()
+    return container.price_provider()
